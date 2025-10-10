@@ -1,0 +1,20 @@
+# Sample IR used across parser tests
+ir sample_module {
+  intent: Document sample behaviour
+  {
+    <?intent_gap: Description = "Refine the user intent" @intent?>
+  }
+  signature: sample_module(x: int, y: float) -> int {
+    <?result_contract: Predicate = "Return value matches invariants" @signature?>
+  }
+  effects:
+    - interacts with filesystem
+    {
+      <?effect_gap: Effect = "Need to clarify side effects" @effect?>
+    }
+  assert:
+    - x > 0 and y > 0
+    {
+      <?assertion_detail: Predicate = "Explain relationship between x and y" @assertion?>
+    }
+}

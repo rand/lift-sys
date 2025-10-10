@@ -1,0 +1,33 @@
+[project]
+name = "lift-sys"
+version = "0.1.0"
+description = "Modular platform for verifiable AI-native software development"
+requires-python = ">=3.11"
+authors = [{name = "Lift Sys Team"}]
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "pydantic>=2.6.0",
+    "lark>=1.1.9",
+    "z3-solver>=4.13.0",
+    "gitpython>=3.1.43",
+    "httpx>=0.27.0",
+    "textual>=0.49.0",
+    "websockets>=11.0",
+    "rich>=13.7",
+    "python-dotenv>=1.0.1"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "pytest-asyncio>=0.23.6",
+    "anyio>=4.3.0"
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.uv]
+development-dependencies = ["pytest", "pytest-asyncio", "anyio"]

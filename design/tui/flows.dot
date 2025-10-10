@@ -1,0 +1,16 @@
+digraph TUIFlow {
+    rankdir=TB;
+    node [shape=rectangle, style=rounded];
+
+    Start [label="Boot"];
+    Config [label="Config Tab"];
+    Repo [label="Repo Tab"];
+    Reverse [label="Reverse Command"];
+    Planner [label="Planner Tab"];
+    Exit [label="Quit", shape=diamond];
+
+    Start -> Config -> Repo -> Reverse -> Planner;
+    Planner -> Config [label="Adjust Settings"];
+    Reverse -> Repo [label="Select different module"];
+    Planner -> Exit;
+}

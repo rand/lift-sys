@@ -103,12 +103,14 @@ class Metadata:
     source_path: Optional[str] = None
     language: Optional[str] = None
     origin: Optional[str] = None
+    evidence: List[Dict[str, object]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, object]:
         return {
             "source_path": self.source_path,
             "language": self.language,
             "origin": self.origin,
+            "evidence": self.evidence,
         }
 
 
@@ -221,7 +223,13 @@ class IntermediateRepresentation:
             for assertion in payload.get("assertions", [])
         ]
 
-        metadata = Metadata(**payload.get("metadata", {}))
+        metadata_payload = payload.get("metadata", {}) or {}
+        metadata = Metadata(
+            source_path=metadata_payload.get("source_path"),
+            language=metadata_payload.get("language"),
+            origin=metadata_payload.get("origin"),
+            evidence=list(metadata_payload.get("evidence", [])),
+        )
 
         return cls(intent=intent, signature=signature, effects=effects, assertions=assertions, metadata=metadata)
 

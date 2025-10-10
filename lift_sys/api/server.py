@@ -44,7 +44,14 @@ class AppState:
         )
         self.synthesizer = CodeSynthesizer(self.config)
         self.lifter = SpecificationLifter(
-            LifterConfig(codeql_queries=["security/default"], daikon_entrypoint="main"),
+            LifterConfig(
+                codeql_queries=["security/default"],
+                daikon_entrypoint="main",
+                stack_index_path=None,
+                run_codeql=True,
+                run_daikon=True,
+                run_stack_graphs=False,
+            ),
             repo=None,
         )
 
@@ -96,9 +103,20 @@ async def open_repository(request: RepoRequest) -> Dict[str, str]:
 async def reverse(request: ReverseRequest) -> IRResponse:
     if not STATE.lifter:
         raise HTTPException(status_code=400, detail="lifter not configured")
-    STATE.lifter.config = LifterConfig(codeql_queries=request.queries or ["security/default"], daikon_entrypoint=request.entrypoint)
+    analyses = set(request.analyses)
+    stack_index = request.stack_index_path or getattr(STATE.lifter.config, "stack_index_path", None)
+    STATE.lifter.config = LifterConfig(
+        codeql_queries=request.queries or ["security/default"],
+        daikon_entrypoint=request.entrypoint,
+        stack_index_path=stack_index,
+        run_codeql="codeql" in analyses,
+        run_daikon="daikon" in analyses,
+        run_stack_graphs="stack_graphs" in analyses,
+    )
     ir = STATE.lifter.lift(request.module)
     STATE.planner.load_ir(ir)
+    for checkpoint in STATE.lifter.progress_log:
+        STATE.planner.record_checkpoint(checkpoint)
     return IRResponse.from_ir(ir)
 
 

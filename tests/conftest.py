@@ -219,7 +219,13 @@ def configured_api_client(api_client: TestClient) -> TestClient:
     """Create configured API client with synthesizer config."""
     response = api_client.post(
         "/config",
-        json={"model_endpoint": "http://localhost:8001", "temperature": 0.7}
+        json={
+            "model_endpoint": "http://localhost:8001",
+            "temperature": 0.7,
+            "provider_type": "vllm",
+            "schema_uri": "memory://schema.json",
+            "grammar_source": "start -> statement",
+        }
     )
     assert response.status_code == 200
     return api_client

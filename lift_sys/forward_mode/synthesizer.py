@@ -1,44 +1,45 @@
 """Forward mode constrained generation components."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from dataclasses import dataclass, field
+from typing import Callable, Dict, Iterable, List, Optional
 
 from ..ir.models import IntermediateRepresentation, TypedHole
+from .controller_runtime import ControllerRuntime
 
 
 @dataclass
 class SynthesizerConfig:
+    """Configuration for the forward-mode synthesiser runtime."""
+
     model_endpoint: str
     temperature: float = 0.0
+    provider_type: str = "vllm"
+    schema_uri: Optional[str] = None
+    grammar_source: Optional[str] = None
+    controller_path: Optional[str] = None
 
 
 @dataclass
 class Constraint:
+    """Representation of a single constraint sent to the runtime."""
+
     name: str
     value: str
-    metadata: Dict[str, str]
-
-
-class Controller:
-    def __init__(self, config: SynthesizerConfig) -> None:
-        self.config = config
-
-    def build_prompt(self, ir: IntermediateRepresentation, constraints: Iterable[Constraint]) -> Dict[str, object]:
-        return {
-            "endpoint": self.config.model_endpoint,
-            "temperature": self.config.temperature,
-            "prompt": {
-                "intent": ir.intent.summary,
-                "signature": ir.signature.to_dict() if hasattr(ir.signature, "to_dict") else ir.signature.name,
-                "constraints": [constraint.__dict__ for constraint in constraints],
-            },
-        }
+    metadata: Dict[str, str] = field(default_factory=dict)
 
 
 class CodeSynthesizer:
-    def __init__(self, config: SynthesizerConfig) -> None:
-        self.controller = Controller(config)
+    """High level forward-mode synthesiser built on the controller runtime."""
+
+    def __init__(
+        self,
+        config: SynthesizerConfig,
+        runtime_factory: Optional[Callable[[SynthesizerConfig], ControllerRuntime]] = None,
+    ) -> None:
+        self.config = config
+        factory = runtime_factory or (lambda cfg: ControllerRuntime(cfg))
+        self.runtime = factory(config)
 
     def compile_constraints(self, ir: IntermediateRepresentation) -> List[Constraint]:
         constraints: List[Constraint] = []
@@ -56,9 +57,11 @@ class CodeSynthesizer:
 
     def generate(self, ir: IntermediateRepresentation) -> Dict[str, object]:
         constraints = self.compile_constraints(ir)
-        request = self.controller.build_prompt(ir, constraints)
-        # A real implementation would stream from vLLM; we return the payload for testing.
-        return request
+        payload = self.runtime.build_payload(ir, constraints)
+        stream = list(self.runtime.stream(payload, constraints))
+        payload["stream"] = stream
+        payload["telemetry"] = self.runtime.telemetry
+        return payload
 
     def _constraint_for_hole(self, hole: TypedHole) -> Constraint:
         return Constraint(
@@ -68,4 +71,4 @@ class CodeSynthesizer:
         )
 
 
-__all__ = ["SynthesizerConfig", "Constraint", "Controller", "CodeSynthesizer"]
+__all__ = ["SynthesizerConfig", "Constraint", "CodeSynthesizer"]

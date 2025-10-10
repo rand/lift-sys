@@ -1,24 +1,32 @@
-"""Shared pytest fixtures for lift-sys test suite."""
+"""Shared pytest fixtures for the lift-sys test suite."""
+from __future__ import annotations
+
+import sys
 import tempfile
 from pathlib import Path
-from typing import Generator
+from typing import Iterator, Generator
 from unittest.mock import Mock
 
 import pytest
+
+pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from git import Repo
 
-from lift_sys.api.server import app, reset_state
-from lift_sys.ir.parser import IRParser
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
-    IntentClause,
-    SigClause,
-    Parameter,
     AssertClause,
     EffectClause,
+    IntentClause,
+    IntermediateRepresentation,
     Metadata,
+    Parameter,
+    SigClause,
 )
+from lift_sys.ir.parser import IRParser
 
 
 # =============================================================================
@@ -26,10 +34,16 @@ from lift_sys.ir.models import (
 # =============================================================================
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def fixtures_dir() -> Path:
     """Return path to test fixtures directory."""
     return Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def sample_ir_text(fixtures_dir: Path) -> str:
+    """Load valid IR sample text."""
+    return (fixtures_dir / "sample_valid.ir").read_text(encoding="utf8")
 
 
 @pytest.fixture
@@ -85,8 +99,14 @@ def temp_repo(temp_dir: Path) -> Repo:
 
 
 @pytest.fixture
-def ir_parser() -> IRParser:
+def parser() -> IRParser:
     """Create IR parser instance."""
+    return IRParser()
+
+
+@pytest.fixture
+def ir_parser() -> IRParser:
+    """Create IR parser instance (alias)."""
     return IRParser()
 
 
@@ -105,6 +125,22 @@ def parsed_with_holes_ir(ir_parser: IRParser, sample_with_holes_ir: str) -> Inte
 # =============================================================================
 # IR Model Fixtures
 # =============================================================================
+
+
+@pytest.fixture
+def sample_ir() -> IntermediateRepresentation:
+    """Create sample IR object programmatically."""
+    return IntermediateRepresentation(
+        intent=IntentClause(summary="Verify sample"),
+        signature=SigClause(
+            name="sample_module",
+            parameters=[Parameter(name="x", type_hint="int")],
+            returns="int",
+        ),
+        effects=[EffectClause(description="No side effects")],
+        assertions=[AssertClause(predicate="x > 0")],
+        metadata=Metadata(origin="tests"),
+    )
 
 
 @pytest.fixture
@@ -160,12 +196,22 @@ def complex_ir() -> IntermediateRepresentation:
 
 
 @pytest.fixture
-def api_client() -> Generator[TestClient, None, None]:
+def api_client() -> Iterator[TestClient]:
     """Create FastAPI test client."""
+    from lift_sys.api.server import app, reset_state
+
     reset_state()
     with TestClient(app) as client:
         yield client
     reset_state()
+
+
+@pytest.fixture
+def api_state():
+    """Get API server state."""
+    from lift_sys.api import server
+
+    return server.STATE
 
 
 @pytest.fixture
@@ -238,19 +284,7 @@ def mock_daikon_output() -> str:
 @pytest.fixture(autouse=True)
 def reset_test_state():
     """Reset application state before each test."""
+    from lift_sys.api.server import reset_state
     reset_state()
     yield
     reset_state()
-
-
-# =============================================================================
-# Markers
-# =============================================================================
-
-
-def pytest_configure(config):
-    """Configure pytest with custom markers."""
-    config.addinivalue_line("markers", "unit: Unit tests")
-    config.addinivalue_line("markers", "integration: Integration tests")
-    config.addinivalue_line("markers", "e2e: End-to-end tests")
-    config.addinivalue_line("markers", "slow: Slow tests")

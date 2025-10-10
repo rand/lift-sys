@@ -1,16 +1,91 @@
-"""End-to-end tests for Textual TUI.
+"""Textual Pilot based end-to-end tests."""
+from __future__ import annotations
 
-Tests cover:
-- TUI navigation
-- IR file loading and editing
-- Forward mode generation workflow
-- User interactions
-"""
+from typing import Any, Dict
+
 import pytest
-from pathlib import Path
 
-# Note: Full TUI testing requires Textual's Pilot framework
-# These tests demonstrate the structure and approach
+pytest.importorskip("textual.testing")
+
+from textual.testing import Pilot  # noqa: E402  - imported after availability check
+
+from lift_sys.main import LiftSysApp
+
+
+pytestmark = [pytest.mark.e2e, pytest.mark.textual]
+
+
+class _DummyResponse:
+    def __init__(self, payload: Dict[str, Any], status_code: int = 200) -> None:
+        self._payload = payload
+        self.status_code = status_code
+
+    def json(self) -> Dict[str, Any]:
+        return self._payload
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise AssertionError(f"Unexpected HTTP status {self.status_code}")
+
+
+@pytest.mark.asyncio
+async def test_tui_ir_to_code_generation(monkeypatch, sample_ir) -> None:
+    """Drive the TUI through reverse mode and plan refresh."""
+
+    plan_payload = {
+        "steps": [
+            {"identifier": "parse_ir", "description": "Parse IR and normalise metadata"},
+            {"identifier": "verify_assertions", "description": "Verify logical assertions with SMT"},
+        ],
+        "goals": ["verified_ir", "code_generation"],
+    }
+
+    class DummyAsyncClient:
+        async def __aenter__(self) -> "DummyAsyncClient":  # type: ignore[override]
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: D401
+            return None
+
+        async def post(self, url: str, json: Dict[str, Any]) -> _DummyResponse:
+            if url.endswith("/config"):
+                return _DummyResponse({"status": "configured"})
+            if url.endswith("/repos/open"):
+                return _DummyResponse({"status": "ready"})
+            if url.endswith("/reverse"):
+                return _DummyResponse({"ir": sample_ir.to_dict()})
+            raise AssertionError(f"Unexpected POST {url}")
+
+        async def get(self, url: str) -> _DummyResponse:
+            if url.endswith("/plan"):
+                return _DummyResponse(plan_payload)
+            raise AssertionError(f"Unexpected GET {url}")
+
+    monkeypatch.setattr("lift_sys.main.httpx.AsyncClient", lambda: DummyAsyncClient())
+
+    app = LiftSysApp()
+    async with Pilot.create(app) as pilot:
+        await pilot.start()
+        app.endpoint_input.value = "http://localhost:8001"
+        app.temperature_input.value = "0.0"
+        await app.configure_backend()
+
+        app.repo_input.value = "/tmp/repo"
+        await app.open_repo()
+
+        await app.run_reverse("module.py")
+        await app.action_refresh_plan()
+        await pilot.wait_for_idle()
+
+    assert app.status_panel.message == "Planner refreshed"
+    assert "module" in str(app.ir_panel.renderable)
+    assert "verify_assertions" in str(app.plan_panel.renderable)
+
+
+# =============================================================================
+# Additional TUI Test Placeholders
+# These tests demonstrate the structure for comprehensive TUI testing
+# =============================================================================
 
 
 @pytest.mark.e2e
@@ -18,228 +93,54 @@ from pathlib import Path
 class TestTUIWorkflows:
     """End-to-end tests for TUI application workflows."""
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_launches_successfully(self):
         """Test that TUI application launches without errors."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # async with app.run_test() as pilot:
-        #     assert pilot.app is not None
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_navigation_to_ir_editor(self):
         """Test navigating to IR editor screen."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # async with app.run_test() as pilot:
-        #     # Navigate to IR editor
-        #     await pilot.press("tab")
-        #     await pilot.press("enter")
-        #
-        #     # Verify we're in IR editor
-        #     assert "IR Editor" in pilot.app.screen.render()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_load_ir_file(self, fixtures_dir):
         """Test loading an IR file in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_simple.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Open file dialog
-        #     await pilot.press("ctrl+o")
-        #
-        #     # Enter filename
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Verify file loaded
-        #     content = pilot.app.screen.render()
-        #     assert "add" in content
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_forward_mode_workflow(self, fixtures_dir):
         """Test complete forward mode code generation workflow in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_simple.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Load IR file
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Trigger forward mode
-        #     await pilot.press("ctrl+f")
-        #
-        #     # Wait for generation
-        #     await pilot.pause(1.0)
-        #
-        #     # Verify code output panel has content
-        #     content = pilot.app.screen.render()
-        #     assert "code" in content.lower() or "generated" in content.lower()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_hole_interaction(self, fixtures_dir):
         """Test interacting with TypedHoles in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_with_holes.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Load IR with holes
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Find and click on a hole
-        #     # (Implementation depends on TUI structure)
-        #     await pilot.press("tab")  # Navigate to first hole
-        #     await pilot.press("enter")  # Open hole editor
-        #
-        #     # Fill in hole
-        #     await pilot.press(*list("optimization strategy"))
-        #     await pilot.press("enter")
-        #
-        #     # Verify hole filled
-        #     content = pilot.app.screen.render()
-        #     assert "optimization strategy" in content
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_save_ir(self, temp_dir, fixtures_dir):
         """Test saving modified IR in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_simple.ir"
-        # output_file = temp_dir / "modified.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Load IR
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Modify IR
-        #     await pilot.press(*list("# Modified"))
-        #
-        #     # Save
-        #     await pilot.press("ctrl+s")
-        #     await pilot.press(*list(str(output_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Verify file saved
-        #     assert output_file.exists()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_verification_display(self, fixtures_dir):
         """Test that verification results are displayed in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_simple.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Load IR
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Trigger verification
-        #     await pilot.press("ctrl+v")
-        #
-        #     # Wait for verification
-        #     await pilot.pause(0.5)
-        #
-        #     # Verify results displayed
-        #     content = pilot.app.screen.render()
-        #     assert any(keyword in content.lower() for keyword in ["verified", "unsat", "sat", "valid"])
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_plan_view(self, fixtures_dir):
         """Test viewing execution plan in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # ir_file = fixtures_dir / "sample_complex.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Load IR
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(ir_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Open plan view
-        #     await pilot.press("ctrl+p")
-        #
-        #     # Verify plan displayed
-        #     content = pilot.app.screen.render()
-        #     assert "plan" in content.lower() or "step" in content.lower()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_help_screen(self):
         """Test accessing help screen in TUI."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        #
-        # async with app.run_test() as pilot:
-        #     # Open help
-        #     await pilot.press("f1")
-        #
-        #     # Verify help displayed
-        #     content = pilot.app.screen.render()
-        #     assert "help" in content.lower() or "command" in content.lower()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_quit(self):
         """Test quitting TUI application."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        #
-        # async with app.run_test() as pilot:
-        #     # Quit app
-        #     await pilot.press("ctrl+q")
-        #
-        #     # App should exit cleanly
-        #     assert pilot.app.is_running is False
-
         pass
 
 
@@ -248,44 +149,12 @@ class TestTUIWorkflows:
 class TestTUIEdgeCases:
     """Edge case tests for TUI."""
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_handles_invalid_ir(self, fixtures_dir):
         """Test TUI handling of invalid IR file."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # invalid_ir = fixtures_dir / "sample_invalid.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Try to load invalid IR
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(invalid_ir)))
-        #     await pilot.press("enter")
-        #
-        #     # Should show error message
-        #     content = pilot.app.screen.render()
-        #     assert "error" in content.lower() or "invalid" in content.lower()
-
         pass
 
-    @pytest.mark.skip(reason="Requires Textual app implementation")
+    @pytest.mark.skip(reason="Requires full Textual app implementation")
     async def test_tui_handles_missing_file(self, temp_dir):
         """Test TUI handling of missing file."""
-        # from lift_sys.main import LiftSysApp
-        # from textual.pilot import Pilot
-        #
-        # app = LiftSysApp()
-        # missing_file = temp_dir / "nonexistent.ir"
-        #
-        # async with app.run_test() as pilot:
-        #     # Try to load missing file
-        #     await pilot.press("ctrl+o")
-        #     await pilot.press(*list(str(missing_file)))
-        #     await pilot.press("enter")
-        #
-        #     # Should show error
-        #     content = pilot.app.screen.render()
-        #     assert "not found" in content.lower() or "error" in content.lower()
-
         pass

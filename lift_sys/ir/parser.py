@@ -86,11 +86,21 @@ class _IRTransformer(Transformer):
 
     def intent(self, summary, holes=None):  # type: ignore[override]
         summary_text = str(summary).strip()
-        hole_items = holes or []
+        if holes is None:
+            hole_items = []
+        elif isinstance(holes, list):
+            hole_items = holes
+        else:
+            hole_items = [holes]  # Single hole case
         return IntentClause(summary=summary_text, holes=hole_items)
 
     def signature(self, name, parameters, returns=None, holes=None):  # type: ignore[override]
-        hole_items = holes or []
+        if holes is None:
+            hole_items = []
+        elif isinstance(holes, list):
+            hole_items = holes
+        else:
+            hole_items = [holes]  # Single hole case
         return {
             "name": str(name),
             "parameters": parameters,
@@ -113,14 +123,24 @@ class _IRTransformer(Transformer):
         return list(items)
 
     def effect_item(self, description, holes=None):  # type: ignore[override]
-        hole_items = holes or []
+        if holes is None:
+            hole_items = []
+        elif isinstance(holes, list):
+            hole_items = holes
+        else:
+            hole_items = [holes]  # Single hole case
         return EffectClause(description=str(description).strip(), holes=hole_items)
 
     def assertions(self, *items):  # type: ignore[override]
         return list(items)
 
     def assertion_item(self, predicate, holes=None):  # type: ignore[override]
-        hole_items = holes or []
+        if holes is None:
+            hole_items = []
+        elif isinstance(holes, list):
+            hole_items = holes
+        else:
+            hole_items = [holes]  # Single hole case
         return AssertClause(predicate=str(predicate).strip(), holes=hole_items)
 
     def hole_list(self, *_parts):  # type: ignore[override]

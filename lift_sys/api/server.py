@@ -96,7 +96,10 @@ async def reverse(request: ReverseRequest) -> IRResponse:
 async def forward(request: ForwardRequest) -> ForwardResponse:
     if not STATE.synthesizer:
         raise HTTPException(status_code=400, detail="synthesizer not configured")
-    ir = IntermediateRepresentation.from_dict(request.ir)
+    try:
+        ir = IntermediateRepresentation.from_dict(request.ir)
+    except (KeyError, TypeError, ValueError) as e:
+        raise HTTPException(status_code=422, detail=f"Invalid IR structure: {str(e)}")
     payload = STATE.synthesizer.generate(ir)
     return ForwardResponse(request_payload=payload)
 

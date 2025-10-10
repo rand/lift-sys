@@ -40,6 +40,9 @@ class TestAPIEndpoints:
             json={
                 "model_endpoint": "http://localhost:8001",
                 "temperature": 0.7,
+                "provider_type": "vllm",
+                "schema_uri": "memory://schema.json",
+                "grammar_source": "start -> expr",
             }
         )
 
@@ -93,6 +96,10 @@ class TestAPIEndpoints:
         assert "endpoint" in payload
         assert "temperature" in payload
         assert "prompt" in payload
+        assert payload["provider"] == "vllm"
+        assert isinstance(payload.get("stream"), list)
+        assert "constraint_intersections" in payload
+        assert payload["telemetry"]
 
     def test_forward_endpoint_invalid_ir(self, configured_api_client):
         """Test forward endpoint with invalid IR structure."""
@@ -142,14 +149,26 @@ class TestAPIEndpoints:
         # First config
         response1 = api_client.post(
             "/config",
-            json={"model_endpoint": "http://localhost:8001", "temperature": 0.5},
+            json={
+                "model_endpoint": "http://localhost:8001",
+                "temperature": 0.5,
+                "provider_type": "vllm",
+                "schema_uri": "memory://schema.json",
+                "grammar_source": "start -> expr",
+            },
         )
         assert response1.status_code == 200
 
         # Second config
         response2 = api_client.post(
             "/config",
-            json={"model_endpoint": "http://localhost:8002", "temperature": 0.8},
+            json={
+                "model_endpoint": "http://localhost:8002",
+                "temperature": 0.8,
+                "provider_type": "sglang",
+                "schema_uri": "memory://schema.json",
+                "grammar_source": "start -> expr",
+            },
         )
         assert response2.status_code == 200
 
@@ -158,7 +177,13 @@ class TestAPIEndpoints:
         # Step 1: Configure
         config_response = api_client.post(
             "/config",
-            json={"model_endpoint": "http://localhost:8001", "temperature": 0.7},
+            json={
+                "model_endpoint": "http://localhost:8001",
+                "temperature": 0.7,
+                "provider_type": "vllm",
+                "schema_uri": "memory://schema.json",
+                "grammar_source": "start -> expr",
+            },
         )
         assert config_response.status_code == 200
 
@@ -170,6 +195,7 @@ class TestAPIEndpoints:
         assert forward_response.status_code == 200
         data = forward_response.json()
         assert "request_payload" in data
+        assert isinstance(data["request_payload"].get("stream"), list)
 
     def test_config_temperature_bounds(self, api_client):
         """Test configuration with different temperature values."""
@@ -178,7 +204,11 @@ class TestAPIEndpoints:
         for temp in valid_temps:
             response = api_client.post(
                 "/config",
-                json={"model_endpoint": "http://localhost:8001", "temperature": temp},
+                json={
+                    "model_endpoint": "http://localhost:8001",
+                    "temperature": temp,
+                    "provider_type": "vllm",
+                },
             )
             assert response.status_code == 200
 
@@ -226,6 +256,8 @@ class TestAPIEndpoints:
         assert response.status_code == 200
         data = response.json()
         prompt = data["request_payload"]["prompt"]
+        assert "constraint_intersections" in data["request_payload"]
+        assert data["request_payload"]["constraint_intersections"]["assertion"]
 
         # Verify structure preserved
         assert "intent" in prompt

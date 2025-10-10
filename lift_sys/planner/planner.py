@@ -120,7 +120,10 @@ class Planner:
             self.state.conflicts[result] = reason or "unknown"
             literals = self.current_plan.literals_for_step(result)
             blocking_literals = extract_reason_literals(reason)
-            clause_literals = tuple(dict.fromkeys(literals + blocking_literals))
+            negative_blockers = [f"!{literal}" for literal in blocking_literals]
+            clause_literals = tuple(
+                dict.fromkeys(literals + negative_blockers)
+            )
             clause = Clause(literals=clause_literals, explanation=reason or "conflict")
             learned_clauses.append(clause)
             self.clauses.add(clause)

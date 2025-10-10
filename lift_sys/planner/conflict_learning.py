@@ -31,9 +31,21 @@ class ClauseStore:
         combined = set(active_literals)
         combined.update(candidate_literals)
         for clause in self.learned:
-            if set(clause.literals).issubset(combined):
+            if self._clause_satisfied(clause, combined):
                 return True
         return False
+
+    @staticmethod
+    def _clause_satisfied(clause: Clause, combined: Set[str]) -> bool:
+        """Determine if all literals in ``clause`` evaluate to true."""
+
+        for literal in clause.literals:
+            if literal.startswith("!"):
+                if literal[1:] in combined:
+                    return False
+            elif literal not in combined:
+                return False
+        return True
 
     def as_dict(self) -> List[dict]:
         return [clause.to_dict() for clause in self.learned]

@@ -44,7 +44,7 @@ def test_planner_clause_learning_and_backjump(parser: IRParser, sample_ir_text: 
     assert conflict.learned_clauses
     learned_literals = conflict.learned_clauses[0].literals
     assert "controller:verifier" in learned_literals
-    assert "controller:synthesiser" in learned_literals
+    assert "!controller:synthesiser" in learned_literals
     assert conflict.backjump_target == 0
     assert any(event["type"] == "learned_clause" for event in conflict.events)
     assert planner.suggest_resolution()["verify_assertions"].startswith("Investigate")

@@ -1,7 +1,7 @@
 """Pydantic schemas for FastAPI endpoints."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,15 +33,33 @@ class ForwardRequest(BaseModel):
 
 class IRResponse(BaseModel):
     ir: dict
+    progress: List[dict] = Field(default_factory=list)
 
     @classmethod
-    def from_ir(cls, ir: IntermediateRepresentation) -> "IRResponse":
-        return cls(ir=ir.to_dict())
+    def from_ir(
+        cls,
+        ir: IntermediateRepresentation,
+        *,
+        progress: Optional[List[Dict[str, object]]] = None,
+    ) -> "IRResponse":
+        return cls(ir=ir.to_dict(), progress=progress or [])
+
+
+class PlannerTelemetry(BaseModel):
+    nodes: List[dict] = Field(default_factory=list)
+    edges: List[dict] = Field(default_factory=list)
+    typed_holes: List[dict] = Field(default_factory=list)
+    invariants: List[dict] = Field(default_factory=list)
+    assists: List[dict] = Field(default_factory=list)
+    completed: List[str] = Field(default_factory=list)
+    conflicts: Dict[str, str] = Field(default_factory=dict)
 
 
 class PlanResponse(BaseModel):
     steps: List[dict]
     goals: List[str]
+    ir: Optional[dict] = None
+    telemetry: Optional[PlannerTelemetry] = None
 
 
 class ForwardResponse(BaseModel):
@@ -55,5 +73,6 @@ __all__ = [
     "ForwardRequest",
     "IRResponse",
     "PlanResponse",
+    "PlannerTelemetry",
     "ForwardResponse",
 ]

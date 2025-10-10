@@ -3,8 +3,11 @@ import { clsx } from "clsx";
 
 type Variant = "default" | "secondary" | "destructive" | "ghost" | "outline";
 
+type Size = "sm" | "md";
+
 type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
   variant?: Variant;
+  size?: Size;
 };
 
 const variantStyles: Record<Variant, string> = {
@@ -15,17 +18,22 @@ const variantStyles: Record<Variant, string> = {
   outline: "background-color: transparent; border: 1px solid #6366f1; color: #6366f1;",
 };
 
-export function Button({ variant = "default", style, className, ...rest }: ButtonProps) {
+const sizeStyles: Record<Size, CSSProperties> = {
+  sm: { padding: "0.35rem 0.75rem", fontSize: "0.85rem" },
+  md: { padding: "0.6rem 1rem" },
+};
+
+export function Button({ variant = "default", size = "md", style, className, ...rest }: ButtonProps) {
   return (
     <button
       className={clsx("shadcn-button", className)}
       style={{
-        padding: "0.6rem 1rem",
         borderRadius: "0.75rem",
         border: "none",
         fontWeight: 600,
         cursor: "pointer",
         ...parseStyleString(variantStyles[variant]),
+        ...sizeStyles[size],
         ...style,
       }}
       {...rest}

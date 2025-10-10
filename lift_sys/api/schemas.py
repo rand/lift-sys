@@ -9,8 +9,12 @@ from ..ir.models import IntermediateRepresentation
 
 
 class ConfigRequest(BaseModel):
-    model_endpoint: str = Field(..., description="vLLM endpoint URL")
+    model_endpoint: str = Field(..., description="Model serving endpoint URL")
     temperature: float = 0.0
+    provider_type: str = Field(default="vllm", description="Provider implementation type")
+    schema_uri: Optional[str] = Field(default=None, description="URI for schema initialisation")
+    grammar_source: Optional[str] = Field(default=None, description="Source text for grammar constraints")
+    controller_path: Optional[str] = Field(default=None, description="Path to WebAssembly controller module")
 
 
 class RepoRequest(BaseModel):

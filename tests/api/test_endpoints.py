@@ -11,10 +11,21 @@ from lift_sys.ir.models import IntermediateRepresentation
 pytestmark = pytest.mark.integration
 
 
-def configure_backend(client, endpoint: str = "http://model" , temperature: float = 0.3):
+def configure_backend(
+    client,
+    endpoint: str = "http://model",
+    temperature: float = 0.3,
+    provider: str = "vllm",
+):
     response = client.post(
         "/config",
-        json={"model_endpoint": endpoint, "temperature": temperature},
+        json={
+            "model_endpoint": endpoint,
+            "temperature": temperature,
+            "provider_type": provider,
+            "schema_uri": "memory://schema.json",
+            "grammar_source": "start -> expr",
+        },
     )
     assert response.status_code == 200
     return response
@@ -66,6 +77,9 @@ def test_forward_endpoint_generates_payload(api_client, api_state, sample_ir: In
     assert payload.status_code == 200
     body = payload.json()
     assert body["request_payload"]["prompt"]["intent"] == sample_ir.intent.summary
+    assert body["request_payload"]["provider"] == "vllm"
+    assert "stream" in body["request_payload"]
+    assert isinstance(body["request_payload"]["stream"], list)
 
 
 def test_forward_endpoint_requires_configuration(api_client) -> None:

@@ -34,7 +34,14 @@ class AppState:
         self.lifter: Optional[SpecificationLifter] = None
 
     def set_config(self, config: ConfigRequest) -> None:
-        self.config = SynthesizerConfig(model_endpoint=config.model_endpoint, temperature=config.temperature)
+        self.config = SynthesizerConfig(
+            model_endpoint=config.model_endpoint,
+            temperature=config.temperature,
+            provider_type=config.provider_type,
+            schema_uri=config.schema_uri,
+            grammar_source=config.grammar_source,
+            controller_path=config.controller_path,
+        )
         self.synthesizer = CodeSynthesizer(self.config)
         self.lifter = SpecificationLifter(
             LifterConfig(codeql_queries=["security/default"], daikon_entrypoint="main"),
@@ -78,7 +85,10 @@ async def open_repository(request: RepoRequest) -> Dict[str, str]:
     if not STATE.lifter:
         STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
     assert STATE.lifter
-    STATE.lifter.load_repository(request.path)
+    try:
+        STATE.lifter.load_repository(request.path)
+    except Exception as exc:  # pragma: no cover - defensive broad catch for repository errors
+        raise HTTPException(status_code=404, detail=f"repository not accessible: {exc}")
     return {"status": "ready"}
 
 

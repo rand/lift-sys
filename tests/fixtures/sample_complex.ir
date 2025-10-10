@@ -1,0 +1,12 @@
+ir binary_search {
+  intent: Perform binary search on sorted array
+  signature: binary_search(arr: list, target: int) -> int
+  effects:
+    - reads array elements
+    - may return -1 if not found
+  assert:
+    - len(arr) >= 0
+    - arr is sorted
+    - result >= -1
+    - result < len(arr)
+}

@@ -1,0 +1,12 @@
+ir factorial {
+  intent: Calculate factorial with memoization {<?optimization_strategy: Strategy = "caching approach"?>}
+  signature: factorial(n: int) -> int {
+    <?max_recursion: int = "recursion limit"?>,
+    <?cache_size: int = "cache capacity"?>
+  }
+  effects:
+    - modifies global cache {<?cache_invalidation: Policy = "when to clear cache"?>}
+  assert:
+    - n >= 0
+    - result > 0 {<?result_bound: Predicate = "upper bound"?>}
+}

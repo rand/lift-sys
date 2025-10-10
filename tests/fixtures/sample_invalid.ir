@@ -1,0 +1,6 @@
+ir broken {
+  intent: This is missing required clauses
+  # Missing signature
+  assert:
+    - x > 0
+}

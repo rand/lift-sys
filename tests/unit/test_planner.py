@@ -39,7 +39,7 @@ class TestPlanner:
         planner = Planner()
         plan = planner.load_ir(simple_ir)
 
-        step_names = [step.name for step in plan.steps]
+        step_names = [step.identifier for step in plan.steps]
 
         # Should have parse, verify, and synthesize steps at minimum
         assert any("parse" in name.lower() or "ir" in name.lower() for name in step_names)
@@ -50,18 +50,18 @@ class TestPlanner:
         planner = Planner()
         plan = planner.load_ir(simple_ir)
 
-        initial_step = plan.steps[0].name
+        initial_step = plan.steps[0].identifier
         next_steps = planner.step(initial_step, success=True)
 
         assert len(next_steps) >= 1
-        assert planner.state.completed_steps[initial_step] is True
+        assert initial_step in planner.state.completed
 
     def test_step_progression_failure(self, simple_ir):
         """Test stepping through plan with failed outcome."""
         planner = Planner()
         plan = planner.load_ir(simple_ir)
 
-        initial_step = plan.steps[0].name
+        initial_step = plan.steps[0].identifier
         reason = "Test failure reason"
         next_steps = planner.step(initial_step, success=False, reason=reason)
 
@@ -98,7 +98,7 @@ class TestPlanner:
         assert len(suggestions[step_name]) > 0
 
     def test_fallback_strategy_after_failure(self, complex_ir):
-        """Test that planner uses fallback strategy after repeated failures."""
+        """Test that planner records fallback strategy after repeated failures."""
         planner = Planner()
         plan = planner.load_ir(complex_ir)
 
@@ -107,10 +107,11 @@ class TestPlanner:
         planner.step(step_name, success=False, reason="timeout 1")
         planner.step(step_name, success=False, reason="timeout 2")
 
-        # Check that conflict count increased
+        # Check that conflict is recorded (second reason overwrites first)
         assert step_name in planner.state.conflicts
-        conflicts = planner.state.conflicts[step_name]
-        assert isinstance(conflicts, (list, dict))
+        conflict_reason = planner.state.conflicts[step_name]
+        assert isinstance(conflict_reason, str)
+        assert "timeout" in conflict_reason
 
     def test_plan_goals_are_set(self, simple_ir):
         """Test that plan has defined goals."""
@@ -127,21 +128,20 @@ class TestPlanner:
         plan = planner.load_ir(simple_ir)
 
         # Initially, no steps completed
-        assert len(planner.state.completed_steps) == 0
+        assert len(planner.state.completed) == 0
 
         # After stepping, should track completion
-        first_step = plan.steps[0].name
+        first_step = plan.steps[0].identifier
         planner.step(first_step, success=True)
 
-        assert first_step in planner.state.completed_steps
-        assert planner.state.completed_steps[first_step] is True
+        assert first_step in planner.state.completed
 
     def test_multiple_ir_loads_reset_plan(self, simple_ir, complex_ir):
         """Test that loading new IR resets the plan."""
         planner = Planner()
 
         plan1 = planner.load_ir(simple_ir)
-        step1_name = plan1.steps[0].name
+        step1_name = plan1.steps[0].identifier
         planner.step(step1_name, success=True)
 
         # Load new IR should reset
@@ -208,14 +208,14 @@ class TestPlanner:
 
         # Execute multiple steps
         if len(plan.steps) >= 2:
-            step1 = plan.steps[0].name
-            step2 = plan.steps[1].name
+            step1 = plan.steps[0].identifier
+            step2 = plan.steps[1].identifier
 
             planner.step(step1, success=True)
             planner.step(step2, success=True)
 
-            assert planner.state.completed_steps[step1] is True
-            assert planner.state.completed_steps[step2] is True
+            assert step1 in planner.state.completed
+            assert step2 in planner.state.completed
 
     def test_conflict_resolution_suggestions_are_actionable(self, simple_ir):
         """Test that conflict resolution suggestions are actionable."""

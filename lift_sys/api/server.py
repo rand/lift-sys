@@ -106,7 +106,8 @@ async def get_plan() -> PlanResponse:
     if not STATE.planner.current_plan:
         raise HTTPException(status_code=404, detail="plan not initialised")
     plan = STATE.planner.current_plan
-    return PlanResponse(steps=[step.__dict__ for step in plan.steps], goals=plan.goals)
+    from dataclasses import asdict
+    return PlanResponse(steps=[asdict(step) for step in plan.steps], goals=plan.goals)
 
 
 async def websocket_emitter() -> AsyncIterator[str]:

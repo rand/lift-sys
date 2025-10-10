@@ -109,7 +109,8 @@ class _IRTransformer(Transformer):
         }
 
     def parameter_block(self, *params):  # type: ignore[override]
-        return list(params)
+        # Filter out None values (empty parameter list)
+        return [p for p in params if p is not None]
 
     def param(self, *parts):  # type: ignore[override]
         name = str(parts[0])

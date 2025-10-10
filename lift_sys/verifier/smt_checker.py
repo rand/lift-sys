@@ -113,9 +113,17 @@ class SMTChecker:
             self.solver.add(expr)
 
         sat_result = self.solver.check()
-        success = is_true(sat_result == 0) or str(sat_result) == "sat"
+        result_text = str(sat_result)
+        success = result_text == "sat"
         model = {str(d): str(self.solver.model()[d]) for d in self.solver.model().decls()} if success else {}
-        return SMTResult(success=success, model=model, reason=None if success else str(sat_result))
+        if success:
+            reason = None
+        elif result_text == "unknown":
+            reason_unknown = self.solver.reason_unknown()
+            reason = f"unknown: {reason_unknown}" if reason_unknown else "unknown"
+        else:
+            reason = result_text
+        return SMTResult(success=success, model=model, reason=reason)
 
     def _compile_assertion(self, assertion: AssertClause, compiler: _ExpressionCompiler):
         try:

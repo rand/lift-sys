@@ -201,8 +201,19 @@ class IRParser:
         return "\n".join(lines)
 
     def _format_holes(self, holes: Iterable[TypedHole], indent: int) -> str:
+        def _format_meta(hole: TypedHole) -> str:
+            parts: list[str] = []
+            if hole.description:
+                escaped = (
+                    hole.description.replace("\\", "\\\\").replace("\"", "\\\"")
+                )
+                parts.append(f"=\"{escaped}\"")
+            if hole.kind:
+                parts.append(f"@{hole.kind.value}")
+            return "".join(parts)
+
         entries = ", ".join(
-            f"<?{hole.identifier}: {hole.type_hint}='{hole.description}'@{hole.kind.value}?>" for hole in holes
+            f"<?{hole.identifier}: {hole.type_hint}{_format_meta(hole)}?>" for hole in holes
         )
         return " " * indent + "{" + entries + "}"
 

@@ -22,12 +22,56 @@ dependencies = [
 dev = [
     "pytest>=8.1.1",
     "pytest-asyncio>=0.23.6",
-    "anyio>=4.3.0"
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-playwright>=0.4.4",
+    "anyio>=4.3.0",
+    "playwright>=1.41.0"
 ]
 
+[project.scripts]
+test = "pytest:main"
+test-cov = "pytest:main"
+
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=lift_sys",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml"
+]
 pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "unit: Unit tests for isolated components",
+    "integration: Integration tests for service interactions",
+    "e2e: End-to-end tests for full user workflows",
+    "slow: Tests that take a long time to run"
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["lift_sys"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod"
+]
 
 [dependency-groups]
-dev = ["pytest", "pytest-asyncio", "anyio"]
+dev = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "anyio"]

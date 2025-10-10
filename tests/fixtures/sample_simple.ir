@@ -1,0 +1,8 @@
+ir add {
+  intent: Add two integers
+  signature: add(a: int, b: int) -> int
+  assert:
+    - a >= 0
+    - b >= 0
+    - result == a + b
+}

@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 .env
 .venv/
+node_modules/
+package-lock.json
+*.log
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml

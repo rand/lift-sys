@@ -1,6 +1,7 @@
 """Runtime orchestration for WebAssembly-based forward-mode controllers."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Protocol, TYPE_CHECKING
 
@@ -76,6 +77,8 @@ class ControllerRuntime:
         self.hooks = self.load_controller()
         if self.hooks.init:
             self.hooks.init(self.context)
+        self._base_state = deepcopy(self.context.state)
+        self._base_telemetry = list(self.context.telemetry)
 
     @property
     def telemetry(self) -> List[Dict[str, object]]:
@@ -119,6 +122,7 @@ class ControllerRuntime:
         payload: Dict[str, object],
         constraints: Iterable["Constraint"],
     ) -> Iterator[str]:
+        self._reset_runtime_state()
         constraint_list = list(constraints)
         if self.hooks.pre:
             self.hooks.pre(self.context, constraint_list)
@@ -162,6 +166,12 @@ class ControllerRuntime:
             return iter(())
         for token in seed.split():
             yield token
+
+    def _reset_runtime_state(self) -> None:
+        """Clear per-request runtime state while preserving controller setup."""
+        self.context.state = deepcopy(self._base_state)
+        self.context.telemetry = list(self._base_telemetry)
+        self.context.state.pop("tokens", None)
 
     # ------------------------------------------------------------------
     # Default hook implementations

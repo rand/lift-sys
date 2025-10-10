@@ -23,8 +23,8 @@ from .analyzers import CodeQLAnalyzer, DaikonAnalyzer, Finding
 
 @dataclass
 class LifterConfig:
-    codeql_queries: Iterable[str]
-    daikon_entrypoint: str
+    codeql_queries: Iterable[str] = ("security/default",)
+    daikon_entrypoint: str = "main"
 
 
 class SpecificationLifter:
@@ -84,7 +84,7 @@ class SpecificationLifter:
             signature=signature,
             effects=effects,
             assertions=assertions,
-            metadata=Metadata(source_path=target_module, origin="reverse"),
+            metadata=Metadata(source_path=target_module, origin="reverse", language="python"),
         )
 
     def _build_intent(self, findings: List[Finding]) -> IntentClause:

@@ -1,7 +1,7 @@
 """Pydantic schemas for FastAPI endpoints."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -39,9 +39,18 @@ class IRResponse(BaseModel):
         return cls(ir=ir.to_dict())
 
 
+class DecisionLiteralModel(BaseModel):
+    identifier: str
+    type: str
+    obligation: str
+    steps: List[str]
+
+
 class PlanResponse(BaseModel):
     steps: List[dict]
     goals: List[str]
+    decision_literals: Dict[str, DecisionLiteralModel]
+    recent_events: List[dict]
 
 
 class ForwardResponse(BaseModel):
@@ -53,6 +62,7 @@ __all__ = [
     "RepoRequest",
     "ReverseRequest",
     "ForwardRequest",
+    "DecisionLiteralModel",
     "IRResponse",
     "PlanResponse",
     "ForwardResponse",

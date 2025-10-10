@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import AsyncIterator, Dict, Optional
 
 import uvicorn
@@ -120,14 +121,23 @@ async def get_plan() -> PlanResponse:
         raise HTTPException(status_code=404, detail="plan not initialised")
     plan = STATE.planner.current_plan
     from dataclasses import asdict
-    return PlanResponse(steps=[asdict(step) for step in plan.steps], goals=plan.goals)
+    return PlanResponse(
+        steps=[asdict(step) for step in plan.steps],
+        goals=plan.goals,
+        decision_literals={key: value.to_dict() for key, value in plan.decision_literals.items()},
+        recent_events=STATE.planner.recent_events(),
+    )
 
 
 async def websocket_emitter() -> AsyncIterator[str]:
-    yield "Planner ready"
+    yield json.dumps({"type": "planner_ready", "data": {}})
     while True:
-        await asyncio.sleep(1)
-        yield "heartbeat"
+        events = STATE.planner.consume_events()
+        if events:
+            for event in events:
+                yield json.dumps(event)
+        else:
+            await asyncio.sleep(0.2)
 
 
 @app.websocket("/ws/progress")

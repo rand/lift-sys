@@ -11,14 +11,29 @@
 uv sync
 ```
 
-3. Run the FastAPI server:
+3. Start both the backend and frontend:
 
+```bash
+./start.sh
+```
+
+This will launch:
+- **Backend API**: http://localhost:8000 (API docs at http://localhost:8000/docs)
+- **Frontend**: http://localhost:5173
+
+Alternatively, you can run services individually:
+
+**Backend only:**
 ```bash
 uv run uvicorn lift_sys.api.server:app --reload
 ```
 
-4. Launch the Textual TUI:
+**Frontend only:**
+```bash
+cd frontend && npm run dev
+```
 
+**Textual TUI:**
 ```bash
 uv run python -m lift_sys.main
 ```

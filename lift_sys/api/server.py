@@ -52,6 +52,16 @@ def reset_state() -> None:
     STATE.reset()
 
 
+@app.get("/")
+async def root() -> Dict[str, str]:
+    return {
+        "name": "lift-sys API",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok"}

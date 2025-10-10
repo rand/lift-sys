@@ -1,0 +1,21 @@
+digraph WebAppFlow {
+    rankdir=LR;
+    node [shape=rectangle, style=rounded];
+
+    Start [label="Landing"];
+    Config [label="Configure Backend"];
+    Repo [label="Select Repository"];
+    Reverse [label="Run Reverse Mode"];
+    ReviewIR [label="Review IR & Typed Holes"];
+    Forward [label="Forward Mode Generation"];
+    Planner [label="Planner Insights"];
+    Errors [label="Error State", shape=diamond];
+
+    Start -> Config -> Repo -> Reverse -> ReviewIR -> Forward;
+    ReviewIR -> Planner;
+    Planner -> Forward;
+    Reverse -> Errors [label="analysis failure"];
+    Forward -> Errors [label="verification failure"];
+    Errors -> ReviewIR [label="resolve"];
+    Errors -> Repo [label="reconfigure"];
+}

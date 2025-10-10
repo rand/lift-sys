@@ -31,6 +31,15 @@ class TypedHole:
 
         return f"<?{self.identifier}: {self.type_hint}?>"
 
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "identifier": self.identifier,
+            "type_hint": self.type_hint,
+            "description": self.description,
+            "constraints": self.constraints,
+            "kind": self.kind.value,
+        }
+
 
 @dataclass(slots=True)
 class IntentClause:
@@ -42,7 +51,7 @@ class IntentClause:
         return {
             "summary": self.summary,
             "rationale": self.rationale,
-            "holes": [hole.__dict__ for hole in self.holes],
+            "holes": [hole.to_dict() for hole in self.holes],
         }
 
 
@@ -51,6 +60,13 @@ class Parameter:
     name: str
     type_hint: str
     description: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "type_hint": self.type_hint,
+            "description": self.description,
+        }
 
 
 @dataclass(slots=True)
@@ -63,9 +79,9 @@ class SigClause:
     def to_dict(self) -> Dict[str, object]:
         return {
             "name": self.name,
-            "parameters": [param.__dict__ for param in self.parameters],
+            "parameters": [param.to_dict() for param in self.parameters],
             "returns": self.returns,
-            "holes": [hole.__dict__ for hole in self.holes],
+            "holes": [hole.to_dict() for hole in self.holes],
         }
 
 
@@ -87,6 +103,13 @@ class Metadata:
     source_path: Optional[str] = None
     language: Optional[str] = None
     origin: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "source_path": self.source_path,
+            "language": self.language,
+            "origin": self.origin,
+        }
 
 
 @dataclass(slots=True)
@@ -121,27 +144,27 @@ class IntermediateRepresentation:
             "intent": {
                 "summary": self.intent.summary,
                 "rationale": self.intent.rationale,
-                "holes": [hole.__dict__ for hole in self.intent.holes],
+                "holes": [hole.to_dict() for hole in self.intent.holes],
             },
             "signature": {
                 "name": self.signature.name,
-                "parameters": [param.__dict__ for param in self.signature.parameters],
+                "parameters": [param.to_dict() for param in self.signature.parameters],
                 "returns": self.signature.returns,
-                "holes": [hole.__dict__ for hole in self.signature.holes],
+                "holes": [hole.to_dict() for hole in self.signature.holes],
             },
             "effects": [
-                {"description": eff.description, "holes": [hole.__dict__ for hole in eff.holes]}
+                {"description": eff.description, "holes": [hole.to_dict() for hole in eff.holes]}
                 for eff in self.effects
             ],
             "assertions": [
                 {
                     "predicate": assertion.predicate,
                     "rationale": assertion.rationale,
-                    "holes": [hole.__dict__ for hole in assertion.holes],
+                    "holes": [hole.to_dict() for hole in assertion.holes],
                 }
                 for assertion in self.assertions
             ],
-            "metadata": self.metadata.__dict__,
+            "metadata": self.metadata.to_dict(),
         }
 
     @classmethod
@@ -152,7 +175,24 @@ class IntermediateRepresentation:
         signature_data = payload["signature"]
 
         def parse_holes(data: List[Dict[str, object]]) -> List[TypedHole]:
-            return [TypedHole(**hole) for hole in data]
+            holes = []
+            for hole_data in data:
+                if isinstance(hole_data, dict):
+                    # Handle kind field conversion
+                    kind = hole_data.get("kind", HoleKind.INTENT.value)
+                    if isinstance(kind, str):
+                        kind = HoleKind(kind)
+                    hole = TypedHole(
+                        identifier=hole_data["identifier"],
+                        type_hint=hole_data["type_hint"],
+                        description=hole_data.get("description", ""),
+                        constraints=hole_data.get("constraints", {}),
+                        kind=kind,
+                    )
+                    holes.append(hole)
+                else:
+                    holes.append(hole_data)
+            return holes
 
         intent = IntentClause(
             summary=intent_data["summary"],
@@ -162,7 +202,7 @@ class IntermediateRepresentation:
 
         signature = SigClause(
             name=signature_data["name"],
-            parameters=[Parameter(**param) for param in signature_data.get("parameters", [])],
+            parameters=[Parameter(**param) if isinstance(param, dict) else param for param in signature_data.get("parameters", [])],
             returns=signature_data.get("returns"),
             holes=parse_holes(signature_data.get("holes", [])),
         )

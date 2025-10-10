@@ -29,5 +29,5 @@ dev = [
 addopts = "-q"
 pythonpath = ["."]
 
-[tool.uv]
-development-dependencies = ["pytest", "pytest-asyncio", "anyio"]
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "anyio"]

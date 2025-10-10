@@ -38,9 +38,9 @@ class TestCodeSynthesizer:
         config = SynthesizerConfig(model_endpoint="http://localhost:8001")
         synthesizer = CodeSynthesizer(config)
 
-        assert synthesizer.controller is not None
-        assert synthesizer.controller.config == config
-        assert synthesizer.controller.config.model_endpoint == "http://localhost:8001"
+        assert synthesizer.runtime is not None
+        assert synthesizer.config == config
+        assert synthesizer.config.model_endpoint == "http://localhost:8001"
 
     def test_generate_request_payload(self, simple_ir):
         """Test generation of request payload from IR."""

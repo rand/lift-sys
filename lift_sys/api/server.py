@@ -44,8 +44,16 @@ from .routes import auth as auth_routes
 from .routes import generate as generate_routes
 from .routes import health as health_routes
 from .routes import providers as provider_routes
+from ..spec_sessions import (
+    InMemorySessionStore,
+    PromptToIRTranslator,
+    SpecSessionManager,
+)
 from .schemas import (
+    AssistResponse,
+    AssistsResponse,
     ConfigRequest,
+    CreateSessionRequest,
     ForwardRequest,
     ForwardResponse,
     IRResponse,
@@ -56,7 +64,10 @@ from .schemas import (
     RepoOpenResponse,
     RepositoryMetadataModel,
     RepositorySummary as RepositorySummaryModel,
+    ResolveHoleRequest,
     ReverseRequest,
+    SessionListResponse,
+    SessionResponse,
 )
 
 app = FastAPI(title="lift-sys API", version="0.1.0")
@@ -97,6 +108,12 @@ class AppState:
         self.progress_log = deque(maxlen=256)
         self._progress_subscribers: set[asyncio.Queue] = set()
         self.repositories: Dict[str, RepositoryMetadata] = {}
+
+        # Session management
+        self.session_store = InMemorySessionStore()
+        self.translator: Optional[PromptToIRTranslator] = None
+        self.session_manager: Optional[SpecSessionManager] = None
+
         self.progress_log.append(
             {
                 "type": "status",
@@ -127,6 +144,14 @@ class AppState:
                 run_stack_graphs=False,
             ),
             repo=None,
+        )
+
+        # Initialize session management
+        self.translator = PromptToIRTranslator(synthesizer=self.synthesizer, parser=self.parser)
+        self.session_manager = SpecSessionManager(
+            store=self.session_store,
+            translator=self.translator,
+            planner=self.planner,
         )
 
     def reset(self) -> None:
@@ -623,6 +648,225 @@ async def get_plan(user: AuthenticatedUser = Depends(require_authenticated_user)
         decision_literals={key: value.to_dict() for key, value in plan.decision_literals.items()},
         recent_events=STATE.planner.recent_events(),
     )
+
+
+# Session management endpoints
+
+
+@app.post("/spec-sessions", response_model=SessionResponse)
+async def create_session(request: CreateSessionRequest) -> SessionResponse:
+    """Create a new prompt refinement session."""
+    if not STATE.session_manager:
+        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
+
+    assert STATE.session_manager
+
+    # Validate request
+    if not request.prompt and not request.ir:
+        raise HTTPException(status_code=400, detail="Either 'prompt' or 'ir' must be provided")
+
+    try:
+        if request.prompt:
+            # Create from natural language prompt
+            session = STATE.session_manager.create_from_prompt(
+                prompt=request.prompt,
+                metadata=request.metadata,
+            )
+        else:
+            # Create from existing IR (e.g., reverse mode)
+            ir = IntermediateRepresentation.from_dict(request.ir)
+            session = STATE.session_manager.create_from_reverse_mode(
+                ir=ir,
+                metadata=request.metadata,
+            )
+
+        # Emit session created event
+        await STATE.publish_progress({
+            "type": "session_created",
+            "scope": "spec_sessions",
+            "session_id": session.session_id,
+            "status": session.status,
+            "ambiguities": len(session.get_unresolved_holes()),
+        })
+
+        return SessionResponse(
+            session_id=session.session_id,
+            status=session.status,
+            source=session.source,
+            created_at=session.created_at,
+            updated_at=session.updated_at,
+            current_draft=session.current_draft.to_dict() if session.current_draft else None,
+            ambiguities=session.get_unresolved_holes(),
+            revision_count=len(session.revisions),
+            metadata=session.metadata,
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
+
+
+@app.get("/spec-sessions", response_model=SessionListResponse)
+async def list_sessions() -> SessionListResponse:
+    """List all active sessions."""
+    if not STATE.session_manager:
+        return SessionListResponse(sessions=[])
+
+    sessions = STATE.session_manager.list_active_sessions()
+
+    return SessionListResponse(
+        sessions=[
+            SessionResponse(
+                session_id=s.session_id,
+                status=s.status,
+                source=s.source,
+                created_at=s.created_at,
+                updated_at=s.updated_at,
+                current_draft=s.current_draft.to_dict() if s.current_draft else None,
+                ambiguities=s.get_unresolved_holes(),
+                revision_count=len(s.revisions),
+                metadata=s.metadata,
+            )
+            for s in sessions
+        ]
+    )
+
+
+@app.get("/spec-sessions/{session_id}", response_model=SessionResponse)
+async def get_session(session_id: str) -> SessionResponse:
+    """Get details of a specific session."""
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    return SessionResponse(
+        session_id=session.session_id,
+        status=session.status,
+        source=session.source,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+        current_draft=session.current_draft.to_dict() if session.current_draft else None,
+        ambiguities=session.get_unresolved_holes(),
+        revision_count=len(session.revisions),
+        metadata=session.metadata,
+    )
+
+
+@app.post("/spec-sessions/{session_id}/holes/{hole_id}/resolve", response_model=SessionResponse)
+async def resolve_hole(
+    session_id: str,
+    hole_id: str,
+    request: ResolveHoleRequest,
+) -> SessionResponse:
+    """Resolve a typed hole in a session."""
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    try:
+        session = STATE.session_manager.apply_resolution(
+            session_id=session_id,
+            hole_id=hole_id,
+            resolution_text=request.resolution_text,
+            resolution_type=request.resolution_type,
+        )
+
+        # Emit hole resolved event
+        await STATE.publish_progress({
+            "type": "hole_resolved",
+            "scope": "spec_sessions",
+            "session_id": session_id,
+            "hole_id": hole_id,
+            "remaining_ambiguities": len(session.get_unresolved_holes()),
+        })
+
+        return SessionResponse(
+            session_id=session.session_id,
+            status=session.status,
+            source=session.source,
+            created_at=session.created_at,
+            updated_at=session.updated_at,
+            current_draft=session.current_draft.to_dict() if session.current_draft else None,
+            ambiguities=session.get_unresolved_holes(),
+            revision_count=len(session.revisions),
+            metadata=session.metadata,
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to resolve hole: {str(e)}")
+
+
+@app.post("/spec-sessions/{session_id}/finalize", response_model=IRResponse)
+async def finalize_session(session_id: str) -> IRResponse:
+    """Finalize a session and return the completed IR."""
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    try:
+        ir = STATE.session_manager.finalize(session_id)
+
+        # Emit finalization event
+        await STATE.publish_progress({
+            "type": "session_finalized",
+            "scope": "spec_sessions",
+            "session_id": session_id,
+            "status": "finalized",
+        })
+
+        return IRResponse.from_ir(ir)
+
+    except ValueError as e:
+        # Check if it's a "not found" error or a validation error
+        error_msg = str(e).lower()
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to finalize session: {str(e)}")
+
+
+@app.get("/spec-sessions/{session_id}/assists", response_model=AssistsResponse)
+async def get_assists(session_id: str) -> AssistsResponse:
+    """Get actionable suggestions for resolving holes."""
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    # Check if session exists
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    assists = STATE.session_manager.get_assists(session_id)
+
+    return AssistsResponse(
+        assists=[AssistResponse(**assist) for assist in assists]
+    )
+
+
+@app.delete("/spec-sessions/{session_id}")
+async def delete_session(session_id: str) -> Dict[str, str]:
+    """Delete a session."""
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    # Check if session exists before deleting
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    STATE.session_manager.delete_session(session_id)
+
+    await STATE.publish_progress({
+        "type": "session_deleted",
+        "scope": "spec_sessions",
+        "session_id": session_id,
+    })
+
+    return {"status": "deleted", "session_id": session_id}
 
 
 async def websocket_emitter() -> AsyncIterator[str]:

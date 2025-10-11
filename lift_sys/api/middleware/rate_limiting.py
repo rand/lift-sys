@@ -60,9 +60,11 @@ def _resolve_rate_limit_key(request: Request) -> str:
             request.state.user_id = user_id
             return user_id
 
-    session_user = request.session.get("user_id")
-    if session_user:
-        request.state.user_id = session_user
-        return session_user
+    # Check if session middleware is installed before accessing session
+    if "session" in request.scope:
+        session_user = request.session.get("user_id")
+        if session_user:
+            request.state.user_id = session_user
+            return session_user
 
     return "anonymous"

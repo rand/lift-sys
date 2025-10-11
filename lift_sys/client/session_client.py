@@ -4,6 +4,7 @@ Provides both synchronous and asynchronous interfaces for programmatic use.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -186,9 +187,21 @@ class SessionClient:
             base_url: Base URL of the lift-sys API
             headers: Optional headers to include in all requests
             timeout: Request timeout in seconds
+
+        Note:
+            Automatically detects demo mode from LIFT_SYS_ENABLE_DEMO_USER_HEADER
+            environment variable and adds x-demo-user header if enabled.
         """
         self.base_url = base_url.rstrip("/")
         self.headers = headers or {}
+
+        # Auto-detect demo mode from environment variable
+        if os.getenv("LIFT_SYS_ENABLE_DEMO_USER_HEADER") == "1":
+            # Only add if not explicitly provided in headers
+            if "x-demo-user" not in self.headers:
+                demo_user = os.getenv("LIFT_SYS_DEMO_USER", "sdk-user")
+                self.headers["x-demo-user"] = demo_user
+
         self.timeout = timeout
 
     # Synchronous methods

@@ -20,7 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from lift_sys.ir.models import (
     AssertClause,
@@ -70,7 +70,7 @@ class _StubGitHubClient:
             private=self._summary.private,
             clone_url="https://example.com/octocat/example.git",
             workspace_path=repo_dir,
-            last_synced=datetime.utcnow(),
+            last_synced=datetime.now(timezone.utc),
         )
 
 

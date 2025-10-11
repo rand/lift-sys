@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from ..ir.models import IntermediateRepresentation
@@ -48,7 +48,7 @@ class IRDraft:
     validation_status: str  # "pending" | "valid" | "contradictory" | "incomplete"
     smt_results: List[Dict[str, Any]] = field(default_factory=list)
     ambiguities: List[str] = field(default_factory=list)  # Unresolved hole identifiers
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -70,7 +70,7 @@ class IRDraft:
             validation_status=data["validation_status"],
             smt_results=data.get("smt_results", []),
             ambiguities=data.get("ambiguities", []),
-            created_at=data.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            created_at=data.get("created_at", datetime.now(timezone.utc).isoformat() + "Z"),
             metadata=data.get("metadata", {}),
         )
 
@@ -88,7 +88,7 @@ class HoleResolution:
     resolution_text: str
     resolution_type: str  # "clarify_intent" | "add_constraint" | "refine_signature" | "specify_effect"
     applied: bool = False
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -108,7 +108,7 @@ class HoleResolution:
             resolution_text=data["resolution_text"],
             resolution_type=data["resolution_type"],
             applied=data.get("applied", False),
-            timestamp=data.get("timestamp", datetime.utcnow().isoformat() + "Z"),
+            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat() + "Z"),
             metadata=data.get("metadata", {}),
         )
 
@@ -142,7 +142,7 @@ class PromptSession:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> PromptSession:
         """Factory method to create a new session with proper defaults."""
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat() + "Z"
         session = cls(
             session_id=str(uuid.uuid4()),
             created_at=now,
@@ -161,18 +161,18 @@ class PromptSession:
     def add_revision(self, revision: PromptRevision) -> None:
         """Add a new revision and update timestamps."""
         self.revisions.append(revision)
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_draft(self, draft: IRDraft) -> None:
         """Add a new IR draft and set as current."""
         self.ir_drafts.append(draft)
         self.current_draft = draft
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_resolution(self, resolution: HoleResolution) -> None:
         """Add a pending hole resolution."""
         self.pending_resolutions.append(resolution)
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def mark_resolution_applied(self, hole_id: str) -> None:
         """Mark a resolution as applied."""
@@ -180,17 +180,17 @@ class PromptSession:
             if resolution.hole_id == hole_id and not resolution.applied:
                 resolution.applied = True
                 break
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def finalize(self) -> None:
         """Mark session as finalized."""
         self.status = "finalized"
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def abandon(self) -> None:
         """Mark session as abandoned."""
         self.status = "abandoned"
-        self.updated_at = datetime.utcnow().isoformat() + "Z"
+        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     def get_unresolved_holes(self) -> List[str]:
         """Get list of hole IDs that still need resolution."""

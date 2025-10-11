@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 from typing import Any, Iterable, Optional
@@ -123,7 +123,7 @@ class GitHubRepositoryClient:
             force_refresh,
         )
 
-        last_synced = datetime.utcnow()
+        last_synced = datetime.now(timezone.utc)
         return RepositoryMetadata(
             identifier=repo_identifier,
             owner=owner,

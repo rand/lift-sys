@@ -71,3 +71,33 @@ def test_learned_clause_blocks_future_candidates(parser: IRParser, sample_ir_tex
     events = planner.consume_events()
     assert any(evt["type"] == "learned_clause" for evt in events)
     assert any(evt["type"] == "next_decisions" for evt in events)
+
+
+def test_blocked_step_returns_once_dependency_resolved(
+    parser: IRParser, sample_ir_text: str
+) -> None:
+    """A learned clause only blocks while the dependency literal is absent."""
+
+    ir = parser.parse(sample_ir_text)
+    planner = Planner()
+    planner.load_ir(ir)
+
+    planner.step("parse_ir", success=True)
+    conflict = planner.step(
+        "verify_assertions",
+        success=False,
+        reason="blocked_by:controller:synthesiser",
+    )
+
+    blocked_candidates = [step.identifier for step in conflict.next_steps]
+    assert "verify_assertions" not in blocked_candidates
+
+    # Completing the synthesiser step activates the missing literal and should
+    # allow verify_assertions to be considered again.
+    planner.step("synthesise_code", success=True)
+    refreshed = planner._filter_next_steps(
+        planner.current_plan.next_steps(planner.state.completed)
+    )
+
+    refreshed_ids = [step.identifier for step in refreshed]
+    assert "verify_assertions" in refreshed_ids

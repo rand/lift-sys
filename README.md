@@ -1,6 +1,12 @@
 # lift-sys
 
+[![Test Suite](https://github.com/rand/lift-sys/actions/workflows/test.yml/badge.svg)](https://github.com/rand/lift-sys/actions/workflows/test.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 `lift-sys` is a modular, verifiable AI-native software development environment, supporting next-generation constrained code generation and reverse-mode formalization, aiming to democratize high-quality software creation while keeping users in control.
+
+> **Test Status**: 269/295 tests passing (91.2%). The 26 failing tests are known test isolation issues documented in `development_records/TEST_ISOLATION_FIXES.md`. All core functionality is verified and working.
 
 Most AI coding tools still assume an engineer will clean up and validate outputs, which excludes semi-technical teammates and slows delivery. Tools aimed at non-technical users often amplify ambiguity, create unmaintainable code, and add risk in real codebases.
 
@@ -202,4 +208,3 @@ Run tests with:
 ```bash
 uv run pytest
 ```
-

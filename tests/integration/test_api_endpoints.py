@@ -342,3 +342,398 @@ class TestAPIEndpoints:
         # Both should succeed independently
         assert response1.json() is not None
         assert response2.json() is not None
+
+    # =============================================================================
+    # Session Management Endpoints Tests
+    # =============================================================================
+
+    def test_create_session_from_prompt(self, api_client):
+        """Test creating a session from a natural language prompt."""
+        response = api_client.post(
+            "/spec-sessions",
+            json={
+                "prompt": "Create a function that takes two integers and returns their sum",
+                "source": "prompt",
+                "metadata": {"test": "value"},
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "session_id" in data
+        assert data["status"] == "active"
+        assert data["source"] == "prompt"
+        assert "ambiguities" in data
+        assert "current_draft" in data
+        assert data["revision_count"] > 0
+        assert data["metadata"]["test"] == "value"
+
+    def test_create_session_from_ir(self, api_client, simple_ir):
+        """Test creating a session from an existing IR (reverse mode)."""
+        response = api_client.post(
+            "/spec-sessions",
+            json={
+                "ir": simple_ir.to_dict(),
+                "source": "reverse_mode",
+                "metadata": {"origin": "reverse"},
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["session_id"]
+        assert data["status"] == "active"
+        assert data["source"] == "reverse_mode"
+        assert data["metadata"]["origin"] == "reverse"
+
+    def test_create_session_requires_prompt_or_ir(self, api_client):
+        """Test that creating a session requires either prompt or IR."""
+        response = api_client.post(
+            "/spec-sessions",
+            json={
+                "source": "prompt",
+                "metadata": {},
+            },
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "detail" in data
+        # Check that both "prompt" and "ir" are mentioned in the error
+        assert "prompt" in data["detail"].lower() and "ir" in data["detail"].lower()
+
+    def test_list_sessions_empty(self, api_client):
+        """Test listing sessions when none exist."""
+        response = api_client.get("/spec-sessions")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "sessions" in data
+        assert isinstance(data["sessions"], list)
+        assert len(data["sessions"]) == 0
+
+    def test_list_sessions_with_data(self, api_client):
+        """Test listing sessions after creating some."""
+        # Create first session
+        response1 = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Function to add numbers", "source": "prompt"},
+        )
+        assert response1.status_code == 200
+
+        # Create second session
+        response2 = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Function to multiply numbers", "source": "prompt"},
+        )
+        assert response2.status_code == 200
+
+        # List sessions
+        list_response = api_client.get("/spec-sessions")
+        assert list_response.status_code == 200
+        data = list_response.json()
+        assert len(data["sessions"]) == 2
+        assert all(s["status"] == "active" for s in data["sessions"])
+
+    def test_get_session_by_id(self, api_client):
+        """Test retrieving a specific session by ID."""
+        # Create session
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Function to compute factorial", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Get session
+        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        assert get_response.status_code == 200
+        data = get_response.json()
+        assert data["session_id"] == session_id
+        assert data["status"] == "active"
+
+    def test_get_session_not_found(self, api_client):
+        """Test retrieving a non-existent session."""
+        response = api_client.get("/spec-sessions/nonexistent-id")
+
+        assert response.status_code == 404
+        data = response.json()
+        assert "detail" in data
+
+    def test_resolve_hole(self, api_client):
+        """Test resolving a typed hole in a session."""
+        # Create session with ambiguities
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Add numbers", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        data = create_response.json()
+        session_id = data["session_id"]
+
+        # Check if there are ambiguities to resolve
+        if data["ambiguities"]:
+            hole_id = data["ambiguities"][0]
+
+            # Resolve the hole
+            resolve_response = api_client.post(
+                f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                json={
+                    "resolution_text": "int",
+                    "resolution_type": "refine_signature",
+                },
+            )
+
+            assert resolve_response.status_code == 200
+            resolved_data = resolve_response.json()
+            assert resolved_data["session_id"] == session_id
+            # Check that ambiguities decreased or stayed same
+            assert len(resolved_data["ambiguities"]) <= len(data["ambiguities"])
+
+    def test_resolve_hole_session_not_found(self, api_client):
+        """Test resolving a hole in a non-existent session."""
+        response = api_client.post(
+            "/spec-sessions/nonexistent/holes/hole1/resolve",
+            json={"resolution_text": "int", "resolution_type": "refine_signature"},
+        )
+
+        assert response.status_code == 404
+
+    def test_get_assists(self, api_client):
+        """Test getting actionable suggestions for resolving holes."""
+        # Create session
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Calculate", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Get assists
+        assists_response = api_client.get(f"/spec-sessions/{session_id}/assists")
+        assert assists_response.status_code == 200
+        data = assists_response.json()
+        assert "assists" in data
+        assert isinstance(data["assists"], list)
+
+        # Check assist structure if any exist
+        if data["assists"]:
+            assist = data["assists"][0]
+            assert "hole_id" in assist
+            assert "hole_kind" in assist
+            assert "suggestion" in assist
+            assert "description" in assist
+
+    def test_get_assists_session_not_found(self, api_client):
+        """Test getting assists for non-existent session."""
+        response = api_client.get("/spec-sessions/nonexistent/assists")
+
+        assert response.status_code == 404
+
+    def test_finalize_session(self, api_client, simple_ir):
+        """Test finalizing a session with no remaining holes."""
+        # Create session from complete IR
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        data = create_response.json()
+        session_id = data["session_id"]
+
+        # If there are no ambiguities, we can finalize
+        if not data["ambiguities"]:
+            finalize_response = api_client.post(
+                f"/spec-sessions/{session_id}/finalize"
+            )
+
+            assert finalize_response.status_code == 200
+            finalized_data = finalize_response.json()
+            assert "ir" in finalized_data
+            assert finalized_data["ir"] is not None
+
+    def test_finalize_session_with_holes(self, api_client):
+        """Test that finalizing fails with unresolved holes."""
+        # Create session with ambiguities
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Function", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        data = create_response.json()
+        session_id = data["session_id"]
+
+        # Try to finalize with holes
+        if data["ambiguities"]:
+            finalize_response = api_client.post(
+                f"/spec-sessions/{session_id}/finalize"
+            )
+
+            assert finalize_response.status_code == 400
+            error_data = finalize_response.json()
+            assert "detail" in error_data
+            assert "unresolved" in error_data["detail"].lower()
+
+    def test_finalize_session_not_found(self, api_client):
+        """Test finalizing a non-existent session."""
+        response = api_client.post("/spec-sessions/nonexistent/finalize")
+
+        assert response.status_code == 404
+
+    def test_delete_session(self, api_client):
+        """Test deleting a session."""
+        # Create session
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Test function", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Delete session
+        delete_response = api_client.delete(f"/spec-sessions/{session_id}")
+        assert delete_response.status_code == 200
+        data = delete_response.json()
+        assert data["status"] == "deleted"
+        assert data["session_id"] == session_id
+
+        # Verify session is gone
+        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_session_not_found(self, api_client):
+        """Test deleting a non-existent session."""
+        response = api_client.delete("/spec-sessions/nonexistent")
+
+        assert response.status_code == 404
+
+    def test_session_workflow_complete(self, api_client):
+        """Test complete session workflow: create → resolve → finalize."""
+        # Step 1: Create session
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={
+                "prompt": "Function that takes an integer n and returns boolean",
+                "source": "prompt",
+            },
+        )
+        assert create_response.status_code == 200
+        data = create_response.json()
+        session_id = data["session_id"]
+        initial_ambiguities = data["ambiguities"]
+
+        # Step 2: Get assists
+        assists_response = api_client.get(f"/spec-sessions/{session_id}/assists")
+        assert assists_response.status_code == 200
+
+        # Step 3: Resolve holes if any exist
+        if initial_ambiguities:
+            for hole_id in initial_ambiguities[:2]:  # Resolve first two holes
+                # Get current state
+                get_response = api_client.get(f"/spec-sessions/{session_id}")
+                current_data = get_response.json()
+
+                # Only resolve if hole still exists
+                if hole_id in current_data["ambiguities"]:
+                    resolve_response = api_client.post(
+                        f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                        json={
+                            "resolution_text": "Resolved value",
+                            "resolution_type": "clarify_intent",
+                        },
+                    )
+                    assert resolve_response.status_code == 200
+
+        # Step 4: Check final state
+        final_response = api_client.get(f"/spec-sessions/{session_id}")
+        assert final_response.status_code == 200
+        final_data = final_response.json()
+
+        # Verify session is still active
+        assert final_data["status"] == "active"
+
+    def test_session_isolation(self, api_client):
+        """Test that sessions are isolated from each other."""
+        # Create two sessions
+        response1 = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "First function", "source": "prompt"},
+        )
+        response2 = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Second function", "source": "prompt"},
+        )
+
+        assert response1.status_code == 200
+        assert response2.status_code == 200
+
+        session1_id = response1.json()["session_id"]
+        session2_id = response2.json()["session_id"]
+
+        assert session1_id != session2_id
+
+        # Modify session 1
+        session1_data = api_client.get(f"/spec-sessions/{session1_id}").json()
+        if session1_data["ambiguities"]:
+            hole_id = session1_data["ambiguities"][0]
+            api_client.post(
+                f"/spec-sessions/{session1_id}/holes/{hole_id}/resolve",
+                json={"resolution_text": "Modified", "resolution_type": "clarify_intent"},
+            )
+
+        # Verify session 2 is unchanged
+        session2_after = api_client.get(f"/spec-sessions/{session2_id}").json()
+        assert session2_after["revision_count"] == response2.json()["revision_count"]
+
+    def test_session_metadata_preserved(self, api_client):
+        """Test that session metadata is preserved throughout workflow."""
+        metadata = {"user_id": "test123", "project": "demo", "tags": ["experimental"]}
+
+        # Create session with metadata
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={
+                "prompt": "Test function",
+                "source": "prompt",
+                "metadata": metadata,
+            },
+        )
+
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Retrieve and verify metadata
+        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        assert get_response.status_code == 200
+        data = get_response.json()
+
+        assert data["metadata"]["user_id"] == "test123"
+        assert data["metadata"]["project"] == "demo"
+        assert data["metadata"]["tags"] == ["experimental"]
+
+    def test_session_revision_tracking(self, api_client):
+        """Test that sessions track revisions correctly."""
+        # Create session
+        create_response = api_client.post(
+            "/spec-sessions",
+            json={"prompt": "Function to test", "source": "prompt"},
+        )
+
+        assert create_response.status_code == 200
+        data = create_response.json()
+        session_id = data["session_id"]
+        initial_revision_count = data["revision_count"]
+
+        # Resolve a hole to create a new revision
+        if data["ambiguities"]:
+            hole_id = data["ambiguities"][0]
+            resolve_response = api_client.post(
+                f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                json={"resolution_text": "int", "resolution_type": "refine_signature"},
+            )
+
+            assert resolve_response.status_code == 200
+            resolved_data = resolve_response.json()
+
+            # Revision count should increase
+            assert resolved_data["revision_count"] > initial_revision_count

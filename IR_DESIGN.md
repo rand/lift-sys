@@ -1316,7 +1316,7 @@ This bridges the gap between informal requirements and verified implementation, 
 - **lift-sys Documentation:**
   - [IR Grammar Specification](lift_sys/ir/parser.py)
   - [Model Definitions](lift_sys/ir/models.py)
-  - [Development Plan](DEVELOPMENT_PLAN.md)
+  - [Development Plan](development_records/DEVELOPMENT_PLAN.md)
 
 ---
 

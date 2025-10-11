@@ -6,6 +6,7 @@ Tests cover:
 - Conflicting analysis results
 - TypedHole generation for ambiguity
 """
+
 import json
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -20,7 +21,7 @@ class TestReverseModeLifter:
     @patch("subprocess.run")
     def test_lift_specification_from_code(self, mock_subprocess, temp_repo, temp_dir, sample_code):
         """Test basic specification lifting from code file."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Create test file
         code_file = Path(temp_dir) / "test_code.py"
@@ -52,9 +53,11 @@ class TestReverseModeLifter:
         assert ir.metadata.origin == "reverse"
 
     @patch("subprocess.run")
-    def test_lift_with_mocked_codeql(self, mock_subprocess, temp_repo, temp_dir, sample_code, mock_codeql_output):
+    def test_lift_with_mocked_codeql(
+        self, mock_subprocess, temp_repo, temp_dir, sample_code, mock_codeql_output
+    ):
         """Test lifting with mocked CodeQL analysis."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Setup test file
         code_file = Path(temp_dir) / "secure_code.py"
@@ -80,9 +83,11 @@ class TestReverseModeLifter:
         assert len(ir.assertions) >= 1
 
     @patch("subprocess.run")
-    def test_lift_with_mocked_daikon(self, mock_subprocess, temp_repo, temp_dir, sample_code, mock_daikon_output):
+    def test_lift_with_mocked_daikon(
+        self, mock_subprocess, temp_repo, temp_dir, sample_code, mock_daikon_output
+    ):
         """Test lifting with mocked Daikon dynamic analysis."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Setup test file
         code_file = Path(temp_dir) / "dynamic_code.py"
@@ -108,9 +113,11 @@ class TestReverseModeLifter:
         assert len(ir.assertions) >= 1
 
     @patch("subprocess.run")
-    def test_lift_with_conflicting_analyses(self, mock_subprocess, temp_repo, temp_dir, sample_code):
+    def test_lift_with_conflicting_analyses(
+        self, mock_subprocess, temp_repo, temp_dir, sample_code
+    ):
         """Test lifting with conflicting static and dynamic analysis results."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Setup test file
         code_file = Path(temp_dir) / "conflict_code.py"
@@ -119,14 +126,20 @@ class TestReverseModeLifter:
         temp_repo.index.commit("Add conflict code")
 
         # Mock conflicting outputs
-        codeql_output = json.dumps({
-            "runs": [{
-                "results": [{
-                    "ruleId": "py/security",
-                    "message": {"text": "Input must be >= 0"},
-                }]
-            }]
-        })
+        codeql_output = json.dumps(
+            {
+                "runs": [
+                    {
+                        "results": [
+                            {
+                                "ruleId": "py/security",
+                                "message": {"text": "Input must be >= 0"},
+                            }
+                        ]
+                    }
+                ]
+            }
+        )
 
         daikon_output = """
         factorial(int n) -> int
@@ -157,10 +170,12 @@ class TestReverseModeLifter:
         assert len(holes) >= 1
 
     @patch("subprocess.run")
-    def test_lift_generates_typed_holes_for_ambiguity(self, mock_subprocess, temp_repo, temp_dir, sample_code):
+    def test_lift_generates_typed_holes_for_ambiguity(
+        self, mock_subprocess, temp_repo, temp_dir, sample_code
+    ):
         """Test that ambiguous analysis results generate TypedHoles."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
         from lift_sys.ir.models import HoleKind
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Setup test file
         code_file = Path(temp_dir) / "ambiguous_code.py"
@@ -194,7 +209,7 @@ class TestReverseModeLifter:
     @patch("subprocess.run")
     def test_lift_handles_analysis_failure(self, mock_subprocess, temp_repo, temp_dir, sample_code):
         """Test that lifter handles analysis tool failures gracefully."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Setup test file
         code_file = Path(temp_dir) / "fail_code.py"
@@ -223,7 +238,7 @@ class TestReverseModeLifter:
     @patch("subprocess.run")
     def test_lift_multiple_files(self, mock_subprocess, temp_repo, temp_dir):
         """Test lifting specifications from multiple files."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         # Create multiple files
         file1 = Path(temp_dir) / "module1.py"
@@ -251,7 +266,7 @@ class TestReverseModeLifter:
     @patch("subprocess.run")
     def test_lift_preserves_function_signatures(self, mock_subprocess, temp_repo, temp_dir):
         """Test that lifter preserves function signature information."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         code = """
 def calculate(x: int, y: int) -> int:
@@ -278,7 +293,7 @@ def calculate(x: int, y: int) -> int:
     @patch("subprocess.run")
     def test_lift_creates_metadata(self, mock_subprocess, temp_repo, temp_dir, sample_code):
         """Test that lifter creates proper metadata."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         code_file = Path(temp_dir) / "meta_code.py"
         code_file.write_text(sample_code)
@@ -302,7 +317,7 @@ def calculate(x: int, y: int) -> int:
     @patch("subprocess.run")
     def test_lift_repository_loading(self, mock_subprocess, temp_repo, temp_dir):
         """Test repository loading functionality."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         mock_subprocess.return_value = Mock(returncode=0, stdout="{}", stderr="")
 
@@ -313,13 +328,13 @@ def calculate(x: int, y: int) -> int:
         lifter.load_repository(str(temp_dir))
 
         # Verify repository is loaded
-        assert hasattr(lifter, 'repo')
+        assert hasattr(lifter, "repo")
         assert lifter.repo is not None
 
     @patch("subprocess.run")
     def test_lift_with_multiple_queries(self, mock_subprocess, temp_repo, temp_dir, sample_code):
         """Test lifting with multiple CodeQL queries."""
-        from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+        from lift_sys.reverse_mode.lifter import LifterConfig, SpecificationLifter
 
         code_file = Path(temp_dir) / "multi_query.py"
         code_file.write_text(sample_code)

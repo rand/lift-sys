@@ -1,4 +1,5 @@
 """Unit tests for prompt-to-IR translator."""
+
 from __future__ import annotations
 
 import pytest
@@ -27,7 +28,10 @@ class TestPromptToIRTranslator:
 
         assert draft.version == 1
         assert draft.ir is not None
-        assert "factorial" in draft.ir.intent.summary.lower() or "factorial" in draft.ir.signature.name.lower()
+        assert (
+            "factorial" in draft.ir.intent.summary.lower()
+            or "factorial" in draft.ir.signature.name.lower()
+        )
 
     def test_extract_function_name(self):
         """Test function name extraction."""
@@ -90,7 +94,9 @@ class TestPromptToIRTranslator:
         assert len(effects) >= 1
         effect_descriptions = [e.description for e in effects]
         # Should detect file writing and logging
-        assert any("write" in desc.lower() or "file" in desc.lower() for desc in effect_descriptions)
+        assert any(
+            "write" in desc.lower() or "file" in desc.lower() for desc in effect_descriptions
+        )
 
     def test_extract_assertions(self):
         """Test assertion extraction from prompt."""
@@ -115,7 +121,10 @@ class TestPromptToIRTranslator:
             intent=IntentClause(summary="Test function"),
             signature=SigClause(
                 name="test",
-                parameters=[Parameter(name="x", type_hint=""), Parameter(name="y", type_hint="unknown")],
+                parameters=[
+                    Parameter(name="x", type_hint=""),
+                    Parameter(name="y", type_hint="unknown"),
+                ],
                 returns="int",
             ),
             metadata=Metadata(origin="prompt"),
@@ -265,7 +274,9 @@ class TestPromptToIRTranslator:
             metadata=Metadata(origin="prompt"),
         )
 
-        draft = IRDraft(version=1, ir=ir, validation_status="incomplete", ambiguities=["value_type"])
+        draft = IRDraft(
+            version=1, ir=ir, validation_status="incomplete", ambiguities=["value_type"]
+        )
 
         # Fill the hole
         new_draft = translator.fill_hole(draft, "value_type", "int")
@@ -299,7 +310,9 @@ class TestPromptToIRTranslator:
             metadata=Metadata(origin="prompt"),
         )
 
-        draft = IRDraft(version=1, ir=ir, validation_status="incomplete", ambiguities=["return_type"])
+        draft = IRDraft(
+            version=1, ir=ir, validation_status="incomplete", ambiguities=["return_type"]
+        )
 
         new_draft = translator.fill_hole(draft, "return_type", "float")
 
@@ -334,7 +347,9 @@ class TestPromptToIRTranslator:
         )
         ir.assertions.append(AssertClause(predicate="", holes=[assertion_hole]))
 
-        draft = IRDraft(version=1, ir=ir, validation_status="incomplete", ambiguities=["input_constraint"])
+        draft = IRDraft(
+            version=1, ir=ir, validation_status="incomplete", ambiguities=["input_constraint"]
+        )
 
         new_draft = translator.fill_hole(draft, "input_constraint", "x > 0")
 
@@ -347,7 +362,7 @@ class TestPromptToIRTranslator:
         """Test that filling a non-existent hole returns draft unchanged."""
         translator = PromptToIRTranslator()
 
-        from lift_sys.ir.models import IntermediateRepresentation, IntentClause, Metadata, SigClause
+        from lift_sys.ir.models import IntentClause, IntermediateRepresentation, Metadata, SigClause
 
         ir = IntermediateRepresentation(
             intent=IntentClause(summary="Test"),

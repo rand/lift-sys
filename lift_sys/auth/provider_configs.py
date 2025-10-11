@@ -1,8 +1,9 @@
 """Provider OAuth configuration models."""
+
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping, Optional
 
 
 @dataclass(slots=True)
@@ -17,7 +18,7 @@ class OAuthClientConfig:
     redirect_uri: str
     additional_params: Mapping[str, str]
     use_pkce: bool = False
-    service_account_key: Optional[str] = None
+    service_account_key: str | None = None
 
 
 def build_default_configs(base_redirect_uri: str) -> dict[str, OAuthClientConfig]:

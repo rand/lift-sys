@@ -6,21 +6,22 @@ Tests cover:
 - Output formatting
 - Command structure
 """
+
 from __future__ import annotations
 
 from unittest.mock import Mock, patch
-from typer.testing import CliRunner
 
 import pytest
+from typer.testing import CliRunner
 
 from lift_sys.cli.session_commands import app
 from lift_sys.client import (
-    PromptSession,
-    IRDraft,
-    SessionListResponse,
     AssistsResponse,
     AssistSuggestion,
+    IRDraft,
     IRResponse,
+    PromptSession,
+    SessionListResponse,
 )
 
 
@@ -65,11 +66,15 @@ class TestCLICommands:
             mock_client.create_session.return_value = mock_session
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "create",
-                "--prompt", "Test function",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "create",
+                    "--prompt",
+                    "Test function",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "test-session-123" in result.stdout
@@ -102,9 +107,7 @@ class TestCLICommands:
         """Test listing sessions with data."""
         with patch("lift_sys.cli.session_commands.get_client") as mock_get_client:
             mock_client = Mock()
-            mock_client.list_sessions.return_value = SessionListResponse(
-                sessions=[mock_session]
-            )
+            mock_client.list_sessions.return_value = SessionListResponse(sessions=[mock_session])
             mock_get_client.return_value = mock_client
 
             result = cli_runner.invoke(app, ["list", "--json"])
@@ -119,11 +122,14 @@ class TestCLICommands:
             mock_client.get_session.return_value = mock_session
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "get",
-                "test-session-123",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "get",
+                    "test-session-123",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "test-session-123" in result.stdout
@@ -135,11 +141,14 @@ class TestCLICommands:
             mock_client.get_session.side_effect = Exception("Session not found")
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "get",
-                "nonexistent",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "get",
+                    "nonexistent",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 1
 
@@ -161,13 +170,16 @@ class TestCLICommands:
             mock_client.resolve_hole.return_value = updated_session
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "resolve",
-                "test-session-123",
-                "hole_1",
-                "resolution",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "resolve",
+                    "test-session-123",
+                    "hole_1",
+                    "resolution",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "test-session-123" in result.stdout
@@ -184,15 +196,18 @@ class TestCLICommands:
                         suggestions=["int", "str"],
                         context="return type",
                     )
-                ]
+                ],
             )
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "assists",
-                "test-session-123",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "assists",
+                    "test-session-123",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "hole_1" in result.stdout
@@ -202,16 +217,18 @@ class TestCLICommands:
         with patch("lift_sys.cli.session_commands.get_client") as mock_get_client:
             mock_client = Mock()
             mock_client.finalize_session.return_value = IRResponse(
-                ir={"intent": {"summary": "finalized"}},
-                metadata={}
+                ir={"intent": {"summary": "finalized"}}, metadata={}
             )
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "finalize",
-                "test-session-123",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "finalize",
+                    "test-session-123",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "intent" in result.stdout
@@ -223,11 +240,14 @@ class TestCLICommands:
             mock_client.delete_session.return_value = None
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "delete",
-                "test-session-123",
-                "--yes",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "delete",
+                    "test-session-123",
+                    "--yes",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "deleted" in result.stdout.lower()
@@ -239,10 +259,14 @@ class TestCLICommands:
             mock_client.create_session.return_value = mock_session
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "create",
-                "--prompt", "Test function",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "create",
+                    "--prompt",
+                    "Test function",
+                ],
+            )
 
             assert result.exit_code == 0
             # Rich output should not be JSON
@@ -255,11 +279,15 @@ class TestCLICommands:
             mock_client.list_sessions.return_value = SessionListResponse(sessions=[])
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "list",
-                "--api-url", "http://custom:9000",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "list",
+                    "--api-url",
+                    "http://custom:9000",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             # Verify get_client was called with custom URL
@@ -273,14 +301,18 @@ class TestCLICommands:
             mock_get_client.return_value = mock_client
 
             for resolution_type in ["clarify_intent", "refine_signature", "add_constraint"]:
-                result = cli_runner.invoke(app, [
-                    "resolve",
-                    "test-session-123",
-                    "hole_1",
-                    "value",
-                    "--type", resolution_type,
-                    "--json",
-                ])
+                result = cli_runner.invoke(
+                    app,
+                    [
+                        "resolve",
+                        "test-session-123",
+                        "hole_1",
+                        "value",
+                        "--type",
+                        resolution_type,
+                        "--json",
+                    ],
+                )
 
                 assert result.exit_code == 0
 
@@ -291,12 +323,15 @@ class TestCLICommands:
             mock_client.get_session.return_value = mock_session
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "get",
-                "test-session-123",
-                "--show-ir",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "get",
+                    "test-session-123",
+                    "--show-ir",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 0
             assert "ir" in result.stdout
@@ -308,11 +343,15 @@ class TestCLICommands:
             mock_client.create_session.side_effect = Exception("API error")
             mock_get_client.return_value = mock_client
 
-            result = cli_runner.invoke(app, [
-                "create",
-                "--prompt", "Test",
-                "--json",
-            ])
+            result = cli_runner.invoke(
+                app,
+                [
+                    "create",
+                    "--prompt",
+                    "Test",
+                    "--json",
+                ],
+            )
 
             assert result.exit_code == 1
             assert "error" in result.stdout.lower() or "error" in str(result.exception).lower()

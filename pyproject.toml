@@ -87,4 +87,53 @@ exclude_lines = [
 ]
 
 [dependency-groups]
-dev = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "anyio"]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "anyio",
+    "ruff>=0.14.0",
+    "mypy>=1.18.2",
+    "pytest-benchmark>=5.1.0",
+    "pytest-xdist>=3.8.0",
+    "pre-commit>=4.3.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+    "B008",  # Function call in argument defaults (FastAPI Depends pattern)
+    "B904",  # Exception chaining (can improve iteratively)
+    "SIM",   # Simplification suggestions (can improve iteratively)
+    "E402",  # Module level imports (needed for sys.path manipulation in tests)
+    "F841",  # Unused local variables (cleanup later)
+    "UP028", # Yield from suggestions (can improve iteratively)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, tighten over time
+ignore_missing_imports = true

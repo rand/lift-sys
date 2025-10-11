@@ -1,11 +1,12 @@
 """OAuth flow management for provider integrations."""
+
 from __future__ import annotations
 
 import base64
 import hashlib
 import secrets
+from collections.abc import MutableMapping
 from dataclasses import dataclass, field
-from typing import Dict, MutableMapping, Optional
 from urllib.parse import urlencode
 
 import httpx
@@ -19,7 +20,7 @@ class OAuthState:
     """Persisted state metadata."""
 
     user_id: str
-    code_verifier: Optional[str] = None
+    code_verifier: str | None = None
 
 
 @dataclass(slots=True)
@@ -30,9 +31,9 @@ class OAuthManager:
     client_config: OAuthClientConfig
     token_store: TokenStore
     state_storage: MutableMapping[str, OAuthState] = field(default_factory=dict)
-    _http_client: Optional[httpx.AsyncClient] = None
+    _http_client: httpx.AsyncClient | None = None
 
-    async def initiate_oauth_flow(self, user_id: str) -> Dict[str, str]:
+    async def initiate_oauth_flow(self, user_id: str) -> dict[str, str]:
         """Return the authorization URL and state for the provider."""
 
         state = secrets.token_urlsafe(24)
@@ -61,7 +62,7 @@ class OAuthManager:
             "auth_url": f"{self.client_config.authorization_url}?{urlencode(query)}",
         }
 
-    async def handle_callback(self, code: str, state: str) -> Dict[str, object]:
+    async def handle_callback(self, code: str, state: str) -> dict[str, object]:
         """Exchange an authorization code for tokens and persist them."""
 
         state_data = self.state_storage.pop(state, None)
@@ -79,7 +80,7 @@ class OAuthManager:
         self.token_store.save_tokens(state_data.user_id, self.provider, tokens)
         return tokens
 
-    async def refresh_token(self, user_id: str) -> Dict[str, object]:
+    async def refresh_token(self, user_id: str) -> dict[str, object]:
         """Refresh an access token using the stored refresh token."""
 
         payload = self.token_store.load_tokens(user_id, self.provider)
@@ -100,7 +101,7 @@ class OAuthManager:
 
         self.token_store.delete_tokens(user_id, self.provider)
 
-    async def _post_token_request(self, data: Dict[str, object]) -> Dict[str, object]:
+    async def _post_token_request(self, data: dict[str, object]) -> dict[str, object]:
         client = await self._ensure_client()
         response = await client.post(self.client_config.token_url, data=data)
         response.raise_for_status()

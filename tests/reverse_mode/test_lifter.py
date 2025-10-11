@@ -1,4 +1,5 @@
 """Integration tests for the reverse mode lifter."""
+
 from __future__ import annotations
 
 import json

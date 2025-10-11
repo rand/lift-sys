@@ -1,12 +1,14 @@
 """GitHub repository management utilities."""
+
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import os
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any
 
 import httpx
 from git import Repo
@@ -29,7 +31,7 @@ class RepositorySummary:
     identifier: str
     owner: str
     name: str
-    description: Optional[str]
+    description: str | None
     default_branch: str
     private: bool
 
@@ -123,7 +125,7 @@ class GitHubRepositoryClient:
             force_refresh,
         )
 
-        last_synced = datetime.now(timezone.utc)
+        last_synced = datetime.now(UTC)
         return RepositoryMetadata(
             identifier=repo_identifier,
             owner=owner,

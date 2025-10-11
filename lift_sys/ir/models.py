@@ -1,9 +1,9 @@
 """Intermediate Representation (IR) data structures."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class HoleKind(str, Enum):
@@ -23,7 +23,7 @@ class TypedHole:
     identifier: str
     type_hint: str
     description: str = ""
-    constraints: Dict[str, str] = field(default_factory=dict)
+    constraints: dict[str, str] = field(default_factory=dict)
     kind: HoleKind = HoleKind.INTENT
 
     def label(self) -> str:
@@ -31,7 +31,7 @@ class TypedHole:
 
         return f"<?{self.identifier}: {self.type_hint}?>"
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "identifier": self.identifier,
             "type_hint": self.type_hint,
@@ -44,10 +44,10 @@ class TypedHole:
 @dataclass(slots=True)
 class IntentClause:
     summary: str
-    rationale: Optional[str] = None
-    holes: List[TypedHole] = field(default_factory=list)
+    rationale: str | None = None
+    holes: list[TypedHole] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "summary": self.summary,
             "rationale": self.rationale,
@@ -59,9 +59,9 @@ class IntentClause:
 class Parameter:
     name: str
     type_hint: str
-    description: Optional[str] = None
+    description: str | None = None
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
             "type_hint": self.type_hint,
@@ -72,11 +72,11 @@ class Parameter:
 @dataclass(slots=True)
 class SigClause:
     name: str
-    parameters: List[Parameter]
-    returns: Optional[str]
-    holes: List[TypedHole] = field(default_factory=list)
+    parameters: list[Parameter]
+    returns: str | None
+    holes: list[TypedHole] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
             "parameters": [param.to_dict() for param in self.parameters],
@@ -88,24 +88,24 @@ class SigClause:
 @dataclass(slots=True)
 class EffectClause:
     description: str
-    holes: List[TypedHole] = field(default_factory=list)
+    holes: list[TypedHole] = field(default_factory=list)
 
 
 @dataclass(slots=True)
 class AssertClause:
     predicate: str
-    rationale: Optional[str] = None
-    holes: List[TypedHole] = field(default_factory=list)
+    rationale: str | None = None
+    holes: list[TypedHole] = field(default_factory=list)
 
 
 @dataclass(slots=True)
 class Metadata:
-    source_path: Optional[str] = None
-    language: Optional[str] = None
-    origin: Optional[str] = None
-    evidence: List[Dict[str, object]] = field(default_factory=list)
+    source_path: str | None = None
+    language: str | None = None
+    origin: str | None = None
+    evidence: list[dict[str, object]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "source_path": self.source_path,
             "language": self.language,
@@ -120,14 +120,14 @@ class IntermediateRepresentation:
 
     intent: IntentClause
     signature: SigClause
-    effects: List[EffectClause] = field(default_factory=list)
-    assertions: List[AssertClause] = field(default_factory=list)
+    effects: list[EffectClause] = field(default_factory=list)
+    assertions: list[AssertClause] = field(default_factory=list)
     metadata: Metadata = field(default_factory=Metadata)
 
-    def typed_holes(self) -> List[TypedHole]:
+    def typed_holes(self) -> list[TypedHole]:
         """Return every typed hole contained within the IR."""
 
-        holes: List[TypedHole] = []
+        holes: list[TypedHole] = []
         holes.extend(self.intent.holes)
         holes.extend(self.signature.holes)
         for param in self.signature.parameters:
@@ -139,7 +139,7 @@ class IntermediateRepresentation:
             holes.extend(assertion.holes)
         return holes
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         """Serialise the IR into a dictionary suitable for APIs."""
 
         return {
@@ -170,13 +170,13 @@ class IntermediateRepresentation:
         }
 
     @classmethod
-    def from_dict(cls, payload: Dict[str, object]) -> "IntermediateRepresentation":
+    def from_dict(cls, payload: dict[str, object]) -> IntermediateRepresentation:
         """Create an IR instance from a dictionary."""
 
         intent_data = payload["intent"]
         signature_data = payload["signature"]
 
-        def parse_holes(data: List[Dict[str, object]]) -> List[TypedHole]:
+        def parse_holes(data: list[dict[str, object]]) -> list[TypedHole]:
             holes = []
             for hole_data in data:
                 if isinstance(hole_data, dict):
@@ -204,13 +204,18 @@ class IntermediateRepresentation:
 
         signature = SigClause(
             name=signature_data["name"],
-            parameters=[Parameter(**param) if isinstance(param, dict) else param for param in signature_data.get("parameters", [])],
+            parameters=[
+                Parameter(**param) if isinstance(param, dict) else param
+                for param in signature_data.get("parameters", [])
+            ],
             returns=signature_data.get("returns"),
             holes=parse_holes(signature_data.get("holes", [])),
         )
 
         effects = [
-            EffectClause(description=effect["description"], holes=parse_holes(effect.get("holes", [])))
+            EffectClause(
+                description=effect["description"], holes=parse_holes(effect.get("holes", []))
+            )
             for effect in payload.get("effects", [])
         ]
 
@@ -231,7 +236,13 @@ class IntermediateRepresentation:
             evidence=list(metadata_payload.get("evidence", [])),
         )
 
-        return cls(intent=intent, signature=signature, effects=effects, assertions=assertions, metadata=metadata)
+        return cls(
+            intent=intent,
+            signature=signature,
+            effects=effects,
+            assertions=assertions,
+            metadata=metadata,
+        )
 
 
 __all__ = [

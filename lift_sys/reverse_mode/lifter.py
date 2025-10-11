@@ -1,11 +1,12 @@
 """Reverse mode lifting of specifications from existing code."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
 import shutil
 import tempfile
-from typing import Dict, Iterable, List, Tuple
+from collections.abc import Iterable
+from dataclasses import dataclass, field
+from pathlib import Path
 
 from git import Repo
 from git.exc import GitCommandError
@@ -27,14 +28,14 @@ from .stack_graphs import StackGraphAnalyzer
 
 @dataclass
 class LifterConfig:
-    codeql_queries: Iterable[str] = field(
-        default_factory=lambda: ["security/default"]
-    )
+    codeql_queries: Iterable[str] = field(default_factory=lambda: ["security/default"])
     daikon_entrypoint: str = "main"
     stack_index_path: str | None = None
     run_codeql: bool = True
     run_daikon: bool = True
     run_stack_graphs: bool = True
+
+
 @dataclass
 class RepositoryHandle:
     identifier: str
@@ -50,7 +51,7 @@ class SpecificationLifter:
         self.codeql = CodeQLAnalyzer()
         self.daikon = DaikonAnalyzer()
         self.stack_graphs = StackGraphAnalyzer()
-        self.progress_log: List[str] = []
+        self.progress_log: list[str] = []
 
     def load_repository(self, source: str | Path | RepositoryHandle) -> Repo:
         """Load a repository from a managed workspace or streamed archive."""
@@ -97,26 +98,28 @@ class SpecificationLifter:
         self.progress_log = []
         self._record_progress("reverse:start")
         repo_path = str(Path(self.repo.working_tree_dir))
-        codeql_findings: List[Finding] = []
+        codeql_findings: list[Finding] = []
         if self.config.run_codeql and self.config.codeql_queries:
             self._record_progress("analysis:codeql:start")
             codeql_findings = self.codeql.run(repo_path, self.config.codeql_queries)
             self._record_progress("analysis:codeql:complete")
 
-        daikon_findings: List[Finding] = []
+        daikon_findings: list[Finding] = []
         if self.config.run_daikon:
             self._record_progress("analysis:daikon:start")
             daikon_findings = self.daikon.run(repo_path, self.config.daikon_entrypoint)
             self._record_progress("analysis:daikon:complete")
 
-        stack_findings: List[Finding] = []
+        stack_findings: list[Finding] = []
         if self.config.run_stack_graphs and self.config.stack_index_path:
             self.stack_graphs.set_index_root(self.config.stack_index_path)
             self._record_progress("analysis:stack_graph:start")
             stack_findings = self.stack_graphs.run(target_module)
             self._record_progress("analysis:stack_graph:complete")
 
-        evidence, evidence_lookup = self._bundle_evidence(codeql_findings, daikon_findings, stack_findings)
+        evidence, evidence_lookup = self._bundle_evidence(
+            codeql_findings, daikon_findings, stack_findings
+        )
 
         intent = self._build_intent(codeql_findings, evidence_lookup)
         signature = SigClause(
@@ -128,7 +131,10 @@ class SpecificationLifter:
                     identifier="return_contract",
                     type_hint="Predicate",
                     description="Assist needed: populate formal return condition",
-                    constraints={"provenance": "reverse", "evidence_id": evidence_lookup.get("signature:return")},
+                    constraints={
+                        "provenance": "reverse",
+                        "evidence_id": evidence_lookup.get("signature:return"),
+                    },
                     kind=HoleKind.SIGNATURE,
                 )
             ],
@@ -157,9 +163,9 @@ class SpecificationLifter:
 
     def _bundle_evidence(
         self, *groups: Iterable[Finding]
-    ) -> Tuple[List[Dict[str, object]], Dict[object, str]]:
-        bundles: List[Dict[str, object]] = []
-        lookup: Dict[object, str] = {}
+    ) -> tuple[list[dict[str, object]], dict[object, str]]:
+        bundles: list[dict[str, object]] = []
+        lookup: dict[object, str] = {}
         counter = 0
         for group in groups:
             for finding in group:
@@ -189,7 +195,9 @@ class SpecificationLifter:
         lookup.setdefault("signature:return", "reverse-signature")
         return bundles, lookup
 
-    def _build_intent(self, findings: List[Finding], evidence_lookup: Dict[object, str]) -> IntentClause:
+    def _build_intent(
+        self, findings: list[Finding], evidence_lookup: dict[object, str]
+    ) -> IntentClause:
         summary = "Lifted intent with typed holes"
         holes = [
             TypedHole(
@@ -207,9 +215,9 @@ class SpecificationLifter:
         return IntentClause(summary=summary, rationale="Derived from static analysis", holes=holes)
 
     def _build_assertions(
-        self, findings: List[Finding], evidence_lookup: Dict[object, str]
-    ) -> List[AssertClause]:
-        assertions: List[AssertClause] = []
+        self, findings: list[Finding], evidence_lookup: dict[object, str]
+    ) -> list[AssertClause]:
+        assertions: list[AssertClause] = []
         for index, finding in enumerate(findings):
             predicate = finding.metadata.get("predicate", "True")
             description = (
@@ -237,18 +245,16 @@ class SpecificationLifter:
         return assertions
 
     def _build_effects(
-        self, findings: List[Finding], evidence_lookup: Dict[object, str]
-    ) -> List[EffectClause]:
+        self, findings: list[Finding], evidence_lookup: dict[object, str]
+    ) -> list[EffectClause]:
         if not findings:
             return [EffectClause(description="Reads external API", holes=[])]
 
-        effects: List[EffectClause] = []
+        effects: list[EffectClause] = []
         for index, finding in enumerate(findings):
             ambiguous = bool(finding.metadata.get("ambiguous"))
             description = (
-                f"Assist needed: Disambiguate {finding.message}"
-                if ambiguous
-                else finding.message
+                f"Assist needed: Disambiguate {finding.message}" if ambiguous else finding.message
             )
             hole_description = (
                 f"Assist needed: Resolve {finding.metadata.get('relation', 'relationship')}"

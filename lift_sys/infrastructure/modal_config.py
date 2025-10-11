@@ -1,10 +1,11 @@
 """Modal configuration helpers for lift-sys."""
+
 from __future__ import annotations
 
+import os
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Dict, Iterable, Mapping
-import os
 
 
 @dataclass(slots=True)
@@ -36,21 +37,27 @@ class ModalAppConfig:
     app_name: str = "lift-sys"
     region: str = field(default_factory=lambda: os.getenv("LIFT_SYS_MODAL_REGION", "us-east-1"))
     token_store_dict: ModalDictRef = field(
-        default_factory=lambda: ModalDictRef(os.getenv("LIFT_SYS_MODAL_TOKEN_DICT", "lift-sys-token-store"))
+        default_factory=lambda: ModalDictRef(
+            os.getenv("LIFT_SYS_MODAL_TOKEN_DICT", "lift-sys-token-store")
+        )
     )
     user_preferences_dict: ModalDictRef = field(
-        default_factory=lambda: ModalDictRef(os.getenv("LIFT_SYS_MODAL_PREFS_DICT", "lift-sys-user-prefs"))
+        default_factory=lambda: ModalDictRef(
+            os.getenv("LIFT_SYS_MODAL_PREFS_DICT", "lift-sys-user-prefs")
+        )
     )
     model_volume: ModalVolumeRef = field(
-        default_factory=lambda: ModalVolumeRef(os.getenv("LIFT_SYS_MODAL_MODEL_VOLUME", "lift-sys-models"))
+        default_factory=lambda: ModalVolumeRef(
+            os.getenv("LIFT_SYS_MODAL_MODEL_VOLUME", "lift-sys-models")
+        )
     )
     api_secrets: Mapping[str, ModalSecretRef] = field(default_factory=dict)
 
     @classmethod
-    def from_env(cls) -> "ModalAppConfig":
+    def from_env(cls) -> ModalAppConfig:
         """Build configuration, auto-discovering provider secret references."""
 
-        secret_mapping: Dict[str, ModalSecretRef] = {}
+        secret_mapping: dict[str, ModalSecretRef] = {}
         prefix = "LIFT_SYS_MODAL_SECRET_"
         for key, value in os.environ.items():
             if key.startswith(prefix) and value:
@@ -67,7 +74,9 @@ class ModalAppConfig:
         """Lookup a secret reference and raise if missing."""
 
         if key not in self.api_secrets:
-            raise KeyError(f"secret '{key}' is not configured; set LIFT_SYS_MODAL_SECRET_{key.upper()}")
+            raise KeyError(
+                f"secret '{key}' is not configured; set LIFT_SYS_MODAL_SECRET_{key.upper()}"
+            )
         return self.api_secrets[key]
 
 

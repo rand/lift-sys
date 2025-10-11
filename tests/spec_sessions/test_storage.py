@@ -1,4 +1,5 @@
 """Unit tests for session storage backends."""
+
 from __future__ import annotations
 
 import pytest
@@ -145,7 +146,7 @@ class TestInMemorySessionStore:
         session = PromptSession.create_new(initial_draft=draft)
 
         # Add history
-        from lift_sys.spec_sessions.models import PromptRevision, HoleResolution
+        from lift_sys.spec_sessions.models import HoleResolution, PromptRevision
 
         session.add_revision(
             PromptRevision(

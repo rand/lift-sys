@@ -1,7 +1,8 @@
 """Code generation service relying on the local vLLM."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .orchestrator import HybridOrchestrator, Task
 
@@ -12,7 +13,9 @@ class GenerationService:
     def __init__(self, orchestrator: HybridOrchestrator) -> None:
         self._orchestrator = orchestrator
 
-    async def generate_code(self, prompt: str, schema: Dict[str, Any], *, temperature: float = 0.0) -> Dict[str, Any]:
+    async def generate_code(
+        self, prompt: str, schema: dict[str, Any], *, temperature: float = 0.0
+    ) -> dict[str, Any]:
         task = Task(
             prompt=prompt,
             temperature=temperature,

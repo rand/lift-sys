@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from lift_sys.auth.token_store import TokenStore
 
 
 def test_token_round_trip() -> None:
-    storage: Dict[str, str] = {}
+    storage: dict[str, str] = {}
     key = TokenStore.generate_key()
     store = TokenStore(storage, key)
 

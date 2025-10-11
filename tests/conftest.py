@@ -1,11 +1,12 @@
 """Shared pytest fixtures for the lift-sys test suite."""
+
 from __future__ import annotations
 
 import os
 import sys
 import tempfile
+from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import Iterator, Generator
 from unittest.mock import Mock
 
 import pytest
@@ -20,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from lift_sys.ir.models import (
     AssertClause,
@@ -70,7 +71,7 @@ class _StubGitHubClient:
             private=self._summary.private,
             clone_url="https://example.com/octocat/example.git",
             workspace_path=repo_dir,
-            last_synced=datetime.now(timezone.utc),
+            last_synced=datetime.now(UTC),
         )
 
 
@@ -162,7 +163,9 @@ def parsed_simple_ir(ir_parser: IRParser, sample_simple_ir: str) -> Intermediate
 
 
 @pytest.fixture
-def parsed_with_holes_ir(ir_parser: IRParser, sample_with_holes_ir: str) -> IntermediateRepresentation:
+def parsed_with_holes_ir(
+    ir_parser: IRParser, sample_with_holes_ir: str
+) -> IntermediateRepresentation:
     """Parse IR with holes and return object."""
     return ir_parser.parse(sample_with_holes_ir)
 
@@ -293,7 +296,7 @@ def configured_api_client(api_client: TestClient) -> TestClient:
             "provider_type": "vllm",
             "schema_uri": "memory://schema.json",
             "grammar_source": "start -> statement",
-        }
+        },
     )
     assert response.status_code == 200
     return api_client
@@ -308,11 +311,7 @@ def configured_api_client(api_client: TestClient) -> TestClient:
 def mock_subprocess_run(monkeypatch):
     """Mock subprocess.run for external tool calls."""
     mock = Mock()
-    mock.return_value = Mock(
-        returncode=0,
-        stdout="",
-        stderr=""
-    )
+    mock.return_value = Mock(returncode=0, stdout="", stderr="")
     monkeypatch.setattr("subprocess.run", mock)
     return mock
 
@@ -359,6 +358,7 @@ def mock_daikon_output() -> str:
 def reset_test_state():
     """Reset application state before each test."""
     from lift_sys.api.server import reset_state
+
     reset_state()
     yield
     reset_state()

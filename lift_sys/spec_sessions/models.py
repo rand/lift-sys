@@ -1,10 +1,11 @@
 """Data models for prompt session management."""
+
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from ..ir.models import IntermediateRepresentation
 
@@ -16,10 +17,10 @@ class PromptRevision:
     timestamp: str
     content: str  # Natural language text
     revision_type: str  # "initial" | "hole_fill" | "constraint_add" | "manual_edit"
-    target_hole: Optional[str] = None  # Hole ID if this revision targets a specific hole
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    target_hole: str | None = None  # Hole ID if this revision targets a specific hole
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "content": self.content,
@@ -29,7 +30,7 @@ class PromptRevision:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> PromptRevision:
+    def from_dict(cls, data: dict[str, Any]) -> PromptRevision:
         return cls(
             timestamp=data["timestamp"],
             content=data["content"],
@@ -46,12 +47,12 @@ class IRDraft:
     version: int
     ir: IntermediateRepresentation
     validation_status: str  # "pending" | "valid" | "contradictory" | "incomplete"
-    smt_results: List[Dict[str, Any]] = field(default_factory=list)
-    ambiguities: List[str] = field(default_factory=list)  # Unresolved hole identifiers
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    smt_results: list[dict[str, Any]] = field(default_factory=list)
+    ambiguities: list[str] = field(default_factory=list)  # Unresolved hole identifiers
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat() + "Z")
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "version": self.version,
             "ir": self.ir.to_dict(),
@@ -63,18 +64,18 @@ class IRDraft:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> IRDraft:
+    def from_dict(cls, data: dict[str, Any]) -> IRDraft:
         return cls(
             version=data["version"],
             ir=IntermediateRepresentation.from_dict(data["ir"]),
             validation_status=data["validation_status"],
             smt_results=data.get("smt_results", []),
             ambiguities=data.get("ambiguities", []),
-            created_at=data.get("created_at", datetime.now(timezone.utc).isoformat() + "Z"),
+            created_at=data.get("created_at", datetime.now(UTC).isoformat() + "Z"),
             metadata=data.get("metadata", {}),
         )
 
-    def get_unresolved_holes(self) -> List[str]:
+    def get_unresolved_holes(self) -> list[str]:
         """Return list of hole identifiers that still need resolution."""
         all_holes = self.ir.typed_holes()
         return [hole.identifier for hole in all_holes]
@@ -86,12 +87,14 @@ class HoleResolution:
 
     hole_id: str
     resolution_text: str
-    resolution_type: str  # "clarify_intent" | "add_constraint" | "refine_signature" | "specify_effect"
+    resolution_type: (
+        str  # "clarify_intent" | "add_constraint" | "refine_signature" | "specify_effect"
+    )
     applied: bool = False
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat() + "Z")
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "hole_id": self.hole_id,
             "resolution_text": self.resolution_text,
@@ -102,13 +105,13 @@ class HoleResolution:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> HoleResolution:
+    def from_dict(cls, data: dict[str, Any]) -> HoleResolution:
         return cls(
             hole_id=data["hole_id"],
             resolution_text=data["resolution_text"],
             resolution_type=data["resolution_type"],
             applied=data.get("applied", False),
-            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat() + "Z"),
+            timestamp=data.get("timestamp", datetime.now(UTC).isoformat() + "Z"),
             metadata=data.get("metadata", {}),
         )
 
@@ -123,26 +126,26 @@ class PromptSession:
     status: str  # "active" | "finalized" | "abandoned"
 
     # Revision history
-    revisions: List[PromptRevision] = field(default_factory=list)
-    ir_drafts: List[IRDraft] = field(default_factory=list)
+    revisions: list[PromptRevision] = field(default_factory=list)
+    ir_drafts: list[IRDraft] = field(default_factory=list)
 
     # Current state
-    current_draft: Optional[IRDraft] = None
-    pending_resolutions: List[HoleResolution] = field(default_factory=list)
+    current_draft: IRDraft | None = None
+    pending_resolutions: list[HoleResolution] = field(default_factory=list)
 
     # Metadata
     source: str = "prompt"  # "prompt" | "reverse_mode"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def create_new(
         cls,
         source: str = "prompt",
-        initial_draft: Optional[IRDraft] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        initial_draft: IRDraft | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> PromptSession:
         """Factory method to create a new session with proper defaults."""
-        now = datetime.now(timezone.utc).isoformat() + "Z"
+        now = datetime.now(UTC).isoformat() + "Z"
         session = cls(
             session_id=str(uuid.uuid4()),
             created_at=now,
@@ -161,18 +164,18 @@ class PromptSession:
     def add_revision(self, revision: PromptRevision) -> None:
         """Add a new revision and update timestamps."""
         self.revisions.append(revision)
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
     def add_draft(self, draft: IRDraft) -> None:
         """Add a new IR draft and set as current."""
         self.ir_drafts.append(draft)
         self.current_draft = draft
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
     def add_resolution(self, resolution: HoleResolution) -> None:
         """Add a pending hole resolution."""
         self.pending_resolutions.append(resolution)
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
     def mark_resolution_applied(self, hole_id: str) -> None:
         """Mark a resolution as applied."""
@@ -180,25 +183,25 @@ class PromptSession:
             if resolution.hole_id == hole_id and not resolution.applied:
                 resolution.applied = True
                 break
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
     def finalize(self) -> None:
         """Mark session as finalized."""
         self.status = "finalized"
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
     def abandon(self) -> None:
         """Mark session as abandoned."""
         self.status = "abandoned"
-        self.updated_at = datetime.now(timezone.utc).isoformat() + "Z"
+        self.updated_at = datetime.now(UTC).isoformat() + "Z"
 
-    def get_unresolved_holes(self) -> List[str]:
+    def get_unresolved_holes(self) -> list[str]:
         """Get list of hole IDs that still need resolution."""
         if not self.current_draft:
             return []
         return self.current_draft.get_unresolved_holes()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "session_id": self.session_id,
             "created_at": self.created_at,
@@ -213,7 +216,7 @@ class PromptSession:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> PromptSession:
+    def from_dict(cls, data: dict[str, Any]) -> PromptSession:
         session = cls(
             session_id=data["session_id"],
             created_at=data["created_at"],
@@ -221,8 +224,12 @@ class PromptSession:
             status=data["status"],
             revisions=[PromptRevision.from_dict(r) for r in data.get("revisions", [])],
             ir_drafts=[IRDraft.from_dict(d) for d in data.get("ir_drafts", [])],
-            current_draft=IRDraft.from_dict(data["current_draft"]) if data.get("current_draft") else None,
-            pending_resolutions=[HoleResolution.from_dict(r) for r in data.get("pending_resolutions", [])],
+            current_draft=IRDraft.from_dict(data["current_draft"])
+            if data.get("current_draft")
+            else None,
+            pending_resolutions=[
+                HoleResolution.from_dict(r) for r in data.get("pending_resolutions", [])
+            ],
             source=data.get("source", "prompt"),
             metadata=data.get("metadata", {}),
         )

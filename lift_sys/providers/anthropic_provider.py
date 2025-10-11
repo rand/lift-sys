@@ -1,13 +1,14 @@
 """Anthropic provider implementation."""
+
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator, Dict, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 
 from .base import BaseProvider, ProviderCapabilities
-
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
@@ -18,13 +19,15 @@ class AnthropicProvider(BaseProvider):
     def __init__(self) -> None:
         super().__init__(
             name="anthropic",
-            capabilities=ProviderCapabilities(streaming=True, structured_output=False, reasoning=True),
+            capabilities=ProviderCapabilities(
+                streaming=True, structured_output=False, reasoning=True
+            ),
         )
-        self._client: Optional[httpx.AsyncClient] = None
-        self._api_key: Optional[str] = None
+        self._client: httpx.AsyncClient | None = None
+        self._api_key: str | None = None
         self._default_model = "claude-3-sonnet-20240229"
 
-    async def initialize(self, credentials: Dict[str, Any]) -> None:
+    async def initialize(self, credentials: dict[str, Any]) -> None:
         token = credentials.get("access_token") or credentials.get("api_key")
         if not token:
             raise ValueError("Anthropic credentials require an access token or API key")
@@ -35,7 +38,7 @@ class AnthropicProvider(BaseProvider):
         prompt: str,
         max_tokens: int = 1024,
         temperature: float = 0.7,
-        model: Optional[str] = None,
+        model: str | None = None,
         **_: Any,
     ) -> str:
         client = await self._ensure_client()

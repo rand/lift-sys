@@ -7,15 +7,15 @@ Tests cover:
 - Step progression
 - Constraint learning
 """
+
 import pytest
 
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
     IntentClause,
-    SigClause,
-    Parameter,
-    AssertClause,
+    IntermediateRepresentation,
     Metadata,
+    Parameter,
+    SigClause,
 )
 from lift_sys.planner.planner import Planner
 

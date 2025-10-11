@@ -1,4 +1,5 @@
 """Unit tests for the planning subsystem."""
+
 from __future__ import annotations
 
 import pytest
@@ -6,7 +7,6 @@ import pytest
 from lift_sys.ir.parser import IRParser
 from lift_sys.planner.plan import derive_plan
 from lift_sys.planner.planner import Planner
-
 
 pytestmark = pytest.mark.unit
 
@@ -95,9 +95,7 @@ def test_blocked_step_returns_once_dependency_resolved(
     # Completing the synthesiser step activates the missing literal and should
     # allow verify_assertions to be considered again.
     planner.step("synthesise_code", success=True)
-    refreshed = planner._filter_next_steps(
-        planner.current_plan.next_steps(planner.state.completed)
-    )
+    refreshed = planner._filter_next_steps(planner.current_plan.next_steps(planner.state.completed))
 
     refreshed_ids = [step.identifier for step in refreshed]
     assert "verify_assertions" in refreshed_ids

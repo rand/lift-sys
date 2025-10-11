@@ -1,9 +1,10 @@
 """Provider abstraction for lift-sys."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator, Optional
 
 
 @dataclass(slots=True)
@@ -76,7 +77,7 @@ class BaseProvider(ABC):
 
         return self.name
 
-    async def ensure_initialized(self, credentials: Optional[dict]) -> None:
+    async def ensure_initialized(self, credentials: dict | None) -> None:
         """Ensure provider is initialized with credentials."""
 
         if credentials is None:

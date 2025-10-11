@@ -1,10 +1,10 @@
 """Pydantic schemas for FastAPI endpoints."""
+
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..ir.models import IntermediateRepresentation
 
@@ -16,49 +16,53 @@ class UserIdentity(BaseModel):
 
     id: str
     provider: str
-    email: Optional[str] = None
-    name: Optional[str] = None
-    avatar_url: Optional[str] = Field(default=None, serialization_alias="avatarUrl")
+    email: str | None = None
+    name: str | None = None
+    avatar_url: str | None = Field(default=None, serialization_alias="avatarUrl")
 
 
 class SessionInfo(BaseModel):
     """Session metadata exposed to the frontend."""
 
     authenticated: bool = False
-    user: Optional[UserIdentity] = None
+    user: UserIdentity | None = None
 
 
 class ConfigRequest(BaseModel):
     model_endpoint: str = Field(..., description="Model serving endpoint URL")
     temperature: float = 0.0
     provider_type: str = Field(default="vllm", description="Provider implementation type")
-    schema_uri: Optional[str] = Field(default=None, description="URI for schema initialisation")
-    grammar_source: Optional[str] = Field(default=None, description="Source text for grammar constraints")
-    controller_path: Optional[str] = Field(default=None, description="Path to WebAssembly controller module")
+    schema_uri: str | None = Field(default=None, description="URI for schema initialisation")
+    grammar_source: str | None = Field(
+        default=None, description="Source text for grammar constraints"
+    )
+    controller_path: str | None = Field(
+        default=None, description="Path to WebAssembly controller module"
+    )
 
 
 class RepoRequest(BaseModel):
     identifier: str = Field(..., description="GitHub repository full name, e.g. owner/name")
-    branch: Optional[str] = Field(default=None, description="Branch to synchronise prior to analysis")
+    branch: str | None = Field(default=None, description="Branch to synchronise prior to analysis")
 
 
 class RepositorySummary(BaseModel):
     identifier: str
     owner: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     default_branch: str = Field(..., serialization_alias="defaultBranch")
     private: bool = False
-    last_synced: Optional[datetime] = Field(default=None, serialization_alias="lastSynced")
+    last_synced: datetime | None = Field(default=None, serialization_alias="lastSynced")
 
 
 class RepositoryMetadataModel(RepositorySummary):
-    workspace_path: Optional[str] = Field(default=None, serialization_alias="workspacePath")
+    workspace_path: str | None = Field(default=None, serialization_alias="workspacePath")
     source: str = "github"
 
 
 class RepoListResponse(BaseModel):
-    repositories: List[RepositorySummary]
+    repositories: list[RepositorySummary]
 
 
 class RepoOpenResponse(BaseModel):
@@ -68,13 +72,13 @@ class RepoOpenResponse(BaseModel):
 
 class ReverseRequest(BaseModel):
     module: str
-    queries: List[str] = Field(default_factory=list)
+    queries: list[str] = Field(default_factory=list)
     entrypoint: str = "main"
-    analyses: List[str] = Field(
+    analyses: list[str] = Field(
         default_factory=lambda: ["codeql", "daikon", "stack_graphs"],
         description="Analyses to execute during reverse lifting",
     )
-    stack_index_path: Optional[str] = Field(
+    stack_index_path: str | None = Field(
         default=None,
         description="Path to stack-graph index directory",
     )
@@ -86,42 +90,42 @@ class ForwardRequest(BaseModel):
 
 class IRResponse(BaseModel):
     ir: dict
-    progress: List[dict] = Field(default_factory=list)
+    progress: list[dict] = Field(default_factory=list)
 
     @classmethod
     def from_ir(
         cls,
         ir: IntermediateRepresentation,
         *,
-        progress: Optional[List[Dict[str, object]]] = None,
-    ) -> "IRResponse":
+        progress: list[dict[str, object]] | None = None,
+    ) -> IRResponse:
         return cls(ir=ir.to_dict(), progress=progress or [])
 
 
 class PlannerTelemetry(BaseModel):
-    nodes: List[dict] = Field(default_factory=list)
-    edges: List[dict] = Field(default_factory=list)
-    typed_holes: List[dict] = Field(default_factory=list)
-    invariants: List[dict] = Field(default_factory=list)
-    assists: List[dict] = Field(default_factory=list)
-    completed: List[str] = Field(default_factory=list)
-    conflicts: Dict[str, str] = Field(default_factory=dict)
+    nodes: list[dict] = Field(default_factory=list)
+    edges: list[dict] = Field(default_factory=list)
+    typed_holes: list[dict] = Field(default_factory=list)
+    invariants: list[dict] = Field(default_factory=list)
+    assists: list[dict] = Field(default_factory=list)
+    completed: list[str] = Field(default_factory=list)
+    conflicts: dict[str, str] = Field(default_factory=dict)
 
 
 class DecisionLiteralModel(BaseModel):
     identifier: str
     type: str
     obligation: str
-    steps: List[str]
+    steps: list[str]
 
 
 class PlanResponse(BaseModel):
-    steps: List[dict]
-    goals: List[str]
-    ir: Optional[dict] = None
-    telemetry: Optional[PlannerTelemetry] = None
-    decision_literals: Dict[str, DecisionLiteralModel] = Field(default_factory=dict)
-    recent_events: List[dict] = Field(default_factory=list)
+    steps: list[dict]
+    goals: list[str]
+    ir: dict | None = None
+    telemetry: PlannerTelemetry | None = None
+    decision_literals: dict[str, DecisionLiteralModel] = Field(default_factory=dict)
+    recent_events: list[dict] = Field(default_factory=list)
 
 
 class ForwardResponse(BaseModel):
@@ -132,10 +136,10 @@ class ForwardResponse(BaseModel):
 
 
 class CreateSessionRequest(BaseModel):
-    prompt: Optional[str] = None
-    ir: Optional[dict] = None
+    prompt: str | None = None
+    ir: dict | None = None
     source: str = Field(default="prompt", description="'prompt' or 'reverse_mode'")
-    metadata: Dict = Field(default_factory=dict)
+    metadata: dict = Field(default_factory=dict)
 
 
 class SessionResponse(BaseModel):
@@ -144,21 +148,21 @@ class SessionResponse(BaseModel):
     source: str
     created_at: str
     updated_at: str
-    current_draft: Optional[dict] = None
-    ambiguities: List[str] = Field(default_factory=list)
+    current_draft: dict | None = None
+    ambiguities: list[str] = Field(default_factory=list)
     revision_count: int
-    metadata: Dict = Field(default_factory=dict)
+    metadata: dict = Field(default_factory=dict)
 
 
 class SessionListResponse(BaseModel):
-    sessions: List[SessionResponse]
+    sessions: list[SessionResponse]
 
 
 class ResolveHoleRequest(BaseModel):
     resolution_text: str
     resolution_type: str = Field(
         default="clarify_intent",
-        description="Type: clarify_intent, add_constraint, refine_signature, specify_effect"
+        description="Type: clarify_intent, add_constraint, refine_signature, specify_effect",
     )
 
 
@@ -170,7 +174,7 @@ class AssistResponse(BaseModel):
 
 
 class AssistsResponse(BaseModel):
-    assists: List[AssistResponse]
+    assists: list[AssistResponse]
 
 
 __all__ = [

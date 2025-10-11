@@ -6,15 +6,16 @@ Tests cover:
 - Various predicate types
 - Edge cases and error handling
 """
+
 import pytest
 
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
-    IntentClause,
-    SigClause,
-    Parameter,
     AssertClause,
+    IntentClause,
+    IntermediateRepresentation,
     Metadata,
+    Parameter,
+    SigClause,
 )
 from lift_sys.verifier.smt_checker import SMTChecker
 
@@ -210,8 +211,8 @@ class TestSMTChecker:
     def test_verify_boundary_conditions(self):
         """Test verification of boundary conditions."""
         test_cases = [
-            ("x >= 0", [("x", 0)], True),   # Boundary
-            ("x > 0", [("x", 0)], False),   # At boundary but exclusive
+            ("x >= 0", [("x", 0)], True),  # Boundary
+            ("x > 0", [("x", 0)], False),  # At boundary but exclusive
             ("x <= 100", [("x", 100)], True),  # Upper boundary
             ("x < 100", [("x", 100)], False),  # At upper boundary but exclusive
         ]
@@ -231,8 +232,9 @@ class TestSMTChecker:
 
             checker = SMTChecker()
             result = checker.verify(ir, assumptions=assumptions)
-            assert result.success == should_succeed, \
+            assert result.success == should_succeed, (
                 f"Failed for predicate: {predicate} with assumptions: {assumptions}"
+            )
 
     def test_verify_chained_comparisons(self):
         """Test verification with chained comparisons."""

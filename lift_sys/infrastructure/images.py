@@ -1,8 +1,9 @@
 """Declarative definitions for Modal image builds used by lift-sys."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable, List
 
 
 @dataclass(slots=True)
@@ -11,15 +12,15 @@ class ImageSpec:
 
     name: str
     python: str = "3.11"
-    system_packages: List[str] = field(default_factory=list)
-    python_packages: List[str] = field(default_factory=list)
-    run_commands: List[str] = field(default_factory=list)
+    system_packages: list[str] = field(default_factory=list)
+    python_packages: list[str] = field(default_factory=list)
+    run_commands: list[str] = field(default_factory=list)
 
-    def with_python_packages(self, *packages: str) -> "ImageSpec":
+    def with_python_packages(self, *packages: str) -> ImageSpec:
         self.python_packages.extend(packages)
         return self
 
-    def with_run_commands(self, *commands: str) -> "ImageSpec":
+    def with_run_commands(self, *commands: str) -> ImageSpec:
         self.run_commands.extend(commands)
         return self
 

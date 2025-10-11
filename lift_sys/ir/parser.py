@@ -1,9 +1,10 @@
 """Parser for the lift-sys Intermediate Representation."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from lark import Lark, Transformer, v_args
 
@@ -82,7 +83,9 @@ class _IRTransformer(Transformer):
             returns=signature_data.get("returns"),
             holes=signature_data.get("holes", []),
         )
-        return IntermediateRepresentation(intent=intent, signature=signature, effects=effects, assertions=assertions)
+        return IntermediateRepresentation(
+            intent=intent, signature=signature, effects=effects, assertions=assertions
+        )
 
     def intent(self, summary, holes=None):  # type: ignore[override]
         summary_text = str(summary).strip()
@@ -158,7 +161,13 @@ class _IRTransformer(Transformer):
                 kind = HoleKind(meta["kind"])
         if not self.allow_typed_holes:
             raise ValueError("Typed holes are disabled for this parser instance")
-        return TypedHole(identifier=str(name), type_hint=str(type_name), description=description, kind=kind, constraints=constraints)
+        return TypedHole(
+            identifier=str(name),
+            type_hint=str(type_name),
+            description=description,
+            kind=kind,
+            constraints=constraints,
+        )
 
     def hole_meta(self, *_parts):  # type: ignore[override]
         description = None
@@ -225,10 +234,8 @@ class IRParser:
         def _format_meta(hole: TypedHole) -> str:
             parts: list[str] = []
             if hole.description:
-                escaped = (
-                    hole.description.replace("\\", "\\\\").replace("\"", "\\\"")
-                )
-                parts.append(f"=\"{escaped}\"")
+                escaped = hole.description.replace("\\", "\\\\").replace('"', '\\"')
+                parts.append(f'="{escaped}"')
             if hole.kind:
                 parts.append(f"@{hole.kind.value}")
             return "".join(parts)

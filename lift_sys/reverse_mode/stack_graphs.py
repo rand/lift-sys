@@ -1,10 +1,11 @@
 """Stack graph analysis utilities for reverse-mode lifting."""
+
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List
 
 from .analyzers import Finding
 
@@ -16,7 +17,7 @@ class SymbolRelationship:
     source: str
     target: str
     relation: str
-    metadata: Dict[str, object]
+    metadata: dict[str, object]
 
     def to_finding(self, module: str) -> Finding:
         """Convert this relationship to a ``Finding`` consumable by the lifter."""
@@ -32,7 +33,7 @@ class StackGraphIndex:
     """In-memory representation of a stack-graph index for a repository."""
 
     module: str
-    relationships: List[SymbolRelationship]
+    relationships: list[SymbolRelationship]
 
 
 class StackGraphAnalyzer:
@@ -56,19 +57,21 @@ class StackGraphAnalyzer:
         with candidate.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
 
-        relationships: List[SymbolRelationship] = []
+        relationships: list[SymbolRelationship] = []
         for edge in payload.get("edges", []):
             relationship = SymbolRelationship(
                 source=edge.get("source", ""),
                 target=edge.get("target", ""),
                 relation=edge.get("relation", "related"),
-                metadata={k: v for k, v in edge.items() if k not in {"source", "target", "relation"}},
+                metadata={
+                    k: v for k, v in edge.items() if k not in {"source", "target", "relation"}
+                },
             )
             relationships.append(relationship)
 
         return StackGraphIndex(module=module, relationships=relationships)
 
-    def run(self, module: str) -> List[Finding]:
+    def run(self, module: str) -> list[Finding]:
         """Return stack-graph findings for ``module`` if an index exists."""
 
         index = self._load_module_index(module)
@@ -82,4 +85,3 @@ __all__: Iterable[str] = [
     "StackGraphIndex",
     "SymbolRelationship",
 ]
-

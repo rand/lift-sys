@@ -1,7 +1,8 @@
 """Reasoning service orchestrating high-level planning."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .orchestrator import HybridOrchestrator, Task
 
@@ -12,7 +13,9 @@ class ReasoningService:
     def __init__(self, orchestrator: HybridOrchestrator) -> None:
         self._orchestrator = orchestrator
 
-    async def plan(self, prompt: str, *, temperature: float = 0.7, metadata: Dict[str, Any] | None = None) -> str:
+    async def plan(
+        self, prompt: str, *, temperature: float = 0.7, metadata: dict[str, Any] | None = None
+    ) -> str:
         task = Task(
             prompt=prompt,
             temperature=temperature,

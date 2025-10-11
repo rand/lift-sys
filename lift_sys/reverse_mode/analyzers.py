@@ -1,9 +1,10 @@
 """Wrappers around static and dynamic analysis tooling."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
 
 
 @dataclass
@@ -18,9 +19,9 @@ class CodeQLAnalyzer:
     def __init__(self, database_path: str | None = None) -> None:
         self.database_path = database_path
 
-    def run(self, repo_path: str, queries: Iterable[str]) -> List[Finding]:
+    def run(self, repo_path: str, queries: Iterable[str]) -> list[Finding]:
         # Placeholder implementation that emulates CodeQL outputs.
-        findings: List[Finding] = []
+        findings: list[Finding] = []
         for query in queries:
             findings.append(
                 Finding(
@@ -34,7 +35,7 @@ class CodeQLAnalyzer:
 
 
 class DaikonAnalyzer:
-    def run(self, repo_path: str, entrypoint: str) -> List[Finding]:
+    def run(self, repo_path: str, entrypoint: str) -> list[Finding]:
         return [
             Finding(
                 kind="daikon",

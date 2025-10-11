@@ -1,4 +1,5 @@
 """Specification session management for iterative prompt refinement."""
+
 from __future__ import annotations
 
 from .manager import SpecSessionManager

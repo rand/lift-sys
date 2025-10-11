@@ -1,7 +1,8 @@
 """Textual Pilot based end-to-end tests."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -11,16 +12,15 @@ from textual.testing import Pilot  # noqa: E402  - imported after availability c
 
 from lift_sys.main import LiftSysApp
 
-
 pytestmark = [pytest.mark.e2e, pytest.mark.textual]
 
 
 class _DummyResponse:
-    def __init__(self, payload: Dict[str, Any], status_code: int = 200) -> None:
+    def __init__(self, payload: dict[str, Any], status_code: int = 200) -> None:
         self._payload = payload
         self.status_code = status_code
 
-    def json(self) -> Dict[str, Any]:
+    def json(self) -> dict[str, Any]:
         return self._payload
 
     def raise_for_status(self) -> None:
@@ -35,19 +35,22 @@ async def test_tui_ir_to_code_generation(monkeypatch, sample_ir) -> None:
     plan_payload = {
         "steps": [
             {"identifier": "parse_ir", "description": "Parse IR and normalise metadata"},
-            {"identifier": "verify_assertions", "description": "Verify logical assertions with SMT"},
+            {
+                "identifier": "verify_assertions",
+                "description": "Verify logical assertions with SMT",
+            },
         ],
         "goals": ["verified_ir", "code_generation"],
     }
 
     class DummyAsyncClient:
-        async def __aenter__(self) -> "DummyAsyncClient":  # type: ignore[override]
+        async def __aenter__(self) -> DummyAsyncClient:  # type: ignore[override]
             return self
 
         async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: D401
             return None
 
-        async def post(self, url: str, json: Dict[str, Any]) -> _DummyResponse:
+        async def post(self, url: str, json: dict[str, Any]) -> _DummyResponse:
             if url.endswith("/config"):
                 return _DummyResponse({"status": "configured"})
             if url.endswith("/repos/open"):

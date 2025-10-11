@@ -1,11 +1,12 @@
 """Local vLLM provider used for constrained generation."""
+
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, Optional
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 
 from .base import BaseProvider, ProviderCapabilities
-
 
 StructuredRunner = Callable[[str, dict], Awaitable[str]]
 TextRunner = Callable[[str, dict], Awaitable[str]]
@@ -16,18 +17,20 @@ class LocalVLLMProvider(BaseProvider):
 
     def __init__(
         self,
-        structured_runner: Optional[StructuredRunner] = None,
-        text_runner: Optional[TextRunner] = None,
+        structured_runner: StructuredRunner | None = None,
+        text_runner: TextRunner | None = None,
     ) -> None:
         super().__init__(
             name="local",
-            capabilities=ProviderCapabilities(streaming=False, structured_output=True, reasoning=False),
+            capabilities=ProviderCapabilities(
+                streaming=False, structured_output=True, reasoning=False
+            ),
         )
         self._structured_runner = structured_runner
         self._text_runner = text_runner
         self._initialized = False
 
-    async def initialize(self, credentials: Dict[str, Any]) -> None:  # noqa: D401 - credentials retained for compatibility
+    async def initialize(self, credentials: dict[str, Any]) -> None:  # noqa: D401 - credentials retained for compatibility
         self._initialized = True
 
     async def generate_text(

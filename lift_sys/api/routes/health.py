@@ -1,4 +1,5 @@
 """Health endpoint for the Modal deployment."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

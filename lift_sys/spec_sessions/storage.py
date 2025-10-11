@@ -1,7 +1,8 @@
 """Storage backends for prompt sessions."""
+
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Protocol
+from typing import Protocol
 
 from .models import PromptSession
 
@@ -13,7 +14,7 @@ class SessionStore(Protocol):
         """Store a new session and return its ID."""
         ...
 
-    def get(self, session_id: str) -> Optional[PromptSession]:
+    def get(self, session_id: str) -> PromptSession | None:
         """Retrieve a session by ID."""
         ...
 
@@ -21,11 +22,11 @@ class SessionStore(Protocol):
         """Update an existing session."""
         ...
 
-    def list_active(self) -> List[PromptSession]:
+    def list_active(self) -> list[PromptSession]:
         """List all active (non-finalized, non-abandoned) sessions."""
         ...
 
-    def list_all(self) -> List[PromptSession]:
+    def list_all(self) -> list[PromptSession]:
         """List all sessions regardless of status."""
         ...
 
@@ -38,14 +39,14 @@ class InMemorySessionStore:
     """In-memory storage implementation for PromptSessions."""
 
     def __init__(self) -> None:
-        self._sessions: Dict[str, PromptSession] = {}
+        self._sessions: dict[str, PromptSession] = {}
 
     def create(self, session: PromptSession) -> str:
         """Store a new session and return its ID."""
         self._sessions[session.session_id] = session
         return session.session_id
 
-    def get(self, session_id: str) -> Optional[PromptSession]:
+    def get(self, session_id: str) -> PromptSession | None:
         """Retrieve a session by ID."""
         return self._sessions.get(session_id)
 
@@ -55,11 +56,11 @@ class InMemorySessionStore:
             raise KeyError(f"Session {session.session_id} not found")
         self._sessions[session.session_id] = session
 
-    def list_active(self) -> List[PromptSession]:
+    def list_active(self) -> list[PromptSession]:
         """List all active (non-finalized, non-abandoned) sessions."""
         return [s for s in self._sessions.values() if s.status == "active"]
 
-    def list_all(self) -> List[PromptSession]:
+    def list_all(self) -> list[PromptSession]:
         """List all sessions regardless of status."""
         return list(self._sessions.values())
 

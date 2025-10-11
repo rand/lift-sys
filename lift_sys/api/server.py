@@ -1,4 +1,5 @@
 """FastAPI server exposing lift-sys workflows."""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,28 +7,23 @@ import json
 import logging
 import os
 from collections import deque
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from ..auth.oauth_manager import OAuthManager
+from ..auth.provider_configs import build_default_configs
+from ..auth.token_store import TokenStore
 from ..forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
 from ..ir.models import IntermediateRepresentation
 from ..ir.parser import IRParser
 from ..planner.planner import Planner
-from ..reverse_mode.lifter import LifterConfig, SpecificationLifter, RepositoryHandle
-from ..auth.oauth_manager import OAuthManager
-from ..auth.provider_configs import build_default_configs
-from ..auth.token_store import TokenStore
-from ..services.github_repository import (
-    GitHubRepositoryClient,
-    RepositoryAccessError,
-    RepositoryMetadata,
-)
 from ..providers import (
     AnthropicProvider,
     BaseProvider,
@@ -35,21 +31,27 @@ from ..providers import (
     LocalVLLMProvider,
     OpenAIProvider,
 )
+from ..reverse_mode.lifter import LifterConfig, RepositoryHandle, SpecificationLifter
 from ..services.generation_service import GenerationService
+from ..services.github_repository import (
+    GitHubRepositoryClient,
+    RepositoryAccessError,
+    RepositoryMetadata,
+)
 from ..services.orchestrator import HybridOrchestrator
 from ..services.reasoning_service import ReasoningService
 from ..services.verification_service import VerificationService
-from .middleware.rate_limiting import rate_limiter
-from .auth import AuthenticatedUser, configure_auth, require_authenticated_user
-from .routes import auth as auth_routes
-from .routes import generate as generate_routes
-from .routes import health as health_routes
-from .routes import providers as provider_routes
 from ..spec_sessions import (
     InMemorySessionStore,
     PromptToIRTranslator,
     SpecSessionManager,
 )
+from .auth import AuthenticatedUser, configure_auth, require_authenticated_user
+from .middleware.rate_limiting import rate_limiter
+from .routes import auth as auth_routes
+from .routes import generate as generate_routes
+from .routes import health as health_routes
+from .routes import providers as provider_routes
 from .schemas import (
     AssistResponse,
     AssistsResponse,
@@ -58,25 +60,25 @@ from .schemas import (
     ForwardRequest,
     ForwardResponse,
     IRResponse,
-    PlanResponse,
     PlannerTelemetry,
-    RepoRequest,
+    PlanResponse,
     RepoListResponse,
     RepoOpenResponse,
+    RepoRequest,
     RepositoryMetadataModel,
-    RepositorySummary as RepositorySummaryModel,
     ResolveHoleRequest,
     ReverseRequest,
     SessionListResponse,
     SessionResponse,
 )
+from .schemas import (
+    RepositorySummary as RepositorySummaryModel,
+)
 
 app = FastAPI(title="lift-sys API", version="0.1.0")
 auth_router = configure_auth(app)
 
-allowed_origins_raw = os.getenv(
-    "LIFT_SYS_ALLOWED_ORIGINS", "http://localhost:3000"
-).split(",")
+allowed_origins_raw = os.getenv("LIFT_SYS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 allowed_origins = [origin.strip() for origin in allowed_origins_raw if origin.strip()]
 if not allowed_origins:
     allowed_origins = ["http://localhost:3000"]
@@ -103,17 +105,17 @@ class AppState:
     def __init__(self) -> None:
         self.parser = IRParser()
         self.planner = Planner()
-        self.config: Optional[SynthesizerConfig] = None
-        self.synthesizer: Optional[CodeSynthesizer] = None
-        self.lifter: Optional[SpecificationLifter] = None
+        self.config: SynthesizerConfig | None = None
+        self.synthesizer: CodeSynthesizer | None = None
+        self.lifter: SpecificationLifter | None = None
         self.progress_log = deque(maxlen=256)
         self._progress_subscribers: set[asyncio.Queue] = set()
-        self.repositories: Dict[str, RepositoryMetadata] = {}
+        self.repositories: dict[str, RepositoryMetadata] = {}
 
         # Session management
         self.session_store = InMemorySessionStore()
-        self.translator: Optional[PromptToIRTranslator] = None
-        self.session_manager: Optional[SpecSessionManager] = None
+        self.translator: PromptToIRTranslator | None = None
+        self.session_manager: SpecSessionManager | None = None
 
         self.progress_log.append(
             {
@@ -121,7 +123,7 @@ class AppState:
                 "scope": "planner",
                 "message": "Planner ready",
                 "status": "idle",
-                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+                "timestamp": datetime.now(UTC).isoformat() + "Z",
             }
         )
 
@@ -170,9 +172,9 @@ class AppState:
         # Restore subscribers (they may be needed by running tests)
         self._progress_subscribers = old_subscribers
 
-    async def publish_progress(self, event: Dict[str, object]) -> Dict[str, object]:
+    async def publish_progress(self, event: dict[str, object]) -> dict[str, object]:
         payload = dict(event)
-        payload.setdefault("timestamp", datetime.now(timezone.utc).isoformat() + "Z")
+        payload.setdefault("timestamp", datetime.now(UTC).isoformat() + "Z")
         self.progress_log.append(payload)
         for queue in list(self._progress_subscribers):
             try:
@@ -221,15 +223,15 @@ def _clear_app_state() -> None:
     """
     # List of attributes that may be set on app.state
     state_attrs = [
-        'providers',
-        'hybrid_orchestrator',
-        'primary_provider',
-        'services',
-        'oauth_managers',
-        'token_store',
-        'default_user_id',
-        'github_repositories',
-        'allow_demo_user_header',
+        "providers",
+        "hybrid_orchestrator",
+        "primary_provider",
+        "services",
+        "oauth_managers",
+        "token_store",
+        "default_user_id",
+        "github_repositories",
+        "allow_demo_user_header",
     ]
 
     for attr in state_attrs:
@@ -251,11 +253,11 @@ def _metadata_to_schema(metadata: RepositoryMetadata) -> RepositoryMetadataModel
     )
 
 
-async def _echo_text_runner(prompt: str, _: Dict[str, Any]) -> str:
+async def _echo_text_runner(prompt: str, _: dict[str, Any]) -> str:
     return prompt
 
 
-async def _echo_structured_runner(prompt: str, payload: Dict[str, Any]) -> str:
+async def _echo_structured_runner(prompt: str, payload: dict[str, Any]) -> str:
     schema = payload.get("schema", {})
     return json.dumps({"prompt": prompt, "schema": schema})
 
@@ -285,7 +287,7 @@ async def lifespan(app: FastAPI):
     # Startup
     token_key = os.getenv("LIFT_SYS_TOKEN_KEY")
     encryption_key = token_key.encode("utf-8") if token_key else TokenStore.generate_key()
-    token_storage: Dict[str, str] = {}
+    token_storage: dict[str, str] = {}
     token_store = TokenStore(token_storage, encryption_key)
 
     providers: dict[str, BaseProvider] = {
@@ -303,7 +305,9 @@ async def lifespan(app: FastAPI):
     )
     await local_provider.initialize({})
 
-    orchestrator = HybridOrchestrator(external_provider=providers["anthropic"], local_provider=local_provider)
+    orchestrator = HybridOrchestrator(
+        external_provider=providers["anthropic"], local_provider=local_provider
+    )
     app.state.providers = {**providers, "local": local_provider}
     app.state.hybrid_orchestrator = orchestrator
     app.state.primary_provider = "anthropic"
@@ -342,7 +346,7 @@ app.router.lifespan_context = lifespan
 
 
 @app.get("/")
-async def root(user: AuthenticatedUser = Depends(require_authenticated_user)) -> Dict[str, str]:
+async def root(user: AuthenticatedUser = Depends(require_authenticated_user)) -> dict[str, str]:
     LOGGER.debug("Root endpoint accessed by %s", user.id)
     return {
         "name": "lift-sys API",
@@ -353,7 +357,7 @@ async def root(user: AuthenticatedUser = Depends(require_authenticated_user)) ->
 
 
 @app.get("/health")
-async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) -> Dict[str, str]:
+async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) -> dict[str, str]:
     LOGGER.debug("Health check by %s", user.id)
     return {"status": "ok"}
 
@@ -361,7 +365,7 @@ async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) 
 @app.post("/config")
 async def configure(
     request: ConfigRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
-) -> Dict[str, str]:
+) -> dict[str, str]:
     LOGGER.info("%s updated synthesizer configuration", user.id)
     STATE.set_config(request)
     return {"status": "configured"}
@@ -371,9 +375,7 @@ async def configure(
 async def list_repositories(
     user: AuthenticatedUser = Depends(require_authenticated_user),
 ) -> RepoListResponse:
-    client: Optional[GitHubRepositoryClient] = getattr(
-        app.state, "github_repositories", None
-    )
+    client: GitHubRepositoryClient | None = getattr(app.state, "github_repositories", None)
     if client is None:
         raise HTTPException(status_code=503, detail="github_integration_unavailable")
     try:
@@ -402,9 +404,7 @@ async def open_repository(
     request: RepoRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> RepoOpenResponse:
     LOGGER.info("%s requested repository open for %s", user.id, request.identifier)
-    client: Optional[GitHubRepositoryClient] = getattr(
-        app.state, "github_repositories", None
-    )
+    client: GitHubRepositoryClient | None = getattr(app.state, "github_repositories", None)
     if client is None:
         raise HTTPException(status_code=503, detail="github_integration_unavailable")
     try:
@@ -515,7 +515,7 @@ async def reverse(
     # Record lifter progress checkpoints in planner
     for checkpoint in STATE.lifter.progress_log:
         STATE.planner.record_checkpoint(checkpoint)
-    now = datetime.now(timezone.utc).isoformat() + "Z"
+    now = datetime.now(UTC).isoformat() + "Z"
     progress = [
         {
             "id": "codeql_scan",
@@ -739,13 +739,15 @@ async def create_session(
             )
 
         # Emit session created event
-        await STATE.publish_progress({
-            "type": "session_created",
-            "scope": "spec_sessions",
-            "session_id": session.session_id,
-            "status": session.status,
-            "ambiguities": len(session.get_unresolved_holes()),
-        })
+        await STATE.publish_progress(
+            {
+                "type": "session_created",
+                "scope": "spec_sessions",
+                "session_id": session.session_id,
+                "status": session.status,
+                "ambiguities": len(session.get_unresolved_holes()),
+            }
+        )
 
         return SessionResponse(
             session_id=session.session_id,
@@ -840,13 +842,15 @@ async def resolve_hole(
         )
 
         # Emit hole resolved event
-        await STATE.publish_progress({
-            "type": "hole_resolved",
-            "scope": "spec_sessions",
-            "session_id": session_id,
-            "hole_id": hole_id,
-            "remaining_ambiguities": len(session.get_unresolved_holes()),
-        })
+        await STATE.publish_progress(
+            {
+                "type": "hole_resolved",
+                "scope": "spec_sessions",
+                "session_id": session_id,
+                "hole_id": hole_id,
+                "remaining_ambiguities": len(session.get_unresolved_holes()),
+            }
+        )
 
         return SessionResponse(
             session_id=session.session_id,
@@ -880,12 +884,14 @@ async def finalize_session(
         ir = STATE.session_manager.finalize(session_id)
 
         # Emit finalization event
-        await STATE.publish_progress({
-            "type": "session_finalized",
-            "scope": "spec_sessions",
-            "session_id": session_id,
-            "status": "finalized",
-        })
+        await STATE.publish_progress(
+            {
+                "type": "session_finalized",
+                "scope": "spec_sessions",
+                "session_id": session_id,
+                "status": "finalized",
+            }
+        )
 
         return IRResponse.from_ir(ir)
 
@@ -917,16 +923,14 @@ async def get_assists(
 
     assists = STATE.session_manager.get_assists(session_id)
 
-    return AssistsResponse(
-        assists=[AssistResponse(**assist) for assist in assists]
-    )
+    return AssistsResponse(assists=[AssistResponse(**assist) for assist in assists])
 
 
 @app.delete("/spec-sessions/{session_id}")
 async def delete_session(
     session_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Delete a session."""
     LOGGER.info("%s deleting session %s", user.id, session_id)
     if not STATE.session_manager:
@@ -939,11 +943,13 @@ async def delete_session(
 
     STATE.session_manager.delete_session(session_id)
 
-    await STATE.publish_progress({
-        "type": "session_deleted",
-        "scope": "spec_sessions",
-        "session_id": session_id,
-    })
+    await STATE.publish_progress(
+        {
+            "type": "session_deleted",
+            "scope": "spec_sessions",
+            "session_id": session_id,
+        }
+    )
 
     return {"status": "deleted", "session_id": session_id}
 
@@ -965,9 +971,12 @@ async def websocket_emitter() -> AsyncIterator[str]:
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=0.2)
                 yield json.dumps(event)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Send heartbeat every 5 seconds
-                heartbeat = {"type": "heartbeat", "timestamp": datetime.now(timezone.utc).isoformat() + "Z"}
+                heartbeat = {
+                    "type": "heartbeat",
+                    "timestamp": datetime.now(UTC).isoformat() + "Z",
+                }
                 yield json.dumps(heartbeat)
     finally:
         STATE.unsubscribe_progress(queue)

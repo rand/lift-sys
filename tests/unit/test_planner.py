@@ -51,9 +51,9 @@ class TestPlanner:
         plan = planner.load_ir(simple_ir)
 
         initial_step = plan.steps[0].identifier
-        next_steps = planner.step(initial_step, success=True)
+        result = planner.step(initial_step, success=True)
 
-        assert len(next_steps) >= 1
+        assert len(result.next_steps) >= 1
         assert initial_step in planner.state.completed
 
     def test_step_progression_failure(self, simple_ir):
@@ -63,7 +63,7 @@ class TestPlanner:
 
         initial_step = plan.steps[0].identifier
         reason = "Test failure reason"
-        next_steps = planner.step(initial_step, success=False, reason=reason)
+        result = planner.step(initial_step, success=False, reason=reason)
 
         # Should record the failure
         assert initial_step in planner.state.conflicts

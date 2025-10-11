@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from lift_sys.ir.models import IntermediateRepresentation
+from lift_sys.reverse_mode.lifter import RepositoryHandle
 
 
 pytestmark = pytest.mark.integration
@@ -95,10 +96,22 @@ def test_open_repository_uses_lifter(api_client, api_state) -> None:
     assert api_state.lifter is not None
 
     with patch.object(api_state.lifter, "load_repository", return_value=MagicMock()) as loader:
-        response = api_client.post("/repos/open", json={"path": "/repo"})
+        response = api_client.post("/repos/open", json={"identifier": "octocat/example"})
 
     assert response.status_code == 200
-    loader.assert_called_once_with("/repo")
+    loader.assert_called_once()
+    args, _ = loader.call_args
+    assert isinstance(args[0], RepositoryHandle)
+    assert args[0].identifier == "octocat/example"
+
+
+def test_list_repositories(api_client) -> None:
+    response = api_client.get("/repos")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "repositories" in payload
+    assert payload["repositories"][0]["identifier"] == "octocat/example"
 
 
 def test_plan_endpoint_requires_plan(api_client) -> None:

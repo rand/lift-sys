@@ -20,6 +20,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from datetime import datetime
+
 from lift_sys.ir.models import (
     AssertClause,
     EffectClause,
@@ -30,6 +32,46 @@ from lift_sys.ir.models import (
     SigClause,
 )
 from lift_sys.ir.parser import IRParser
+from lift_sys.services.github_repository import RepositoryMetadata, RepositorySummary
+
+
+class _StubGitHubClient:
+    """Minimal GitHub client stub used during API tests."""
+
+    def __init__(self) -> None:
+        self._summary = RepositorySummary(
+            identifier="octocat/example",
+            owner="octocat",
+            name="example",
+            description="stub repo",
+            default_branch="main",
+            private=False,
+        )
+
+    async def list_repositories(self, user_id: str) -> list[RepositorySummary]:
+        return [self._summary]
+
+    async def ensure_repository(
+        self,
+        user_id: str,
+        identifier: str,
+        *,
+        branch: str | None = None,
+        force_refresh: bool = False,
+    ) -> RepositoryMetadata:
+        repo_dir = Path(tempfile.mkdtemp(prefix="lift_stub_repo_"))
+        Repo.init(repo_dir)
+        return RepositoryMetadata(
+            identifier=identifier,
+            owner=self._summary.owner,
+            name=self._summary.name,
+            description=self._summary.description,
+            default_branch=self._summary.default_branch,
+            private=self._summary.private,
+            clone_url="https://example.com/octocat/example.git",
+            workspace_path=repo_dir,
+            last_synced=datetime.utcnow(),
+        )
 
 
 # =============================================================================
@@ -204,8 +246,11 @@ def api_client() -> Iterator[TestClient]:
     from lift_sys.api.server import app, reset_state
 
     reset_state()
+    stub_client = _StubGitHubClient()
+    app.state.github_repositories = stub_client
     with TestClient(app) as client:
         client.headers.update({"x-demo-user": "pytest"})
+        client.app.state.github_repositories = stub_client
         yield client
     reset_state()
 

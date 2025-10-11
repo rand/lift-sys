@@ -10,6 +10,8 @@ Tests cover:
 import pytest
 from fastapi.testclient import TestClient
 
+from lift_sys.services.github_repository import RepositoryAccessError
+
 
 @pytest.mark.integration
 class TestAPIEndpoints:
@@ -123,26 +125,43 @@ class TestAPIEndpoints:
         data = response.json()
         assert "detail" in data
 
-    def test_repos_open_endpoint(self, api_client, temp_repo, temp_dir):
+    def test_repos_open_endpoint(self, api_client):
         """Test repository opening endpoint."""
         response = api_client.post(
             "/repos/open",
-            json={"path": str(temp_dir)},
+            json={"identifier": "octocat/example"},
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ready"
+        assert data["repository"]["identifier"] == "octocat/example"
 
-    def test_repos_open_invalid_path(self, api_client):
-        """Test repository opening with invalid path."""
+    def test_repos_list_endpoint(self, api_client):
+        """Repositories endpoint should list accessible repositories."""
+        response = api_client.get("/repos")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["repositories"][0]["identifier"] == "octocat/example"
+
+    def test_repos_open_permission_error(self, api_client, monkeypatch):
+        """Repository open should respect permission failures."""
+
+        async def fail(*_args, **_kwargs):
+            raise RepositoryAccessError(403, "github_token_missing")
+
+        monkeypatch.setattr(
+            api_client.app.state.github_repositories,
+            "ensure_repository",
+            fail,
+        )
         response = api_client.post(
             "/repos/open",
-            json={"path": "/nonexistent/path"},
+            json={"identifier": "octocat/example"},
         )
 
-        # Should handle invalid path gracefully
-        assert response.status_code in [400, 404, 500]
+        assert response.status_code == 403
 
     def test_multiple_config_updates(self, api_client):
         """Test updating configuration multiple times."""

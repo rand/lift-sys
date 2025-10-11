@@ -1,9 +1,10 @@
 """Authentication endpoints for provider OAuth flows."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ...auth.oauth_manager import OAuthManager
+from ..auth import AuthenticatedUser, require_authenticated_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -28,19 +29,14 @@ async def _initialize_provider(request: Request, provider: str, credentials: dic
         ) from exc
 
 
-def _resolve_user_id(request: Request) -> str:
-    return getattr(
-        request.state,
-        "user_id",
-        getattr(request.app.state, "default_user_id", "demo-user"),
-    )
-
-
 @router.post("/{provider}/initiate")
-async def initiate_oauth(provider: str, request: Request) -> dict:
+async def initiate_oauth(
+    provider: str,
+    request: Request,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> dict:
     manager = get_oauth_manager(request, provider)
-    user_id = _resolve_user_id(request)
-    return await manager.initiate_oauth_flow(user_id=user_id)
+    return await manager.initiate_oauth_flow(user_id=user.id)
 
 
 @router.get("/{provider}/callback")
@@ -52,17 +48,23 @@ async def oauth_callback(provider: str, code: str, state: str, request: Request)
 
 
 @router.post("/{provider}/refresh")
-async def refresh(provider: str, request: Request) -> dict:
+async def refresh(
+    provider: str,
+    request: Request,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> dict:
     manager = get_oauth_manager(request, provider)
-    user_id = _resolve_user_id(request)
-    tokens = await manager.refresh_token(user_id=user_id)
+    tokens = await manager.refresh_token(user_id=user.id)
     await _initialize_provider(request, provider, tokens)
     return {"status": "refreshed", "tokens": tokens}
 
 
 @router.delete("/{provider}/disconnect")
-async def disconnect(provider: str, request: Request) -> dict:
+async def disconnect(
+    provider: str,
+    request: Request,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> dict:
     manager = get_oauth_manager(request, provider)
-    user_id = _resolve_user_id(request)
-    await manager.revoke_token(user_id=user_id)
+    await manager.revoke_token(user_id=user.id)
     return {"status": "disconnected"}

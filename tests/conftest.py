@@ -242,18 +242,35 @@ def complex_ir() -> IntermediateRepresentation:
 
 @pytest.fixture
 def api_client() -> Iterator[TestClient]:
-    """Create FastAPI test client."""
+    """Create FastAPI test client with proper state isolation.
+
+    This fixture ensures:
+    1. State is reset before the test
+    2. Stub GitHub client is configured
+    3. Demo auth is enabled
+    4. State is reset after the test for the next test
+    """
     from lift_sys.api.server import app, reset_state
 
+    # Reset state before creating client
     reset_state()
+
+    # Set up stub client and demo auth
     stub_client = _StubGitHubClient()
     app.state.github_repositories = stub_client
-    app.state.allow_demo_user_header = True  # Enable demo auth for tests
+    app.state.allow_demo_user_header = True
+
+    # Create test client with demo user header
     with TestClient(app) as client:
         client.headers.update({"x-demo-user": "pytest"})
+
+        # Ensure app.state is set on the client's app instance too
         client.app.state.github_repositories = stub_client
-        client.app.state.allow_demo_user_header = True  # Enable demo auth for tests
+        client.app.state.allow_demo_user_header = True
+
         yield client
+
+    # Clean up after test - reset_state() now clears both STATE and app.state
     reset_state()
 
 

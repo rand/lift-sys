@@ -128,6 +128,51 @@ class ForwardResponse(BaseModel):
     request_payload: dict
 
 
+# Session management schemas
+
+
+class CreateSessionRequest(BaseModel):
+    prompt: Optional[str] = None
+    ir: Optional[dict] = None
+    source: str = Field(default="prompt", description="'prompt' or 'reverse_mode'")
+    metadata: Dict = Field(default_factory=dict)
+
+
+class SessionResponse(BaseModel):
+    session_id: str
+    status: str
+    source: str
+    created_at: str
+    updated_at: str
+    current_draft: Optional[dict] = None
+    ambiguities: List[str] = Field(default_factory=list)
+    revision_count: int
+    metadata: Dict = Field(default_factory=dict)
+
+
+class SessionListResponse(BaseModel):
+    sessions: List[SessionResponse]
+
+
+class ResolveHoleRequest(BaseModel):
+    resolution_text: str
+    resolution_type: str = Field(
+        default="clarify_intent",
+        description="Type: clarify_intent, add_constraint, refine_signature, specify_effect"
+    )
+
+
+class AssistResponse(BaseModel):
+    hole_id: str
+    hole_kind: str
+    suggestion: str
+    description: str
+
+
+class AssistsResponse(BaseModel):
+    assists: List[AssistResponse]
+
+
 __all__ = [
     "UserIdentity",
     "SessionInfo",
@@ -144,4 +189,10 @@ __all__ = [
     "PlanResponse",
     "PlannerTelemetry",
     "ForwardResponse",
+    "CreateSessionRequest",
+    "SessionResponse",
+    "SessionListResponse",
+    "ResolveHoleRequest",
+    "AssistResponse",
+    "AssistsResponse",
 ]

@@ -6,16 +6,17 @@ Tests cover:
 - Constraint compilation
 - Request payload generation
 """
+
 import pytest
 
 from lift_sys.forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
-    IntentClause,
-    SigClause,
-    Parameter,
     AssertClause,
+    IntentClause,
+    IntermediateRepresentation,
     Metadata,
+    Parameter,
+    SigClause,
 )
 
 

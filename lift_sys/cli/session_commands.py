@@ -10,18 +10,17 @@ Usage:
     uv run python -m lift_sys.cli session finalize SESSION_ID
     uv run python -m lift_sys.cli session delete SESSION_ID
 """
+
 from __future__ import annotations
 
 import json
 import os
-import sys
-from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.table import Table
 
 from lift_sys.client import SessionClient
 
@@ -47,9 +46,11 @@ def get_client(api_url: str = "http://localhost:8000") -> SessionClient:
 
 @app.command("create")
 def create_session(
-    prompt: Optional[str] = typer.Option(None, "--prompt", "-p", help="Natural language prompt"),
-    ir_file: Optional[str] = typer.Option(None, "--ir-file", "-i", help="Path to IR JSON file"),
-    source: str = typer.Option("prompt", "--source", "-s", help="Session source (prompt or reverse_mode)"),
+    prompt: str | None = typer.Option(None, "--prompt", "-p", help="Natural language prompt"),
+    ir_file: str | None = typer.Option(None, "--ir-file", "-i", help="Path to IR JSON file"),
+    source: str = typer.Option(
+        "prompt", "--source", "-s", help="Session source (prompt or reverse_mode)"
+    ),
     api_url: str = typer.Option("http://localhost:8000", "--api-url", help="API base URL"),
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
@@ -74,7 +75,7 @@ def create_session(
 
     if ir_file:
         try:
-            with open(ir_file, "r") as f:
+            with open(ir_file) as f:
                 ir_dict = json.load(f)
         except Exception as e:
             console.print(f"[red]Error reading IR file:[/red] {e}")
@@ -88,21 +89,28 @@ def create_session(
         )
 
         if output_json:
-            print(json.dumps({
-                "session_id": session.session_id,
-                "status": session.status,
-                "source": session.source,
-                "ambiguities": session.ambiguities,
-            }, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "session_id": session.session_id,
+                        "status": session.status,
+                        "source": session.source,
+                        "ambiguities": session.ambiguities,
+                    },
+                    indent=2,
+                )
+            )
         else:
-            console.print(Panel(
-                f"[green]✓ Session created[/green]\n\n"
-                f"ID: [cyan]{session.session_id}[/cyan]\n"
-                f"Status: {session.status}\n"
-                f"Source: {session.source}\n"
-                f"Ambiguities: {len(session.ambiguities)}",
-                title="Session Created",
-            ))
+            console.print(
+                Panel(
+                    f"[green]✓ Session created[/green]\n\n"
+                    f"ID: [cyan]{session.session_id}[/cyan]\n"
+                    f"Status: {session.status}\n"
+                    f"Source: {session.source}\n"
+                    f"Ambiguities: {len(session.ambiguities)}",
+                    title="Session Created",
+                )
+            )
 
             if session.ambiguities:
                 console.print("\n[yellow]Unresolved holes:[/yellow]")
@@ -132,13 +140,21 @@ def list_sessions(
         sessions = response.sessions
 
         if output_json:
-            print(json.dumps([{
-                "session_id": s.session_id,
-                "status": s.status,
-                "source": s.source,
-                "ambiguities_count": len(s.ambiguities),
-                "created_at": s.created_at,
-            } for s in sessions], indent=2))
+            print(
+                json.dumps(
+                    [
+                        {
+                            "session_id": s.session_id,
+                            "status": s.status,
+                            "source": s.source,
+                            "ambiguities_count": len(s.ambiguities),
+                            "created_at": s.created_at,
+                        }
+                        for s in sessions
+                    ],
+                    indent=2,
+                )
+            )
         else:
             if not sessions:
                 console.print("[yellow]No sessions found[/yellow]")
@@ -210,10 +226,12 @@ def get_session(
             ]
 
             if session.current_draft:
-                lines.extend([
-                    f"[cyan]Draft Version:[/cyan] {session.current_draft.version}",
-                    f"[cyan]Validation:[/cyan] {session.current_draft.validation_status}",
-                ])
+                lines.extend(
+                    [
+                        f"[cyan]Draft Version:[/cyan] {session.current_draft.version}",
+                        f"[cyan]Validation:[/cyan] {session.current_draft.validation_status}",
+                    ]
+                )
 
             lines.append(f"[cyan]Ambiguities:[/cyan] {len(session.ambiguities)}")
 
@@ -263,18 +281,25 @@ def resolve_hole(
         )
 
         if output_json:
-            print(json.dumps({
-                "session_id": session.session_id,
-                "status": session.status,
-                "ambiguities": session.ambiguities,
-            }, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "session_id": session.session_id,
+                        "status": session.status,
+                        "ambiguities": session.ambiguities,
+                    },
+                    indent=2,
+                )
+            )
         else:
-            console.print(Panel(
-                f"[green]✓ Hole resolved[/green]\n\n"
-                f"Session: [cyan]{session.session_id[:12]}...[/cyan]\n"
-                f"Remaining holes: {len(session.ambiguities)}",
-                title="Resolution Applied",
-            ))
+            console.print(
+                Panel(
+                    f"[green]✓ Hole resolved[/green]\n\n"
+                    f"Session: [cyan]{session.session_id[:12]}...[/cyan]\n"
+                    f"Remaining holes: {len(session.ambiguities)}",
+                    title="Resolution Applied",
+                )
+            )
 
             if session.ambiguities:
                 console.print("\n[yellow]Remaining holes:[/yellow]")
@@ -292,7 +317,7 @@ def resolve_hole(
 def finalize_session(
     session_id: str = typer.Argument(..., help="Session ID"),
     api_url: str = typer.Option("http://localhost:8000", "--api-url", help="API base URL"),
-    output_file: Optional[str] = typer.Option(None, "--output", "-o", help="Save IR to file"),
+    output_file: str | None = typer.Option(None, "--output", "-o", help="Save IR to file"),
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """Finalize a session and get the completed IR.
@@ -314,11 +339,12 @@ def finalize_session(
         if output_json:
             print(json.dumps(response.ir, indent=2))
         else:
-            console.print(Panel(
-                f"[green]✓ Session finalized[/green]\n\n"
-                f"IR ready for code generation",
-                title="Finalization Complete",
-            ))
+            console.print(
+                Panel(
+                    "[green]✓ Session finalized[/green]\n\nIR ready for code generation",
+                    title="Finalization Complete",
+                )
+            )
 
             if not output_file:
                 console.print("\n[cyan]IR Preview:[/cyan]")
@@ -380,11 +406,19 @@ def get_assists(
         response = client.get_assists(session_id)
 
         if output_json:
-            print(json.dumps([{
-                "hole_id": a.hole_id,
-                "suggestions": a.suggestions,
-                "context": a.context,
-            } for a in response.assists], indent=2))
+            print(
+                json.dumps(
+                    [
+                        {
+                            "hole_id": a.hole_id,
+                            "suggestions": a.suggestions,
+                            "context": a.context,
+                        }
+                        for a in response.assists
+                    ],
+                    indent=2,
+                )
+            )
         else:
             if not response.assists:
                 console.print("[yellow]No assists available[/yellow]")

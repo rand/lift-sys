@@ -2,11 +2,12 @@
 
 Provides both synchronous and asynchronous interfaces for programmatic use.
 """
+
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 
@@ -16,12 +17,12 @@ class IRDraft:
     """IR draft with validation status."""
 
     version: int
-    ir: Dict[str, Any]
+    ir: dict[str, Any]
     validation_status: str
-    ambiguities: List[str]
-    smt_results: List[Dict[str, Any]]
+    ambiguities: list[str]
+    smt_results: list[dict[str, Any]]
     created_at: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -33,13 +34,13 @@ class PromptSession:
     source: str
     created_at: str
     updated_at: str
-    current_draft: Optional[IRDraft]
-    ambiguities: List[str]
+    current_draft: IRDraft | None
+    ambiguities: list[str]
     revision_count: int
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> PromptSession:
+    def from_dict(cls, data: dict[str, Any]) -> PromptSession:
         """Create from API response."""
         draft_data = data.get("current_draft")
         draft = (
@@ -73,14 +74,14 @@ class PromptSession:
 class CreateSessionRequest:
     """Request to create a new session."""
 
-    prompt: Optional[str] = None
-    ir: Optional[Dict[str, Any]] = None
+    prompt: str | None = None
+    ir: dict[str, Any] | None = None
     source: str = "prompt"
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to API request format."""
-        result: Dict[str, Any] = {"source": self.source}
+        result: dict[str, Any] = {"source": self.source}
         if self.prompt:
             result["prompt"] = self.prompt
         if self.ir:
@@ -97,7 +98,7 @@ class ResolveHoleRequest:
     resolution_text: str
     resolution_type: str = "clarify_intent"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to API request format."""
         return {
             "resolution_text": self.resolution_text,
@@ -109,14 +110,12 @@ class ResolveHoleRequest:
 class SessionListResponse:
     """Response containing session list."""
 
-    sessions: List[PromptSession]
+    sessions: list[PromptSession]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> SessionListResponse:
+    def from_dict(cls, data: dict[str, Any]) -> SessionListResponse:
         """Create from API response."""
-        return cls(
-            sessions=[PromptSession.from_dict(s) for s in data["sessions"]]
-        )
+        return cls(sessions=[PromptSession.from_dict(s) for s in data["sessions"]])
 
 
 @dataclass
@@ -124,7 +123,7 @@ class AssistSuggestion:
     """Suggestion for resolving a hole."""
 
     hole_id: str
-    suggestions: List[str]
+    suggestions: list[str]
     context: str
 
 
@@ -133,10 +132,10 @@ class AssistsResponse:
     """Response containing assist suggestions."""
 
     session_id: str
-    assists: List[AssistSuggestion]
+    assists: list[AssistSuggestion]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> AssistsResponse:
+    def from_dict(cls, data: dict[str, Any]) -> AssistsResponse:
         """Create from API response."""
         return cls(
             session_id=data["session_id"],
@@ -155,8 +154,8 @@ class AssistsResponse:
 class IRResponse:
     """Response containing finalized IR."""
 
-    ir: Dict[str, Any]
-    metadata: Dict[str, Any]
+    ir: dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class SessionClient:
@@ -178,7 +177,7 @@ class SessionClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         timeout: float = 30.0,
     ):
         """Initialize session client.
@@ -208,10 +207,10 @@ class SessionClient:
 
     def create_session(
         self,
-        prompt: Optional[str] = None,
-        ir: Optional[Dict[str, Any]] = None,
+        prompt: str | None = None,
+        ir: dict[str, Any] | None = None,
         source: str = "prompt",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> PromptSession:
         """Create a new prompt refinement session.
 
@@ -227,9 +226,7 @@ class SessionClient:
         Raises:
             httpx.HTTPError: If request fails
         """
-        request = CreateSessionRequest(
-            prompt=prompt, ir=ir, source=source, metadata=metadata
-        )
+        request = CreateSessionRequest(prompt=prompt, ir=ir, source=source, metadata=metadata)
         response = httpx.post(
             f"{self.base_url}/spec-sessions",
             json=request.to_dict(),
@@ -370,10 +367,10 @@ class SessionClient:
 
     async def acreate_session(
         self,
-        prompt: Optional[str] = None,
-        ir: Optional[Dict[str, Any]] = None,
+        prompt: str | None = None,
+        ir: dict[str, Any] | None = None,
         source: str = "prompt",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> PromptSession:
         """Create a new prompt refinement session (async).
 
@@ -389,9 +386,7 @@ class SessionClient:
         Raises:
             httpx.HTTPError: If request fails
         """
-        request = CreateSessionRequest(
-            prompt=prompt, ir=ir, source=source, metadata=metadata
-        )
+        request = CreateSessionRequest(prompt=prompt, ir=ir, source=source, metadata=metadata)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/spec-sessions",

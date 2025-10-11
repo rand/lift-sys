@@ -1,4 +1,5 @@
 """CLI entry point for lift-sys."""
+
 from __future__ import annotations
 
 import typer

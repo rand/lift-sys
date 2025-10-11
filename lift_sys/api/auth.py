@@ -1,10 +1,11 @@
 """Authentication configuration and session management for the API."""
+
 from __future__ import annotations
 
 import logging
 import os
 import secrets
-from typing import Any, Dict, Optional
+from typing import Any
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import APIRouter, FastAPI, HTTPException, Request, status
@@ -19,7 +20,7 @@ _SESSION_COOKIE = "lift_sys_session"
 _REDIRECT_KEY = "post_auth_redirect"
 
 
-def _is_truthy(value: Optional[str]) -> bool:
+def _is_truthy(value: str | None) -> bool:
     if value is None:
         return False
     return value.lower() in {"1", "true", "yes", "on"}
@@ -28,10 +29,10 @@ def _is_truthy(value: Optional[str]) -> bool:
 class AuthSettings:
     """Runtime configuration for OAuth providers."""
 
-    google_client_id: Optional[str]
-    google_client_secret: Optional[str]
-    github_client_id: Optional[str]
-    github_client_secret: Optional[str]
+    google_client_id: str | None
+    google_client_secret: str | None
+    github_client_id: str | None
+    github_client_secret: str | None
     callback_base_url: str
     session_secret: str
     enable_demo_user_header: bool
@@ -41,20 +42,14 @@ class AuthSettings:
         self.google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
         self.github_client_id = os.getenv("GITHUB_CLIENT_ID")
         self.github_client_secret = os.getenv("GITHUB_CLIENT_SECRET")
-        self.callback_base_url = os.getenv(
-            "LIFT_SYS_CALLBACK_BASE", "http://localhost:8000"
-        )
+        self.callback_base_url = os.getenv("LIFT_SYS_CALLBACK_BASE", "http://localhost:8000")
         configured_secret = os.getenv("LIFT_SYS_SESSION_SECRET")
         if configured_secret:
             self.session_secret = configured_secret
         else:
             self.session_secret = secrets.token_hex(32)
-            LOGGER.warning(
-                "LIFT_SYS_SESSION_SECRET not configured; using ephemeral secret."
-            )
-        self.enable_demo_user_header = _is_truthy(
-            os.getenv("LIFT_SYS_ENABLE_DEMO_USER_HEADER")
-        )
+            LOGGER.warning("LIFT_SYS_SESSION_SECRET not configured; using ephemeral secret.")
+        self.enable_demo_user_header = _is_truthy(os.getenv("LIFT_SYS_ENABLE_DEMO_USER_HEADER"))
 
 
 class AuthContext:
@@ -72,8 +67,7 @@ class AuthContext:
                 name="google",
                 client_id=self.settings.google_client_id,
                 client_secret=self.settings.google_client_secret,
-                server_metadata_url=
-                "https://accounts.google.com/.well-known/openid-configuration",
+                server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
                 client_kwargs={"scope": "openid email profile"},
             )
             self.providers.add("google")
@@ -126,19 +120,17 @@ def configure_auth(app: FastAPI) -> APIRouter:
     app.state.auth_context = context
     app.state.allow_demo_user_header = settings.enable_demo_user_header
     if settings.enable_demo_user_header:
-        LOGGER.warning(
-            "x-demo-user override enabled via LIFT_SYS_ENABLE_DEMO_USER_HEADER"
-        )
+        LOGGER.warning("x-demo-user override enabled via LIFT_SYS_ENABLE_DEMO_USER_HEADER")
 
     router = APIRouter(prefix="/api/auth", tags=["auth"])
 
     @router.get("/providers")
-    async def list_providers() -> Dict[str, bool]:
+    async def list_providers() -> dict[str, bool]:
         registered = {name: name in context.providers for name in ("google", "github")}
         return registered
 
     @router.get("/login/{provider}")
-    async def login(request: Request, provider: str, redirect: Optional[str] = None):
+    async def login(request: Request, provider: str, redirect: str | None = None):
         client = context.get_client(provider)
         callback_url = f"{context.settings.callback_base_url}/api/auth/callback/{provider}"
         if redirect:
@@ -164,7 +156,7 @@ def configure_auth(app: FastAPI) -> APIRouter:
         user_identity = UserIdentity(**profile)
         request.session["user"] = user_identity.model_dump()
         request.session["user_id"] = user_identity.id
-        tokens: Dict[str, Any] = request.session.get("tokens", {})
+        tokens: dict[str, Any] = request.session.get("tokens", {})
         tokens[provider] = token
         request.session["tokens"] = tokens
 
@@ -190,8 +182,8 @@ def configure_auth(app: FastAPI) -> APIRouter:
 
 
 async def _resolve_profile(
-    provider: str, client: Any, token: Dict[str, Any], request: Request
-) -> Optional[Dict[str, Any]]:
+    provider: str, client: Any, token: dict[str, Any], request: Request
+) -> dict[str, Any] | None:
     """Derive a normalised user profile from provider metadata."""
 
     if provider == "google":
@@ -236,9 +228,7 @@ def require_authenticated_user(request: Request) -> UserIdentity:
     if allow_demo_override:
         demo_user = request.headers.get("x-demo-user")
         if demo_user:
-            user = UserIdentity(
-                id=f"demo:{demo_user}", provider="internal", name=demo_user
-            )
+            user = UserIdentity(id=f"demo:{demo_user}", provider="internal", name=demo_user)
             request.state.user_id = user.id
             return user
 

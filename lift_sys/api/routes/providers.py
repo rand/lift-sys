@@ -1,4 +1,5 @@
 """Endpoints for provider management."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
@@ -33,9 +34,7 @@ async def list_providers(request: Request) -> list[dict[str, object]]:
                     "reasoning": getattr(provider.capabilities, "reasoning", True),
                 },
                 "status": "healthy" if healthy else "unavailable",
-                "authenticated": bool(
-                    token_store and name in token_store.list_providers(user_id)
-                ),
+                "authenticated": bool(token_store and name in token_store.list_providers(user_id)),
             }
         )
     return payload

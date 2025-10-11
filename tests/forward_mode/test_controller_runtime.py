@@ -1,7 +1,8 @@
 """Unit tests for the forward-mode controller runtime."""
+
 from __future__ import annotations
 
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from lift_sys.forward_mode.controller_runtime import ControllerHooks, ControllerRuntime
 from lift_sys.forward_mode.synthesizer import CodeSynthesizer, Constraint, SynthesizerConfig
@@ -28,7 +29,7 @@ def test_runtime_compiles_schema_and_grammar(simple_ir) -> None:
 def test_runtime_executes_controller_hooks(simple_ir) -> None:
     """All controller hooks must execute in sequence when streaming."""
 
-    events: List[str] = []
+    events: list[str] = []
 
     def loader(context):
         def init(ctx):

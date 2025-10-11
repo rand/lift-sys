@@ -1,9 +1,10 @@
 """Hybrid orchestration between external and local providers."""
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 from ..providers import BaseProvider, LocalVLLMProvider
 
@@ -19,9 +20,9 @@ class Task:
     requires_constrained_output: bool = False
     requires_reasoning: bool = False
     requires_verification: bool = False
-    output_schema: Optional[dict] = None
-    verification_schema: Optional[dict] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    output_schema: dict | None = None
+    verification_schema: dict | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -30,7 +31,7 @@ class TaskResult:
 
     provider: str
     content: Any
-    intermediate: Optional[Any] = None
+    intermediate: Any | None = None
 
 
 class HybridOrchestrator:
@@ -72,7 +73,9 @@ class HybridOrchestrator:
         if task.requires_verification and task.verification_schema is not None:
             reasoning = await self.external.generate_text(task.prompt, temperature=task.temperature)
             verification_prompt = f"Formalize: {reasoning}"
-            content = await self.local.generate_structured(verification_prompt, task.verification_schema)
+            content = await self.local.generate_structured(
+                verification_prompt, task.verification_schema
+            )
             return self.local, content
         if task.output_schema and self.local.supports_structured_output:
             content = await self.local.generate_structured(task.prompt, task.output_schema)

@@ -12,6 +12,7 @@ Tests cover:
 - JSON output mode
 - End-to-end workflow
 """
+
 from __future__ import annotations
 
 import json
@@ -88,16 +89,20 @@ class TestCLISessionCommands:
         # Note: This test requires the API to accept connections
         # Skip if API is not reachable
         import httpx
+
         try:
             httpx.get("http://localhost:8000/health", timeout=1.0)
         except Exception:
             pytest.skip("API server not accessible")
 
-        result = run_cli([
-            "create",
-            "--prompt", "A function that takes two integers and returns their sum",
-            "--json",
-        ])
+        result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "A function that takes two integers and returns their sum",
+                "--json",
+            ]
+        )
 
         if result.returncode != 0:
             # CLI tests may fail if server is not reachable
@@ -114,12 +119,16 @@ class TestCLISessionCommands:
         ir_file = temp_dir / "test_ir.json"
         ir_file.write_text(json.dumps(simple_ir.to_dict()))
 
-        result = run_cli([
-            "create",
-            "--ir-file", str(ir_file),
-            "--source", "reverse_mode",
-            "--json",
-        ])
+        result = run_cli(
+            [
+                "create",
+                "--ir-file",
+                str(ir_file),
+                "--source",
+                "reverse_mode",
+                "--json",
+            ]
+        )
 
         assert result.returncode == 0
         data = parse_json_output(result.stdout)
@@ -144,16 +153,22 @@ class TestCLISessionCommands:
     def test_cli_list_sessions_with_data(self, api_client):
         """Test listing sessions after creating some."""
         # Create two sessions
-        run_cli([
-            "create",
-            "--prompt", "Function to add numbers",
-            "--json",
-        ])
-        run_cli([
-            "create",
-            "--prompt", "Function to multiply numbers",
-            "--json",
-        ])
+        run_cli(
+            [
+                "create",
+                "--prompt",
+                "Function to add numbers",
+                "--json",
+            ]
+        )
+        run_cli(
+            [
+                "create",
+                "--prompt",
+                "Function to multiply numbers",
+                "--json",
+            ]
+        )
 
         # List sessions
         result = run_cli(["list", "--json"])
@@ -166,11 +181,14 @@ class TestCLISessionCommands:
     def test_cli_get_session(self, api_client):
         """Test retrieving a specific session by ID."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Function to compute factorial",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Function to compute factorial",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
@@ -191,11 +209,14 @@ class TestCLISessionCommands:
     def test_cli_get_session_with_ir(self, api_client):
         """Test retrieving session with IR included."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Test function",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Test function",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
@@ -210,11 +231,14 @@ class TestCLISessionCommands:
     def test_cli_resolve_hole(self, api_client):
         """Test resolving a hole via CLI."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Add numbers",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Add numbers",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
@@ -223,13 +247,15 @@ class TestCLISessionCommands:
             hole_id = create_data["ambiguities"][0]
 
             # Resolve the hole
-            resolve_result = run_cli([
-                "resolve",
-                session_id,
-                hole_id,
-                "int",
-                "--json",
-            ])
+            resolve_result = run_cli(
+                [
+                    "resolve",
+                    session_id,
+                    hole_id,
+                    "int",
+                    "--json",
+                ]
+            )
 
             assert resolve_result.returncode == 0
             resolve_data = parse_json_output(resolve_result.stdout)
@@ -237,24 +263,29 @@ class TestCLISessionCommands:
 
     def test_cli_resolve_hole_session_not_found(self, api_client):
         """Test resolving hole in non-existent session."""
-        result = run_cli([
-            "resolve",
-            "nonexistent",
-            "hole_id",
-            "resolution",
-            "--json",
-        ])
+        result = run_cli(
+            [
+                "resolve",
+                "nonexistent",
+                "hole_id",
+                "resolution",
+                "--json",
+            ]
+        )
 
         assert result.returncode == 1
 
     def test_cli_get_assists(self, api_client):
         """Test getting assist suggestions via CLI."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Calculate something",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Calculate something",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
@@ -277,22 +308,28 @@ class TestCLISessionCommands:
         ir_file = temp_dir / "finalize_ir.json"
         ir_file.write_text(json.dumps(simple_ir.to_dict()))
 
-        create_result = run_cli([
-            "create",
-            "--ir-file", str(ir_file),
-            "--source", "reverse_mode",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--ir-file",
+                str(ir_file),
+                "--source",
+                "reverse_mode",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
         # If no ambiguities, finalize
         if not create_data.get("ambiguities"):
-            finalize_result = run_cli([
-                "finalize",
-                session_id,
-                "--json",
-            ])
+            finalize_result = run_cli(
+                [
+                    "finalize",
+                    session_id,
+                    "--json",
+                ]
+            )
 
             assert finalize_result.returncode == 0
             finalize_data = parse_json_output(finalize_result.stdout)
@@ -301,21 +338,26 @@ class TestCLISessionCommands:
     def test_cli_finalize_session_with_holes(self, api_client):
         """Test that finalizing fails with unresolved holes."""
         # Create session with ambiguities
-        create_result = run_cli([
-            "create",
-            "--prompt", "Function",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Function",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
         # Try to finalize with holes
         if create_data.get("ambiguities"):
-            finalize_result = run_cli([
-                "finalize",
-                session_id,
-                "--json",
-            ])
+            finalize_result = run_cli(
+                [
+                    "finalize",
+                    session_id,
+                    "--json",
+                ]
+            )
 
             assert finalize_result.returncode == 1
 
@@ -331,24 +373,31 @@ class TestCLISessionCommands:
         ir_file = temp_dir / "input_ir.json"
         ir_file.write_text(json.dumps(simple_ir.to_dict()))
 
-        create_result = run_cli([
-            "create",
-            "--ir-file", str(ir_file),
-            "--source", "reverse_mode",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--ir-file",
+                str(ir_file),
+                "--source",
+                "reverse_mode",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
         # If no ambiguities, finalize with output file
         if not create_data.get("ambiguities"):
             output_file = temp_dir / "output_ir.json"
-            finalize_result = run_cli([
-                "finalize",
-                session_id,
-                "--output", str(output_file),
-                "--json",
-            ])
+            finalize_result = run_cli(
+                [
+                    "finalize",
+                    session_id,
+                    "--output",
+                    str(output_file),
+                    "--json",
+                ]
+            )
 
             assert finalize_result.returncode == 0
             assert output_file.exists()
@@ -361,20 +410,25 @@ class TestCLISessionCommands:
     def test_cli_delete_session(self, api_client):
         """Test deleting a session via CLI."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Test function",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Test function",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
         # Delete session with --yes flag to skip confirmation
-        delete_result = run_cli([
-            "delete",
-            session_id,
-            "--yes",
-        ])
+        delete_result = run_cli(
+            [
+                "delete",
+                session_id,
+                "--yes",
+            ]
+        )
 
         assert delete_result.returncode == 0
         assert "deleted" in delete_result.stdout.lower()
@@ -385,22 +439,27 @@ class TestCLISessionCommands:
 
     def test_cli_delete_session_not_found(self, api_client):
         """Test deleting a non-existent session."""
-        result = run_cli([
-            "delete",
-            "nonexistent",
-            "--yes",
-        ])
+        result = run_cli(
+            [
+                "delete",
+                "nonexistent",
+                "--yes",
+            ]
+        )
 
         assert result.returncode == 1
 
     def test_cli_workflow_complete(self, api_client):
         """Test complete CLI workflow: create → list → get → assists → resolve → finalize."""
         # Step 1: Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Function that takes an integer and returns boolean",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Function that takes an integer and returns boolean",
+                "--json",
+            ]
+        )
         assert create_result.returncode == 0
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
@@ -424,22 +483,27 @@ class TestCLISessionCommands:
         # Step 5: Resolve holes if any
         if create_data.get("ambiguities"):
             hole_id = create_data["ambiguities"][0]
-            resolve_result = run_cli([
-                "resolve",
-                session_id,
-                hole_id,
-                "test_value",
-                "--json",
-            ])
+            resolve_result = run_cli(
+                [
+                    "resolve",
+                    session_id,
+                    hole_id,
+                    "test_value",
+                    "--json",
+                ]
+            )
             assert resolve_result.returncode == 0
 
     def test_cli_rich_output_mode(self, api_client):
         """Test that CLI produces rich output when --json is not specified."""
         # Create session without --json flag
-        result = run_cli([
-            "create",
-            "--prompt", "Test function",
-        ])
+        result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Test function",
+            ]
+        )
 
         assert result.returncode == 0
         # Rich output should contain formatted text (not JSON)
@@ -448,22 +512,28 @@ class TestCLISessionCommands:
 
     def test_cli_custom_api_url(self, api_client):
         """Test specifying custom API URL."""
-        result = run_cli([
-            "list",
-            "--api-url", "http://localhost:8000",
-            "--json",
-        ])
+        result = run_cli(
+            [
+                "list",
+                "--api-url",
+                "http://localhost:8000",
+                "--json",
+            ]
+        )
 
         assert result.returncode == 0
 
     def test_cli_resolution_types(self, api_client):
         """Test different resolution types."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Test",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Test",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 
@@ -472,14 +542,17 @@ class TestCLISessionCommands:
 
             # Test different resolution types
             for resolution_type in ["clarify_intent", "refine_signature", "add_constraint"]:
-                resolve_result = run_cli([
-                    "resolve",
-                    session_id,
-                    hole_id,
-                    "test_value",
-                    "--type", resolution_type,
-                    "--json",
-                ])
+                resolve_result = run_cli(
+                    [
+                        "resolve",
+                        session_id,
+                        hole_id,
+                        "test_value",
+                        "--type",
+                        resolution_type,
+                        "--json",
+                    ]
+                )
 
                 # Should succeed (or fail if hole already resolved)
                 assert resolve_result.returncode in [0, 1]
@@ -487,11 +560,14 @@ class TestCLISessionCommands:
     def test_cli_metadata_preservation(self, api_client):
         """Test that metadata is preserved in CLI operations."""
         # Create session
-        create_result = run_cli([
-            "create",
-            "--prompt", "Test function",
-            "--json",
-        ])
+        create_result = run_cli(
+            [
+                "create",
+                "--prompt",
+                "Test function",
+                "--json",
+            ]
+        )
         create_data = parse_json_output(create_result.stdout)
         session_id = create_data["session_id"]
 

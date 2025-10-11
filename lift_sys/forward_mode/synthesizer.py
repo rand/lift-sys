@@ -1,8 +1,9 @@
 """Forward mode constrained generation components."""
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Iterable, List, Optional
 
 from ..ir.models import IntermediateRepresentation, TypedHole
 from .controller_runtime import ControllerRuntime
@@ -15,9 +16,9 @@ class SynthesizerConfig:
     model_endpoint: str
     temperature: float = 0.0
     provider_type: str = "vllm"
-    schema_uri: Optional[str] = None
-    grammar_source: Optional[str] = None
-    controller_path: Optional[str] = None
+    schema_uri: str | None = None
+    grammar_source: str | None = None
+    controller_path: str | None = None
 
 
 @dataclass
@@ -26,7 +27,7 @@ class Constraint:
 
     name: str
     value: str
-    metadata: Dict[str, str] = field(default_factory=dict)
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 class CodeSynthesizer:
@@ -35,14 +36,14 @@ class CodeSynthesizer:
     def __init__(
         self,
         config: SynthesizerConfig,
-        runtime_factory: Optional[Callable[[SynthesizerConfig], ControllerRuntime]] = None,
+        runtime_factory: Callable[[SynthesizerConfig], ControllerRuntime] | None = None,
     ) -> None:
         self.config = config
         factory = runtime_factory or (lambda cfg: ControllerRuntime(cfg))
         self.runtime = factory(config)
 
-    def compile_constraints(self, ir: IntermediateRepresentation) -> List[Constraint]:
-        constraints: List[Constraint] = []
+    def compile_constraints(self, ir: IntermediateRepresentation) -> list[Constraint]:
+        constraints: list[Constraint] = []
         for assertion in ir.assertions:
             constraints.append(
                 Constraint(
@@ -55,7 +56,7 @@ class CodeSynthesizer:
             constraints.append(self._constraint_for_hole(hole))
         return constraints
 
-    def generate(self, ir: IntermediateRepresentation) -> Dict[str, object]:
+    def generate(self, ir: IntermediateRepresentation) -> dict[str, object]:
         constraints = self.compile_constraints(ir)
         payload = self.runtime.build_payload(ir, constraints)
         stream = list(self.runtime.stream(payload, constraints))

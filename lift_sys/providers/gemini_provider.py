@@ -1,8 +1,10 @@
 """Google Gemini provider implementation."""
+
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator, Dict, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 
@@ -18,14 +20,16 @@ class GeminiProvider(BaseProvider):
     def __init__(self) -> None:
         super().__init__(
             name="gemini",
-            capabilities=ProviderCapabilities(streaming=True, structured_output=True, reasoning=True),
+            capabilities=ProviderCapabilities(
+                streaming=True, structured_output=True, reasoning=True
+            ),
         )
-        self._client: Optional[httpx.AsyncClient] = None
-        self._access_token: Optional[str] = None
-        self._api_key: Optional[str] = None
-        self._project_id: Optional[str] = None
+        self._client: httpx.AsyncClient | None = None
+        self._access_token: str | None = None
+        self._api_key: str | None = None
+        self._project_id: str | None = None
 
-    async def initialize(self, credentials: Dict[str, Any]) -> None:
+    async def initialize(self, credentials: dict[str, Any]) -> None:
         self._access_token = credentials.get("access_token")
         self._api_key = credentials.get("api_key")
         self._project_id = credentials.get("project_id")
@@ -37,7 +41,7 @@ class GeminiProvider(BaseProvider):
         prompt: str,
         max_tokens: int = 1024,
         temperature: float = 0.7,
-        model: Optional[str] = None,
+        model: str | None = None,
         **_: Any,
     ) -> str:
         client = await self._ensure_client()

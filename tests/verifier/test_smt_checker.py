@@ -1,4 +1,5 @@
 """Unit tests covering the SMT-based verifier."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,7 +16,6 @@ from lift_sys.ir.models import (
     SigClause,
 )
 from lift_sys.verifier.smt_checker import SMTChecker
-
 
 pytestmark = pytest.mark.unit
 

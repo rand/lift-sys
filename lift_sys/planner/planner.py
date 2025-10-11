@@ -1,9 +1,11 @@
 """Conflict driven planner orchestrating reverse and forward workflows."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional
 
+from ..ir.models import IntermediateRepresentation
 from .conflict_learning import (
     Clause,
     ClauseStore,
@@ -11,7 +13,6 @@ from .conflict_learning import (
     extract_reason_literals,
 )
 from .plan import Plan, PlanStep, derive_plan
-from ..ir.models import IntermediateRepresentation
 
 
 @dataclass(slots=True)
@@ -19,9 +20,9 @@ class PlannerEvent:
     """Structured planner telemetry event."""
 
     type: str
-    data: Dict[str, object]
+    data: dict[str, object]
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {"type": self.type, "data": self.data}
 
 
@@ -29,18 +30,18 @@ class PlannerEvent:
 class PlannerStepResult:
     """Detailed result for a planner transition."""
 
-    next_steps: List[PlanStep]
-    learned_clauses: List[Clause]
-    backjump_target: Optional[int]
-    events: List[Dict[str, object]]
+    next_steps: list[PlanStep]
+    learned_clauses: list[Clause]
+    backjump_target: int | None
+    events: list[dict[str, object]]
 
 
 @dataclass
 class PlannerState:
-    completed: List[str] = field(default_factory=list)
-    conflicts: Dict[str, str] = field(default_factory=dict)
-    decision_levels: Dict[str, int] = field(default_factory=dict)
-    checkpoints: List[str] = field(default_factory=list)
+    completed: list[str] = field(default_factory=list)
+    conflicts: dict[str, str] = field(default_factory=dict)
+    decision_levels: dict[str, int] = field(default_factory=dict)
+    checkpoints: list[str] = field(default_factory=list)
 
 
 class Planner:
@@ -48,13 +49,13 @@ class Planner:
 
     def __init__(self) -> None:
         self.state = PlannerState()
-        self.current_plan: Optional[Plan] = None
-        self.current_ir: Optional[IntermediateRepresentation] = None
+        self.current_plan: Plan | None = None
+        self.current_ir: IntermediateRepresentation | None = None
         self.clauses = ClauseStore()
         self.graph = ImplicationGraph()
-        self._event_queue: List[PlannerEvent] = []
-        self._event_history: List[PlannerEvent] = []
-        self._current_step_events: List[PlannerEvent] = []
+        self._event_queue: list[PlannerEvent] = []
+        self._event_history: list[PlannerEvent] = []
+        self._current_step_events: list[PlannerEvent] = []
 
     def load_ir(self, ir) -> Plan:
         self.current_plan = derive_plan(ir)
@@ -66,30 +67,32 @@ class Planner:
         self._event_history.clear()
         return self.current_plan
 
-    def _record_event(self, event_type: str, data: Dict[str, object]) -> None:
+    def _record_event(self, event_type: str, data: dict[str, object]) -> None:
         event = PlannerEvent(type=event_type, data=data)
         self._current_step_events.append(event)
 
-    def _flush_events(self) -> List[Dict[str, object]]:
+    def _flush_events(self) -> list[dict[str, object]]:
         events = [event.to_dict() for event in self._current_step_events]
         self._event_history.extend(self._current_step_events)
         self._event_queue.extend(self._current_step_events)
         self._current_step_events = []
         return events
 
-    def consume_events(self) -> List[Dict[str, object]]:
+    def consume_events(self) -> list[dict[str, object]]:
         events = [event.to_dict() for event in self._event_queue]
         self._event_queue.clear()
         return events
 
-    def recent_events(self, limit: int = 25) -> List[Dict[str, object]]:
+    def recent_events(self, limit: int = 25) -> list[dict[str, object]]:
         return [event.to_dict() for event in self._event_history[-limit:]]
 
-    def _filter_next_steps(self, candidates: Iterable[PlanStep]) -> List[PlanStep]:
+    def _filter_next_steps(self, candidates: Iterable[PlanStep]) -> list[PlanStep]:
         active_literals = self.graph.assigned_literals()
-        filtered: List[PlanStep] = []
+        filtered: list[PlanStep] = []
         for step in candidates:
-            literals = self.current_plan.literals_for_step(step.identifier) if self.current_plan else []
+            literals = (
+                self.current_plan.literals_for_step(step.identifier) if self.current_plan else []
+            )
             if self.clauses.would_conflict(active_literals, literals):
                 continue
             filtered.append(step)
@@ -104,8 +107,8 @@ class Planner:
         if not self.current_plan:
             raise RuntimeError("Planner has no plan loaded")
         self._current_step_events = []
-        learned_clauses: List[Clause] = []
-        backjump_target: Optional[int] = None
+        learned_clauses: list[Clause] = []
+        backjump_target: int | None = None
         if success:
             self.state.completed.append(result)
             self.state.conflicts.pop(result, None)
@@ -130,9 +133,7 @@ class Planner:
             literals = self.current_plan.literals_for_step(result)
             blocking_literals = extract_reason_literals(reason)
             negative_blockers = [f"!{literal}" for literal in blocking_literals]
-            clause_literals = tuple(
-                dict.fromkeys(literals + negative_blockers)
-            )
+            clause_literals = tuple(dict.fromkeys(literals + negative_blockers))
             clause = Clause(literals=clause_literals, explanation=reason or "conflict")
             learned_clauses.append(clause)
             self.clauses.add(clause)
@@ -174,8 +175,8 @@ class Planner:
             events=events,
         )
 
-    def suggest_resolution(self) -> Dict[str, str]:
-        suggestions: Dict[str, str] = {}
+    def suggest_resolution(self) -> dict[str, str]:
+        suggestions: dict[str, str] = {}
         for node, reason in self.state.conflicts.items():
             suggestions[node] = f"Investigate {node}: {reason}"
         return suggestions

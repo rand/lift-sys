@@ -1,10 +1,11 @@
 """Deployment settings and IaC helpers for Modal automation."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 DEFAULT_SETTINGS_PATH = Path(__file__).with_name("deployment_settings.json")
 
@@ -15,11 +16,11 @@ class APISettings:
 
     replicas: int = 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"replicas": self.replicas}
 
     @classmethod
-    def from_mapping(cls, data: Dict[str, Any]) -> "APISettings":
+    def from_mapping(cls, data: dict[str, Any]) -> APISettings:
         return cls(replicas=int(data.get("replicas", 1)))
 
 
@@ -30,11 +31,11 @@ class VLLMSettings:
     concurrency: int = 4
     gpu: str = "A10G"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"concurrency": self.concurrency, "gpu": self.gpu}
 
     @classmethod
-    def from_mapping(cls, data: Dict[str, Any]) -> "VLLMSettings":
+    def from_mapping(cls, data: dict[str, Any]) -> VLLMSettings:
         return cls(
             concurrency=int(data.get("concurrency", 4)),
             gpu=str(data.get("gpu", "A10G")),
@@ -48,11 +49,11 @@ class DeploymentSettings:
     api: APISettings = field(default_factory=APISettings)
     vllm: VLLMSettings = field(default_factory=VLLMSettings)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"api": self.api.to_dict(), "vllm": self.vllm.to_dict()}
 
     @classmethod
-    def from_mapping(cls, data: Dict[str, Any]) -> "DeploymentSettings":
+    def from_mapping(cls, data: dict[str, Any]) -> DeploymentSettings:
         return cls(
             api=APISettings.from_mapping(data.get("api", {})),
             vllm=VLLMSettings.from_mapping(data.get("vllm", {})),

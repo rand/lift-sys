@@ -1,4 +1,5 @@
 """Integration tests for the FastAPI surface."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -7,7 +8,6 @@ import pytest
 
 from lift_sys.ir.models import IntermediateRepresentation
 from lift_sys.reverse_mode.lifter import RepositoryHandle
-
 
 pytestmark = pytest.mark.integration
 
@@ -40,7 +40,9 @@ def test_configure_endpoint_initialises_state(api_client, api_state) -> None:
     assert api_state.lifter is not None
 
 
-def test_reverse_endpoint_happy_path(api_client, api_state, sample_ir: IntermediateRepresentation) -> None:
+def test_reverse_endpoint_happy_path(
+    api_client, api_state, sample_ir: IntermediateRepresentation
+) -> None:
     configure_backend(api_client)
     assert api_state.lifter is not None
     api_state.lifter.repo = MagicMock()
@@ -66,7 +68,9 @@ def test_reverse_endpoint_rejects_when_unconfigured(api_client) -> None:
     assert response.status_code == 400
 
 
-def test_forward_endpoint_generates_payload(api_client, api_state, sample_ir: IntermediateRepresentation) -> None:
+def test_forward_endpoint_generates_payload(
+    api_client, api_state, sample_ir: IntermediateRepresentation
+) -> None:
     configure_backend(api_client)
     assert api_state.synthesizer is not None
 
@@ -119,7 +123,9 @@ def test_plan_endpoint_requires_plan(api_client) -> None:
     assert response.status_code == 404
 
 
-def test_plan_endpoint_returns_loaded_plan(api_client, api_state, sample_ir: IntermediateRepresentation) -> None:
+def test_plan_endpoint_returns_loaded_plan(
+    api_client, api_state, sample_ir: IntermediateRepresentation
+) -> None:
     configure_backend(api_client)
     assert api_state.lifter is not None
     api_state.lifter.repo = MagicMock()
@@ -142,7 +148,9 @@ def test_plan_endpoint_returns_loaded_plan(api_client, api_state, sample_ir: Int
     assert plan["recent_events"] == []
 
 
-def test_progress_socket_streams_planner_events(api_client, api_state, sample_ir: IntermediateRepresentation) -> None:
+def test_progress_socket_streams_planner_events(
+    api_client, api_state, sample_ir: IntermediateRepresentation
+) -> None:
     configure_backend(api_client)
     planner = api_state.planner
     planner.load_ir(sample_ir)

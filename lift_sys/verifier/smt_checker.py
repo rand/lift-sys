@@ -1,11 +1,12 @@
 """Z3 SMT solver integration for validating IR assertions."""
+
 from __future__ import annotations
 
 import ast
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict, Iterable, Tuple
 
-from z3 import And, BoolVal, Int, IntVal, Not, Or, Real, RealVal, Solver, is_true
+from z3 import And, BoolVal, IntVal, Not, Or, Real, RealVal, Solver
 
 from ..ir.models import AssertClause, IntermediateRepresentation
 
@@ -13,12 +14,12 @@ from ..ir.models import AssertClause, IntermediateRepresentation
 @dataclass
 class SMTResult:
     success: bool
-    model: Dict[str, str]
+    model: dict[str, str]
     reason: str | None = None
 
 
 class _ExpressionCompiler(ast.NodeVisitor):
-    def __init__(self, context: Dict[str, object]) -> None:
+    def __init__(self, context: dict[str, object]) -> None:
         self.context = context
 
     def visit_Name(self, node: ast.Name):  # noqa: D401
@@ -39,7 +40,7 @@ class _ExpressionCompiler(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare):
         left = self.visit(node.left)
         result = None
-        for comparator, op in zip(node.comparators, node.ops):
+        for comparator, op in zip(node.comparators, node.ops, strict=False):
             right = self.visit(comparator)
             comparison = self._apply_comparison(op, left, right)
             result = comparison if result is None else And(result, comparison)
@@ -99,9 +100,11 @@ class SMTChecker:
     def __init__(self) -> None:
         self.solver = Solver()
 
-    def verify(self, ir: IntermediateRepresentation, assumptions: Iterable[Tuple[str, float]] | None = None) -> SMTResult:
+    def verify(
+        self, ir: IntermediateRepresentation, assumptions: Iterable[tuple[str, float]] | None = None
+    ) -> SMTResult:
         self.solver.reset()
-        context: Dict[str, object] = {}
+        context: dict[str, object] = {}
         if assumptions:
             for name, value in assumptions:
                 context[name] = Real(name)
@@ -115,7 +118,11 @@ class SMTChecker:
         sat_result = self.solver.check()
         result_text = str(sat_result)
         success = result_text == "sat"
-        model = {str(d): str(self.solver.model()[d]) for d in self.solver.model().decls()} if success else {}
+        model = (
+            {str(d): str(self.solver.model()[d]) for d in self.solver.model().decls()}
+            if success
+            else {}
+        )
         if success:
             reason = None
         elif result_text == "unknown":

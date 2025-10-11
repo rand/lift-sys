@@ -1,17 +1,25 @@
 """Textual TUI entrypoint for lift-sys."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List
+from typing import Any
 
 import httpx
 from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.reactive import reactive
-from textual.widgets import Footer, Header, Input, Label, Static, TabbedContent, TabPane, Button, ListView, ListItem
-from textual.containers import Vertical, Horizontal
+from textual.widgets import (
+    Footer,
+    Header,
+    Input,
+    Label,
+    Static,
+    TabbedContent,
+    TabPane,
+)
 
-from lift_sys.client import SessionClient, PromptSession
+from lift_sys.client import PromptSession, SessionClient
 
 API_URL = "http://localhost:8000"
 
@@ -20,10 +28,10 @@ API_URL = "http://localhost:8000"
 class SessionState:
     endpoint: str = API_URL
     temperature: float = 0.0
-    repository: Optional[str] = None
-    ir: Optional[Dict[str, Any]] = None
-    active_session: Optional[PromptSession] = None
-    sessions: List[PromptSession] = None
+    repository: str | None = None
+    ir: dict[str, Any] | None = None
+    active_session: PromptSession | None = None
+    sessions: list[PromptSession] = None
 
     def __post_init__(self):
         if self.sessions is None:
@@ -61,7 +69,9 @@ class LiftSysApp(App):
         with TabbedContent():
             with TabPane("Configuration"):
                 yield Label("Model Endpoint")
-                self.endpoint_input = Input(value=self.state.endpoint, placeholder="http://localhost:8001")
+                self.endpoint_input = Input(
+                    value=self.state.endpoint, placeholder="http://localhost:8001"
+                )
                 yield self.endpoint_input
                 yield Label("Temperature")
                 self.temperature_input = Input(value=str(self.state.temperature))
@@ -108,9 +118,7 @@ class LiftSysApp(App):
     async def open_repo(self) -> None:
         identifier = self.repo_input.value
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{API_URL}/repos/open", json={"identifier": identifier}
-            )
+            response = await client.post(f"{API_URL}/repos/open", json={"identifier": identifier})
             response.raise_for_status()
         self.state.repository = identifier
         self.status_panel.message = f"Repository {identifier} opened"
@@ -123,7 +131,9 @@ class LiftSysApp(App):
                 return
             response.raise_for_status()
             plan = response.json()
-        rendered = "\n".join(f"- {step['identifier']}: {step['description']}" for step in plan["steps"])
+        rendered = "\n".join(
+            f"- {step['identifier']}: {step['description']}" for step in plan["steps"]
+        )
         self.plan_panel.update(rendered)
         self.status_panel.message = "Planner refreshed"
 
@@ -131,7 +141,7 @@ class LiftSysApp(App):
         """Action to list prompt refinement sessions."""
         await self.list_prompt_sessions()
 
-    async def watch_ir(self, ir: Dict[str, Any]) -> None:  # pragma: no cover - reactive hook
+    async def watch_ir(self, ir: dict[str, Any]) -> None:  # pragma: no cover - reactive hook
         self.ir_panel.update(str(ir))
 
     async def run_reverse(self, module: str) -> None:

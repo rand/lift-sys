@@ -1,13 +1,10 @@
 """Unit tests for prompt session models."""
-from __future__ import annotations
 
-from datetime import datetime
+from __future__ import annotations
 
 import pytest
 
 from lift_sys.ir.models import (
-    AssertClause,
-    EffectClause,
     HoleKind,
     IntentClause,
     IntermediateRepresentation,
@@ -98,7 +95,9 @@ class TestIRDraft:
             signature=SigClause(name="process", parameters=[], returns="void"),
         )
 
-        draft = IRDraft(version=1, ir=ir, validation_status="incomplete", ambiguities=["data_format"])
+        draft = IRDraft(
+            version=1, ir=ir, validation_status="incomplete", ambiguities=["data_format"]
+        )
 
         assert "data_format" in draft.ambiguities
         assert len(draft.get_unresolved_holes()) == 1

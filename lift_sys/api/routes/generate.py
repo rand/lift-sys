@@ -1,4 +1,5 @@
 """Generation endpoints exposing the hybrid orchestrator."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request

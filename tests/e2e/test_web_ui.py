@@ -1,4 +1,5 @@
 """Playwright-powered E2E tests for the web workflow."""
+
 from __future__ import annotations
 
 from pathlib import Path

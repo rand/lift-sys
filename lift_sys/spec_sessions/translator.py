@@ -1,9 +1,9 @@
 """Natural language to IR translation service."""
+
 from __future__ import annotations
 
-import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..forward_mode.synthesizer import CodeSynthesizer
 from ..ir.models import (
@@ -24,15 +24,15 @@ from .models import IRDraft
 class PromptToIRTranslator:
     """Converts natural language prompts to IR drafts with ambiguity detection."""
 
-    def __init__(self, synthesizer: Optional[CodeSynthesizer] = None, parser: Optional[IRParser] = None):
+    def __init__(self, synthesizer: CodeSynthesizer | None = None, parser: IRParser | None = None):
         self.synthesizer = synthesizer
         self.parser = parser or IRParser()
 
     def translate(
         self,
         prompt: str,
-        context: Optional[IntermediateRepresentation] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        context: IntermediateRepresentation | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> IRDraft:
         """
         Translate a natural language prompt into an IR draft.
@@ -70,7 +70,7 @@ class PromptToIRTranslator:
     def _translate_with_llm(
         self,
         prompt: str,
-        context: Optional[IntermediateRepresentation],
+        context: IntermediateRepresentation | None,
     ) -> IntermediateRepresentation:
         """Use LLM to translate prompt to IR structure."""
         # This would integrate with the controller runtime to generate structured IR
@@ -100,7 +100,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
     def _translate_rule_based(
         self,
         prompt: str,
-        context: Optional[IntermediateRepresentation],
+        context: IntermediateRepresentation | None,
     ) -> IntermediateRepresentation:
         """Rule-based translation for when LLM is not available."""
         if context:
@@ -148,7 +148,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
         # Default: generate generic name
         return "generated_function"
 
-    def _extract_parameters(self, prompt: str) -> List[Parameter]:
+    def _extract_parameters(self, prompt: str) -> list[Parameter]:
         """Extract parameters from prompt using heuristics."""
         parameters = []
 
@@ -169,7 +169,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
 
         return parameters
 
-    def _extract_return_type(self, prompt: str) -> Optional[str]:
+    def _extract_return_type(self, prompt: str) -> str | None:
         """Extract return type from prompt using heuristics."""
         patterns = [
             r"returns?\s+(?:a\s+)?(?:an\s+)?(\w+)(?:\s|$)",
@@ -182,12 +182,12 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
             if match:
                 ret_type = match.group(1)
                 # Filter out common non-type words
-                if ret_type.lower() not in ['a', 'an', 'the', 'type', 'value']:
+                if ret_type.lower() not in ["a", "an", "the", "type", "value"]:
                     return ret_type
 
         return None
 
-    def _extract_effects(self, prompt: str) -> List[EffectClause]:
+    def _extract_effects(self, prompt: str) -> list[EffectClause]:
         """Extract side effects from prompt."""
         effects = []
 
@@ -209,7 +209,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
 
         return effects
 
-    def _extract_assertions(self, prompt: str) -> List[AssertClause]:
+    def _extract_assertions(self, prompt: str) -> list[AssertClause]:
         """Extract assertions from prompt."""
         assertions = []
 
@@ -235,9 +235,9 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
         self,
         ir: IntermediateRepresentation,
         original_prompt: str,
-    ) -> List[TypedHole]:
+    ) -> list[TypedHole]:
         """Detect ambiguous or under-specified parts of the IR."""
-        holes: List[TypedHole] = []
+        holes: list[TypedHole] = []
 
         # Check for missing parameter types
         for param in ir.signature.parameters:
@@ -277,8 +277,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
         if len(ir.assertions) == 0:
             # Look for numeric types in parameters
             has_numeric = any(
-                param.type_hint in ["int", "float", "number"]
-                for param in ir.signature.parameters
+                param.type_hint in ["int", "float", "number"] for param in ir.signature.parameters
             )
             if has_numeric:
                 holes.append(
@@ -308,7 +307,7 @@ Mark any ambiguous or unclear aspects by including holes in the appropriate sect
     def _inject_holes(
         self,
         ir: IntermediateRepresentation,
-        holes: List[TypedHole],
+        holes: list[TypedHole],
     ) -> IntermediateRepresentation:
         """Inject typed holes into appropriate IR clauses."""
         # Group holes by kind

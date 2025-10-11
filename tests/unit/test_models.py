@@ -8,18 +8,19 @@ Tests cover:
 - TypedHole handling
 - Edge cases
 """
+
 import pytest
 
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
-    IntentClause,
-    SigClause,
-    Parameter,
     AssertClause,
     EffectClause,
-    TypedHole,
     HoleKind,
+    IntentClause,
+    IntermediateRepresentation,
     Metadata,
+    Parameter,
+    SigClause,
+    TypedHole,
 )
 
 
@@ -126,7 +127,9 @@ class TestIRModels:
         assert len(restored_ir.effects) == len(simple_ir.effects)
 
         # Check parameter details
-        for orig_param, restored_param in zip(simple_ir.signature.parameters, restored_ir.signature.parameters):
+        for orig_param, restored_param in zip(
+            simple_ir.signature.parameters, restored_ir.signature.parameters, strict=False
+        ):
             assert orig_param.name == restored_param.name
             assert orig_param.type_hint == restored_param.type_hint
 

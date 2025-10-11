@@ -1,11 +1,12 @@
 """Infrastructure-as-code automation helpers for Modal deployments."""
+
 from __future__ import annotations
 
 import argparse
 import shutil
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Optional
 
 from .deployment_settings import DeploymentSettings, load_settings, save_settings
 
@@ -23,11 +24,11 @@ def _modal_cli_path() -> str:
     return path
 
 
-def build_deploy_command(force: bool = False, modal_app: Path | None = None) -> List[str]:
+def build_deploy_command(force: bool = False, modal_app: Path | None = None) -> list[str]:
     """Construct the modal deploy command used for rollouts."""
 
     app_path = modal_app or Path("lift_sys/modal_app.py")
-    command: List[str] = ["modal", "deploy"]
+    command: list[str] = ["modal", "deploy"]
     if force:
         command.append("--force")
     command.append(str(app_path))
@@ -60,8 +61,8 @@ def update(modal_app: Path | None = None) -> None:
 
 def scale(
     *,
-    api_replicas: Optional[int],
-    vllm_concurrency: Optional[int],
+    api_replicas: int | None,
+    vllm_concurrency: int | None,
     apply: bool,
     settings_path: Path | None = None,
     modal_app: Path | None = None,
@@ -94,7 +95,7 @@ def scale(
     return settings
 
 
-def cli(argv: Optional[Iterable[str]] = None) -> None:
+def cli(argv: Iterable[str] | None = None) -> None:
     """Entry point for `python -m lift_sys.infrastructure.iac`."""
 
     parser = argparse.ArgumentParser(description="lift-sys Modal IaC automation")
@@ -107,7 +108,9 @@ def cli(argv: Optional[Iterable[str]] = None) -> None:
     update_parser.set_defaults(func=lambda args: update())
 
     scale_parser = subparsers.add_parser("scale", help="Adjust worker counts and redeploy")
-    scale_parser.add_argument("--api-replicas", type=int, default=None, help="Number of API worker replicas")
+    scale_parser.add_argument(
+        "--api-replicas", type=int, default=None, help="Number of API worker replicas"
+    )
     scale_parser.add_argument(
         "--vllm-concurrency",
         type=int,

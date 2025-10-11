@@ -1,9 +1,10 @@
 """Encrypted token storage utilities."""
+
 from __future__ import annotations
 
 import json
+from collections.abc import MutableMapping
 from dataclasses import dataclass
-from typing import Dict, MutableMapping, Optional
 
 from cryptography.fernet import Fernet
 
@@ -13,7 +14,7 @@ class StoredToken:
     """Represents a stored provider token."""
 
     provider: str
-    payload: Dict[str, object]
+    payload: dict[str, object]
 
 
 class TokenStore:
@@ -32,12 +33,12 @@ class TokenStore:
     def _key(self, user_id: str, provider: str) -> str:
         return f"{user_id}:{provider}"
 
-    def save_tokens(self, user_id: str, provider: str, payload: Dict[str, object]) -> None:
+    def save_tokens(self, user_id: str, provider: str, payload: dict[str, object]) -> None:
         serialized = json.dumps(payload).encode("utf-8")
         token = self._fernet.encrypt(serialized).decode("utf-8")
         self._storage[self._key(user_id, provider)] = token
 
-    def load_tokens(self, user_id: str, provider: str) -> Optional[Dict[str, object]]:
+    def load_tokens(self, user_id: str, provider: str) -> dict[str, object] | None:
         token = self._storage.get(self._key(user_id, provider))
         if not token:
             return None

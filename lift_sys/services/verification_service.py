@@ -1,7 +1,8 @@
 """Verification pipeline service."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .orchestrator import HybridOrchestrator, Task
 
@@ -12,7 +13,9 @@ class VerificationService:
     def __init__(self, orchestrator: HybridOrchestrator) -> None:
         self._orchestrator = orchestrator
 
-    async def verify(self, prompt: str, schema: Dict[str, Any], *, temperature: float = 0.2) -> Dict[str, Any]:
+    async def verify(
+        self, prompt: str, schema: dict[str, Any], *, temperature: float = 0.2
+    ) -> dict[str, Any]:
         task = Task(
             prompt=prompt,
             temperature=temperature,

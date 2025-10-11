@@ -7,11 +7,9 @@ Tests cover:
 - Edge cases (empty files, comments only)
 - Round-trip serialization
 """
-import pytest
-from lark.exceptions import UnexpectedToken, UnexpectedCharacters
 
-from lift_sys.ir.parser import IRParser
-from lift_sys.ir.models import HoleKind, IntermediateRepresentation
+import pytest
+from lark.exceptions import UnexpectedCharacters, UnexpectedToken
 
 
 @pytest.mark.unit

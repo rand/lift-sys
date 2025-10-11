@@ -8,14 +8,14 @@ Tests cover:
 - Integration with SessionClient
 - Error handling
 """
+
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
-from lift_sys.client import PromptSession, SessionListResponse, IRDraft
+from lift_sys.client import IRDraft, PromptSession, SessionListResponse
 from lift_sys.main import LiftSysApp, SessionState
 
 
@@ -108,9 +108,7 @@ class TestTUISessionManagement:
 
         # Mock session client to raise error
         with patch.object(
-            app.session_client,
-            "acreate_session",
-            side_effect=Exception("API error")
+            app.session_client, "acreate_session", side_effect=Exception("API error")
         ):
             app.prompt_input.value = "Test function"
 
@@ -207,11 +205,7 @@ class TestTUISessionManagement:
         )
 
         # Mock session client to raise error
-        with patch.object(
-            app.session_client,
-            "alist_sessions",
-            side_effect=Exception("API error")
-        ):
+        with patch.object(app.session_client, "alist_sessions", side_effect=Exception("API error")):
             # List sessions (should handle error gracefully)
             await app.list_prompt_sessions()
 
@@ -424,9 +418,10 @@ class TestTUISessionManagement:
         # Mock session list
         mock_list_response = SessionListResponse(sessions=[mock_session])
 
-        with patch.object(app.session_client, "acreate_session", return_value=mock_session), \
-             patch.object(app.session_client, "alist_sessions", return_value=mock_list_response):
-
+        with (
+            patch.object(app.session_client, "acreate_session", return_value=mock_session),
+            patch.object(app.session_client, "alist_sessions", return_value=mock_list_response),
+        ):
             # Step 1: Create session
             app.prompt_input.value = "Workflow test"
             await app.create_prompt_session()

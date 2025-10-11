@@ -1,4 +1,5 @@
 """Unit tests for the textual IR parser."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,7 +11,6 @@ from lark.exceptions import LarkError
 
 from lift_sys.ir.models import AssertClause, HoleKind, TypedHole
 from lift_sys.ir.parser import IRParser
-
 
 pytestmark = pytest.mark.unit
 
@@ -34,7 +34,7 @@ def test_parser_raises_on_invalid_syntax(parser: IRParser) -> None:
 def test_parser_handles_typed_hole_correctly(parser: IRParser) -> None:
     source = (
         "ir hole_demo {\n"
-        "  intent: Demonstrate typed hole { <?my_hole: Predicate = \"Ensure\" @intent?> }\n"
+        '  intent: Demonstrate typed hole { <?my_hole: Predicate = "Ensure" @intent?> }\n'
         "  signature: hole_demo() -> int\n"
         "}\n"
     )

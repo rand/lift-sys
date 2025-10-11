@@ -7,8 +7,8 @@ Tests cover:
 - Request/response formats
 - State management
 """
+
 import pytest
-from fastapi.testclient import TestClient
 
 from lift_sys.services.github_repository import RepositoryAccessError
 
@@ -45,7 +45,7 @@ class TestAPIEndpoints:
                 "provider_type": "vllm",
                 "schema_uri": "memory://schema.json",
                 "grammar_source": "start -> expr",
-            }
+            },
         )
 
         assert response.status_code == 200
@@ -543,9 +543,7 @@ class TestAPIEndpoints:
 
         # If there are no ambiguities, we can finalize
         if not data["ambiguities"]:
-            finalize_response = api_client.post(
-                f"/spec-sessions/{session_id}/finalize"
-            )
+            finalize_response = api_client.post(f"/spec-sessions/{session_id}/finalize")
 
             assert finalize_response.status_code == 200
             finalized_data = finalize_response.json()
@@ -565,9 +563,7 @@ class TestAPIEndpoints:
 
         # Try to finalize with holes
         if data["ambiguities"]:
-            finalize_response = api_client.post(
-                f"/spec-sessions/{session_id}/finalize"
-            )
+            finalize_response = api_client.post(f"/spec-sessions/{session_id}/finalize")
 
             assert finalize_response.status_code == 400
             error_data = finalize_response.json()

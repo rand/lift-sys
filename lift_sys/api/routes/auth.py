@@ -1,4 +1,5 @@
 """Authentication endpoints for provider OAuth flows."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request

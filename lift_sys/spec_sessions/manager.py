@@ -1,7 +1,6 @@
 """Session manager for orchestrating prompt refinement workflows."""
-from __future__ import annotations
 
-from typing import Dict, List, Optional
+from __future__ import annotations
 
 from ..ir.models import IntermediateRepresentation
 from ..planner.planner import Planner
@@ -19,7 +18,7 @@ class SpecSessionManager:
         store: SessionStore,
         translator: PromptToIRTranslator,
         planner: Planner,
-        verifier: Optional[SMTChecker] = None,
+        verifier: SMTChecker | None = None,
     ):
         self.store = store
         self.translator = translator
@@ -29,7 +28,7 @@ class SpecSessionManager:
     def create_from_prompt(
         self,
         prompt: str,
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ) -> PromptSession:
         """
         Create a new session from a natural language prompt.
@@ -45,11 +44,13 @@ class SpecSessionManager:
         draft = self.translator.translate(prompt, metadata=metadata)
 
         # Create revision record
-        revision = PromptRevision.from_dict({
-            "timestamp": draft.created_at,
-            "content": prompt,
-            "revision_type": "initial",
-        })
+        revision = PromptRevision.from_dict(
+            {
+                "timestamp": draft.created_at,
+                "content": prompt,
+                "revision_type": "initial",
+            }
+        )
 
         # Create session
         session = PromptSession.create_new(
@@ -71,7 +72,7 @@ class SpecSessionManager:
     def create_from_reverse_mode(
         self,
         ir: IntermediateRepresentation,
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ) -> PromptSession:
         """
         Create a session from a reverse-mode lifted IR.
@@ -112,11 +113,11 @@ class SpecSessionManager:
 
         return session
 
-    def get_session(self, session_id: str) -> Optional[PromptSession]:
+    def get_session(self, session_id: str) -> PromptSession | None:
         """Retrieve a session by ID."""
         return self.store.get(session_id)
 
-    def list_active_sessions(self) -> List[PromptSession]:
+    def list_active_sessions(self) -> list[PromptSession]:
         """List all active sessions."""
         return self.store.list_active()
 
@@ -158,12 +159,14 @@ class SpecSessionManager:
         session.add_resolution(resolution)
 
         # Create revision record
-        revision = PromptRevision.from_dict({
-            "timestamp": resolution.timestamp,
-            "content": resolution_text,
-            "revision_type": "hole_fill",
-            "target_hole": hole_id,
-        })
+        revision = PromptRevision.from_dict(
+            {
+                "timestamp": resolution.timestamp,
+                "content": resolution_text,
+                "revision_type": "hole_fill",
+                "target_hole": hole_id,
+            }
+        )
         session.add_revision(revision)
 
         # Apply resolution to create new draft
@@ -243,7 +246,7 @@ class SpecSessionManager:
 
         return draft.ir
 
-    def get_assists(self, session_id: str) -> List[Dict[str, str]]:
+    def get_assists(self, session_id: str) -> list[dict[str, str]]:
         """
         Get actionable suggestions for resolving holes.
 
@@ -261,25 +264,29 @@ class SpecSessionManager:
         for hole in session.current_draft.ir.typed_holes():
             # Generate context-aware suggestions
             suggestion = self._generate_suggestion(hole, session.current_draft.ir)
-            assists.append({
-                "hole_id": hole.identifier,
-                "hole_kind": hole.kind.value,
-                "suggestion": suggestion,
-                "description": hole.description,
-            })
+            assists.append(
+                {
+                    "hole_id": hole.identifier,
+                    "hole_kind": hole.kind.value,
+                    "suggestion": suggestion,
+                    "description": hole.description,
+                }
+            )
 
         return assists
 
-    def _verify_assertions(self, ir: IntermediateRepresentation) -> List[Dict]:
+    def _verify_assertions(self, ir: IntermediateRepresentation) -> list[dict]:
         """Verify IR assertions using SMT checker."""
         results = []
         for assertion in ir.assertions:
             result = self.verifier.verify(assertion.predicate)
-            results.append({
-                "predicate": assertion.predicate,
-                "status": result.status,
-                "model": result.model if hasattr(result, "model") else None,
-            })
+            results.append(
+                {
+                    "predicate": assertion.predicate,
+                    "status": result.status,
+                    "model": result.model if hasattr(result, "model") else None,
+                }
+            )
         return results
 
     def _generate_suggestion(self, hole, ir: IntermediateRepresentation) -> str:
@@ -303,8 +310,7 @@ class SpecSessionManager:
         elif hole.kind == HoleKind.ASSERTION:
             # Check for numeric parameters
             numeric_params = [
-                p.name for p in ir.signature.parameters
-                if p.type_hint in ["int", "float", "number"]
+                p.name for p in ir.signature.parameters if p.type_hint in ["int", "float", "number"]
             ]
             if numeric_params:
                 examples = ", ".join(f"{p} > 0" for p in numeric_params[:2])

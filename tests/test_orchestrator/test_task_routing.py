@@ -13,7 +13,9 @@ from lift_sys.services.orchestrator import HybridOrchestrator, Task
 
 class StubExternalProvider(BaseProvider):
     def __init__(self) -> None:
-        super().__init__("stub", ProviderCapabilities(streaming=True, structured_output=False, reasoning=True))
+        super().__init__(
+            "stub", ProviderCapabilities(streaming=True, structured_output=False, reasoning=True)
+        )
         self.calls: list[str] = []
 
     async def initialize(self, credentials: dict) -> None:  # pragma: no cover - unused path
@@ -23,10 +25,14 @@ class StubExternalProvider(BaseProvider):
         self.calls.append(prompt)
         return f"external:{prompt}"
 
-    async def generate_stream(self, prompt: str, **kwargs: dict):  # pragma: no cover - unused in tests
+    async def generate_stream(
+        self, prompt: str, **kwargs: dict
+    ):  # pragma: no cover - unused in tests
         yield await self.generate_text(prompt, **kwargs)
 
-    async def generate_structured(self, prompt: str, schema: dict, **kwargs: dict):  # pragma: no cover
+    async def generate_structured(
+        self, prompt: str, schema: dict, **kwargs: dict
+    ):  # pragma: no cover
         raise NotImplementedError
 
     async def check_health(self) -> bool:
@@ -47,7 +53,9 @@ async def local_provider() -> LocalVLLMProvider:
         schema = payload["schema"]
         return json.dumps({"prompt": prompt, "schema": schema})
 
-    provider = LocalVLLMProvider(structured_runner=structured_runner, text_runner=lambda p, _: asyncio.sleep(0, result=p))
+    provider = LocalVLLMProvider(
+        structured_runner=structured_runner, text_runner=lambda p, _: asyncio.sleep(0, result=p)
+    )
     await provider.initialize({})
     return provider
 
@@ -56,7 +64,9 @@ async def local_provider() -> LocalVLLMProvider:
 async def test_structured_task_routes_to_local(local_provider: LocalVLLMProvider) -> None:
     external = StubExternalProvider()
     orchestrator = HybridOrchestrator(external, local_provider)
-    task = Task(prompt="generate", requires_constrained_output=True, output_schema={"type": "object"})
+    task = Task(
+        prompt="generate", requires_constrained_output=True, output_schema={"type": "object"}
+    )
     result = await orchestrator.execute_task(task)
     assert result.provider == "local"
     assert "schema" in result.content

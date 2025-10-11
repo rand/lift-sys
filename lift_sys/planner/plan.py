@@ -1,8 +1,9 @@
 """Static representation of verification and synthesis plans."""
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional
 
 from ..ir.models import IntermediateRepresentation
 
@@ -11,10 +12,10 @@ from ..ir.models import IntermediateRepresentation
 class PlanStep:
     identifier: str
     description: str
-    prerequisites: List[str] = field(default_factory=list)
-    metadata: Dict[str, str] = field(default_factory=dict)
-    controllers: List[str] = field(default_factory=list)
-    obligations: List[str] = field(default_factory=list)
+    prerequisites: list[str] = field(default_factory=list)
+    metadata: dict[str, str] = field(default_factory=dict)
+    controllers: list[str] = field(default_factory=list)
+    obligations: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -22,9 +23,9 @@ class DecisionLiteral:
     identifier: str
     literal_type: str
     obligation: str
-    steps: List[str] = field(default_factory=list)
+    steps: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "identifier": self.identifier,
             "type": self.literal_type,
@@ -37,10 +38,10 @@ class DecisionLiteral:
 class Plan:
     """Immutable workflow representation derived from the IR."""
 
-    steps: List[PlanStep]
-    goals: List[str] = field(default_factory=list)
-    decision_literals: Dict[str, DecisionLiteral] = field(init=False, default_factory=dict)
-    _step_index: Dict[str, PlanStep] = field(init=False, default_factory=dict)
+    steps: list[PlanStep]
+    goals: list[str] = field(default_factory=list)
+    decision_literals: dict[str, DecisionLiteral] = field(init=False, default_factory=dict)
+    _step_index: dict[str, PlanStep] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         self._step_index = {step.identifier: step for step in self.steps}
@@ -74,16 +75,16 @@ class Plan:
                 step.obligations.append(literal_id)
             step.obligations = list(dict.fromkeys(step.obligations))
 
-    def adjacency(self) -> Dict[str, List[str]]:
-        mapping: Dict[str, List[str]] = {step.identifier: [] for step in self.steps}
+    def adjacency(self) -> dict[str, list[str]]:
+        mapping: dict[str, list[str]] = {step.identifier: [] for step in self.steps}
         for step in self.steps:
             for dependency in step.prerequisites:
                 mapping.setdefault(dependency, []).append(step.identifier)
         return mapping
 
-    def next_steps(self, completed: Iterable[str]) -> List[PlanStep]:
+    def next_steps(self, completed: Iterable[str]) -> list[PlanStep]:
         completed_set = set(completed)
-        ready: List[PlanStep] = []
+        ready: list[PlanStep] = []
         for step in self.steps:
             if step.identifier in completed_set:
                 continue
@@ -94,7 +95,7 @@ class Plan:
     def step_for(self, identifier: str) -> PlanStep:
         return self._step_index[identifier]
 
-    def literals_for_step(self, identifier: str) -> List[str]:
+    def literals_for_step(self, identifier: str) -> list[str]:
         return list(self.step_for(identifier).obligations)
 
 

@@ -1,8 +1,8 @@
 """Tests for the Modal IaC automation helpers."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -21,9 +21,11 @@ def test_build_deploy_command_with_force(tmp_path: Path) -> None:
     assert command == ["modal", "deploy", "--force", str(custom_app)]
 
 
-def test_scale_updates_settings_and_applies(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scale_updates_settings_and_applies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     settings_path = tmp_path / "deployment_settings.json"
-    calls: List[str] = []
+    calls: list[str] = []
 
     monkeypatch.setattr(iac, "update", lambda modal_app=None: calls.append("update"))
 
@@ -45,7 +47,7 @@ def test_scale_updates_settings_and_applies(tmp_path: Path, monkeypatch: pytest.
 
 
 def test_scale_skips_when_no_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: List[str] = []
+    calls: list[str] = []
     monkeypatch.setattr(iac, "update", lambda modal_app=None: calls.append("update"))
 
     result = iac.scale(

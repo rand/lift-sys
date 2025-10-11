@@ -5,13 +5,14 @@ Tests cover:
 - SessionState structure
 - Method existence and signatures
 """
+
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from lift_sys.client import PromptSession, SessionListResponse, IRDraft
+from lift_sys.client import IRDraft, PromptSession, SessionListResponse
 from lift_sys.main import LiftSysApp, SessionState
 
 
@@ -143,11 +144,7 @@ class TestTUISessionMethods:
             metadata={},
         )
 
-        with patch.object(
-            app.session_client,
-            "acreate_session",
-            return_value=mock_session
-        ):
+        with patch.object(app.session_client, "acreate_session", return_value=mock_session):
             # Set prompt value (note: widgets may not be fully initialized)
             if hasattr(app, "prompt_input"):
                 app.prompt_input.value = "Test prompt"
@@ -179,11 +176,14 @@ class TestTUISessionMethods:
         ]
 
         # Mock the status_panel to avoid widget context issues
-        with patch.object(
-            app.session_client,
-            "alist_sessions",
-            return_value=SessionListResponse(sessions=mock_sessions)
-        ), patch.object(app, "status_panel", create=True) as mock_status:
+        with (
+            patch.object(
+                app.session_client,
+                "alist_sessions",
+                return_value=SessionListResponse(sessions=mock_sessions),
+            ),
+            patch.object(app, "status_panel", create=True) as mock_status,
+        ):
             mock_status.message = ""
 
             await app.list_prompt_sessions()

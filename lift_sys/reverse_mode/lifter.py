@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import shutil
+import tempfile
 from typing import Dict, Iterable, List, Tuple
 
 from git import Repo
+from git.exc import GitCommandError
 
 from ..ir.models import (
     AssertClause,
@@ -32,6 +35,12 @@ class LifterConfig:
     run_codeql: bool = True
     run_daikon: bool = True
     run_stack_graphs: bool = True
+@dataclass
+class RepositoryHandle:
+    identifier: str
+    workspace_path: Path | None = None
+    archive_path: Path | None = None
+    branch: str | None = None
 
 
 class SpecificationLifter:
@@ -43,12 +52,44 @@ class SpecificationLifter:
         self.stack_graphs = StackGraphAnalyzer()
         self.progress_log: List[str] = []
 
-    def load_repository(self, path: str) -> Repo:
-        repo = Repo(path)
+    def load_repository(self, source: str | Path | RepositoryHandle) -> Repo:
+        """Load a repository from a managed workspace or streamed archive."""
+
+        if isinstance(source, RepositoryHandle):
+            repo = self._load_from_handle(source)
+        else:
+            repo = Repo(str(source))
         if repo.bare:
             raise ValueError("Repository is bare")
         self.repo = repo
         return repo
+
+    def _load_from_handle(self, handle: RepositoryHandle) -> Repo:
+        if handle.workspace_path:
+            repo_path = Path(handle.workspace_path)
+        elif handle.archive_path:
+            repo_path = Path(tempfile.mkdtemp(prefix="lift_repo_"))
+            shutil.unpack_archive(str(handle.archive_path), repo_path)
+        else:
+            raise ValueError("Repository handle missing workspace or archive path")
+
+        if (repo_path / ".git").exists():
+            repo = Repo(str(repo_path))
+        else:
+            repo = Repo.init(repo_path)
+        if handle.branch:
+            self._checkout_branch(repo, handle.branch)
+        return repo
+
+    def _checkout_branch(self, repo: Repo, branch: str) -> None:
+        try:
+            repo.git.checkout(branch)
+        except GitCommandError:
+            if "origin" in repo.remotes:
+                repo.remotes.origin.fetch(branch)
+                repo.git.checkout("-B", branch, f"origin/{branch}")
+            else:
+                raise
 
     def lift(self, target_module: str) -> IntermediateRepresentation:
         if not self.repo:

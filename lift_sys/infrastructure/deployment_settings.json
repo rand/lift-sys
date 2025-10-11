@@ -1,0 +1,9 @@
+{
+  "api": {
+    "replicas": 1
+  },
+  "vllm": {
+    "concurrency": 4,
+    "gpu": "A10G"
+  }
+}

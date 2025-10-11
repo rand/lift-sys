@@ -6,7 +6,8 @@ import json
 import logging
 import os
 from collections import deque
-from datetime import datetime
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Optional
 
@@ -120,7 +121,7 @@ class AppState:
                 "scope": "planner",
                 "message": "Planner ready",
                 "status": "idle",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         )
 
@@ -159,7 +160,7 @@ class AppState:
 
     async def publish_progress(self, event: Dict[str, object]) -> Dict[str, object]:
         payload = dict(event)
-        payload.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
+        payload.setdefault("timestamp", datetime.now(timezone.utc).isoformat() + "Z")
         self.progress_log.append(payload)
         for queue in list(self._progress_subscribers):
             try:
@@ -235,8 +236,10 @@ async def _initialize_providers_with_tokens(
             )
 
 
-@app.on_event("startup")
-async def configure_hybrid_runtime() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for FastAPI app startup and shutdown."""
+    # Startup
     token_key = os.getenv("LIFT_SYS_TOKEN_KEY")
     encryption_key = token_key.encode("utf-8") if token_key else TokenStore.generate_key()
     token_storage: Dict[str, str] = {}
@@ -285,6 +288,14 @@ async def configure_hybrid_runtime() -> None:
     app.state.github_repositories = GitHubRepositoryClient(
         token_store, workspace_root=workspace_root
     )
+
+    yield  # App runs during this yield
+
+    # Shutdown (add cleanup code here if needed in future)
+
+
+# Assign lifespan to app router
+app.router.lifespan_context = lifespan
 
 
 @app.get("/")
@@ -461,7 +472,7 @@ async def reverse(
     # Record lifter progress checkpoints in planner
     for checkpoint in STATE.lifter.progress_log:
         STATE.planner.record_checkpoint(checkpoint)
-    now = datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(timezone.utc).isoformat() + "Z"
     progress = [
         {
             "id": "codeql_scan",
@@ -913,7 +924,7 @@ async def websocket_emitter() -> AsyncIterator[str]:
                 yield json.dumps(event)
             except asyncio.TimeoutError:
                 # Send heartbeat every 5 seconds
-                heartbeat = {"type": "heartbeat", "timestamp": datetime.utcnow().isoformat() + "Z"}
+                heartbeat = {"type": "heartbeat", "timestamp": datetime.now(timezone.utc).isoformat() + "Z"}
                 yield json.dumps(heartbeat)
     finally:
         STATE.unsubscribe_progress(queue)

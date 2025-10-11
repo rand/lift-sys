@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Optional
 
@@ -33,8 +34,15 @@ console = Console()
 
 
 def get_client(api_url: str = "http://localhost:8000") -> SessionClient:
-    """Get configured session client."""
-    return SessionClient(base_url=api_url)
+    """Get configured session client with automatic demo mode detection."""
+    headers = {}
+
+    # Auto-detect demo mode from environment variable
+    if os.getenv("LIFT_SYS_ENABLE_DEMO_USER_HEADER") == "1":
+        demo_user = os.getenv("LIFT_SYS_DEMO_USER", "cli-user")
+        headers["x-demo-user"] = demo_user
+
+    return SessionClient(base_url=api_url, headers=headers if headers else None)
 
 
 @app.command("create")

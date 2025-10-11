@@ -1,6 +1,7 @@
 """Shared pytest fixtures for the lift-sys test suite."""
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Iterator, Generator
 from unittest.mock import Mock
 
 import pytest
+
+os.environ.setdefault("LIFT_SYS_ENABLE_DEMO_USER_HEADER", "1")
 
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient

@@ -19,6 +19,12 @@ _SESSION_COOKIE = "lift_sys_session"
 _REDIRECT_KEY = "post_auth_redirect"
 
 
+def _is_truthy(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 class AuthSettings:
     """Runtime configuration for OAuth providers."""
 
@@ -28,6 +34,7 @@ class AuthSettings:
     github_client_secret: Optional[str]
     callback_base_url: str
     session_secret: str
+    enable_demo_user_header: bool
 
     def __init__(self) -> None:
         self.google_client_id = os.getenv("GOOGLE_CLIENT_ID")
@@ -45,6 +52,9 @@ class AuthSettings:
             LOGGER.warning(
                 "LIFT_SYS_SESSION_SECRET not configured; using ephemeral secret."
             )
+        self.enable_demo_user_header = _is_truthy(
+            os.getenv("LIFT_SYS_ENABLE_DEMO_USER_HEADER")
+        )
 
 
 class AuthContext:
@@ -114,6 +124,11 @@ def configure_auth(app: FastAPI) -> APIRouter:
 
     context = AuthContext(settings)
     app.state.auth_context = context
+    app.state.allow_demo_user_header = settings.enable_demo_user_header
+    if settings.enable_demo_user_header:
+        LOGGER.warning(
+            "x-demo-user override enabled via LIFT_SYS_ENABLE_DEMO_USER_HEADER"
+        )
 
     router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -217,11 +232,15 @@ async def _resolve_profile(
 def require_authenticated_user(request: Request) -> UserIdentity:
     """FastAPI dependency that enforces an authenticated session."""
 
-    demo_user = request.headers.get("x-demo-user")
-    if demo_user:
-        user = UserIdentity(id=f"demo:{demo_user}", provider="internal", name=demo_user)
-        request.state.user_id = user.id
-        return user
+    allow_demo_override = getattr(request.app.state, "allow_demo_user_header", False)
+    if allow_demo_override:
+        demo_user = request.headers.get("x-demo-user")
+        if demo_user:
+            user = UserIdentity(
+                id=f"demo:{demo_user}", provider="internal", name=demo_user
+            )
+            request.state.user_id = user.id
+            return user
 
     user_data = request.session.get("user")
     if not user_data:

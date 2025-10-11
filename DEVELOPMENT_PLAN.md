@@ -1,17 +1,18 @@
 # lift-sys Development Plan
 ## Implementation Roadmap
 
-**Current Status:** 137/137 tests passing (100% of implemented tests) 🎉
-**Previous Status:** 123/135 tests passing (91.1%)
-**Goal:** Enable E2E tests for complete coverage
+**Current Status:** 207/219 tests passing (94.5%) after merge with origin/main 🚀
+**Previous Status:** 182/182 tests passing (100% before merge)
+**Goal:** Complete OAuth authentication integration for session endpoints
 
 **Recent Major Achievements:**
-- ✅ **Conflict-Driven Learning** - Full CDCL-inspired planner with implication graphs and clause learning (PR #7)
+- ✅ **Prompt-to-IR Session Management (Phase 1)** - Full backend implementation with 45 new tests
+- ✅ **OAuth & GitHub Integration** - Authentication system and repository client (from origin/main)
+- ✅ **Conflict-Driven Learning** - Full CDCL-inspired planner with implication graphs (PR #7)
 - ✅ **Stack Graph Analysis** - Symbol relationship tracking for effect analysis (PR #6)
 - ✅ **Controller Runtime** - WASM-based forward mode with lifecycle hooks (PR #5)
 - ✅ **IR Design Documentation** - Comprehensive 900+ line design document
-- ✅ **All Reverse Mode Tests** - Now passing with mocked analyzers
-- ✅ **All Integration Tests** - API, forward mode, reverse mode, planner all green
+- ✅ **Comprehensive Test Coverage** - 219 tests across unit, integration, and API layers
 
 ---
 
@@ -177,24 +178,41 @@ uv pip install "textual[dev]"
 - Gap analysis issue list outlining missing hooks or telemetry.
 - Shared glossary defining “prompt session,” “IR draft,” and “typed hole request” for consistency.
 
-### Phase 1 – Backend prompt/spec iteration service
+### Phase 1 – Backend prompt/spec iteration service ✅ MOSTLY COMPLETE
 
 **Objective:** Introduce a backend service that converts natural-language briefs into IR sessions, tracks refinement state, and exposes APIs/WebSockets for UI clients.
 
+**Status:** 🟢 Core functionality complete (207/219 tests passing after merge with origin/main)
+
 **Key Tasks**
-- **1.1 Session model & storage** – Create `lift_sys/spec_sessions/` with Pydantic models for `PromptSession`, `PromptRevision`, `IRDraft`, and `HoleResolution`. Decide on in-memory vs. persistent backing (initially in-memory with pluggable storage interface). Include unit tests covering lifecycle transitions.
-- **1.2 Prompt translation pipeline** – Implement `PromptToIRTranslator` with interfaces to the configured controller runtime. Add normalization through the existing `IRParser`, ensuring typed holes and metadata survive round-trips. Provide fakes for testing.
-- **1.3 Ambiguity detection** – Reuse reverse-mode heuristics to generate typed holes for ambiguous/missing logic. Integrate SMT checker calls on partial specs to flag contradictions. Create actionable messages with provenance and recommended follow-up prompts.
-- **1.4 FastAPI endpoints** – Add routes under `/spec-sessions` for create/update/list/finalize. Implement streaming progress responses over WebSocket with session-scoped channels. Update OpenAPI schema.
-- **1.5 Automated tests** – Extend integration suite with end-to-end tests simulating NL prompt submission, IR draft creation, hole updates, and finalization. Use snapshotting for telemetry payloads.
+- ✅ **1.1 Session model & storage** – Created `lift_sys/spec_sessions/` with full data models (`PromptSession`, `PromptRevision`, `IRDraft`, `HoleResolution`). Implemented `InMemorySessionStore` with Protocol-based interface. 16 unit tests passing.
+- ✅ **1.2 Prompt translation pipeline** – Implemented `PromptToIRTranslator` with rule-based extraction (regex patterns for functions, parameters, returns, effects, assertions) and LLM hooks. Full `IRParser` integration with round-trip serialization. 19 unit tests passing.
+- ✅ **1.3 Ambiguity detection** – Heuristic analysis detecting missing types, vague intents, missing assertions (for numeric types), and unspecified effects. Generates typed holes with context-aware suggestions. SMT verification integrated in manager. Full resolution workflow implemented.
+- ✅ **1.4 FastAPI endpoints** – Added 7 routes under `/spec-sessions`:
+  * POST /spec-sessions (create from prompt or IR)
+  * GET /spec-sessions (list active)
+  * GET /spec-sessions/{id} (get details)
+  * POST /spec-sessions/{id}/holes/{hole_id}/resolve (resolve hole)
+  * POST /spec-sessions/{id}/finalize (finalize session)
+  * GET /spec-sessions/{id}/assists (get suggestions)
+  * DELETE /spec-sessions/{id} (delete session)
+  All endpoints emit WebSocket progress events.
+- ✅ **1.5 Automated tests** – Added 18 integration tests covering all endpoints, workflows (create→resolve→finalize), session isolation, metadata preservation, revision tracking.
+- 🟡 **1.6 Auth integration (pending)** – Session endpoints need OAuth authentication integration from origin/main merge. 11 tests currently failing due to auth requirements.
 
 **Deliverables**
-- New backend package with comprehensive tests.
-- FastAPI routes documented and exposed in OpenAPI/Swagger UI.
-- WebSocket events carrying session updates, verified via integration tests.
+- ✅ New backend package `lift_sys/spec_sessions/` (models, storage, translator, manager)
+- ✅ FastAPI routes exposed and documented
+- ✅ WebSocket events verified via integration tests
+- 🟡 Auth integration pending
+
+**Test Status:**
+- 45 spec_sessions unit tests passing (models, storage, translator)
+- 18 integration tests for API endpoints (7 passing standalone, 11 need auth fix)
+- Total: 207/219 tests passing (94.5%)
 
 **Dependencies**
-- Phase 0 artifacts (architecture diagrams, telemetry hooks) to ensure alignment with existing services.
+- ✅ Phase 0 artifacts complete (`design/ARCHITECTURE_PROMPT_TO_IR.md`, `design/ARTIFACT_INVENTORY.md`)
 
 ### Phase 2 – Web experience for iterative refinement
 

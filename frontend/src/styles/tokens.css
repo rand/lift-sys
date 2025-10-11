@@ -1,0 +1,217 @@
+/**
+ * Design Tokens - Hex + v0 Inspired
+ *
+ * Colors: Zinc-like neutrals with cyan–emerald accents
+ * Geometry: ~1rem radius, soft shadows, glassy overlays
+ * Motion: 150–250ms with smooth easing, respects prefers-reduced-motion
+ */
+
+@layer base {
+  :root {
+    /* Neutral zinc-like scale - Light mode */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+
+    /* Brand - Cyan-emerald spectrum */
+    --brand: 189 94% 43%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Accent - Emerald tones */
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Primary - Cyan focus */
+    --primary: 189 94% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Muted zinc */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    /* Destructive - Balanced red */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Success - Emerald */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Info - Cyan */
+    --info: 189 94% 43%;
+    --info-foreground: 0 0% 100%;
+
+    /* Radius - ~1rem with derived sizes */
+    --radius: 1rem;
+
+    /* Shadows - Soft, elevation-based */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+    --shadow-brand: 0 0 0 3px hsl(189 94% 43% / 0.1);
+
+    /* Motion - Smooth easing curve */
+    --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 250ms;
+  }
+
+  .dark {
+    /* Neutral zinc-like scale - Dark mode */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 7%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 7%;
+    --popover-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* Brand - Cyan (brighter for dark mode) */
+    --brand: 189 94% 53%;
+    --brand-foreground: 240 10% 3.9%;
+
+    /* Accent - Emerald (adjusted) */
+    --accent: 142 76% 46%;
+    --accent-foreground: 240 10% 3.9%;
+
+    /* Primary - Cyan focus */
+    --primary: 189 94% 53%;
+    --primary-foreground: 240 10% 3.9%;
+
+    /* Secondary - Muted zinc */
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* Destructive - Balanced red */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Success - Emerald */
+    --success: 142 76% 46%;
+    --success-foreground: 240 10% 3.9%;
+
+    /* Warning - Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 10% 3.9%;
+
+    /* Info - Cyan */
+    --info: 189 94% 53%;
+    --info-foreground: 240 10% 3.9%;
+
+    /* Shadows - Deeper for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
+    --shadow-brand: 0 0 0 3px hsl(189 94% 53% / 0.2);
+  }
+
+  .hc {
+    /* High Contrast mode - Maximum readability */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 20%;
+
+    --border: 0 0% 0%;
+    --input: 0 0% 0%;
+    --ring: 0 0% 0%;
+
+    /* Brand - High contrast cyan */
+    --brand: 189 100% 25%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Accent - High contrast emerald */
+    --accent: 142 100% 20%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Primary - High contrast */
+    --primary: 189 100% 25%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - High contrast */
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Destructive - High contrast red */
+    --destructive: 0 100% 35%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success - High contrast emerald */
+    --success: 142 100% 20%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - High contrast amber */
+    --warning: 38 100% 35%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Info - High contrast cyan */
+    --info: 189 100% 25%;
+    --info-foreground: 0 0% 100%;
+
+    /* Shadows - None for HC mode */
+    --shadow-sm: none;
+    --shadow-md: 0 0 0 2px hsl(0 0% 0%);
+    --shadow-lg: 0 0 0 3px hsl(0 0% 0%);
+    --shadow-inner: none;
+    --shadow-brand: 0 0 0 4px hsl(189 100% 25%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/**
+ * Reduced motion preferences
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

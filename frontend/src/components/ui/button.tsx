@@ -1,53 +1,58 @@
-import { ButtonHTMLAttributes, CSSProperties, DetailedHTMLProps } from "react";
-import { clsx } from "clsx";
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-type Variant = "default" | "secondary" | "destructive" | "ghost" | "outline";
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-brand text-brand-foreground shadow hover:bg-brand/90",
+        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-brand underline-offset-4 hover:underline",
+        success: "bg-success text-success-foreground shadow hover:bg-success/90",
+        warning: "bg-warning text-warning-foreground shadow hover:bg-warning/90",
+        info: "bg-info text-info-foreground shadow hover:bg-info/90",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-11 rounded-lg px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
 
-type Size = "sm" | "md";
-
-type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
-  variant?: Variant;
-  size?: Size;
-};
-
-const variantStyles: Record<Variant, string> = {
-  default: "background-color: #6366f1; color: white;",
-  secondary: "background-color: #1e293b; color: #e2e8f0;",
-  destructive: "background-color: #ef4444; color: white;",
-  ghost: "background-color: transparent; color: #e2e8f0;",
-  outline: "background-color: transparent; border: 1px solid #6366f1; color: #6366f1;",
-};
-
-const sizeStyles: Record<Size, CSSProperties> = {
-  sm: { padding: "0.35rem 0.75rem", fontSize: "0.85rem" },
-  md: { padding: "0.6rem 1rem" },
-};
-
-export function Button({ variant = "default", size = "md", style, className, ...rest }: ButtonProps) {
-  return (
-    <button
-      className={clsx("shadcn-button", className)}
-      style={{
-        borderRadius: "0.75rem",
-        border: "none",
-        fontWeight: 600,
-        cursor: "pointer",
-        ...parseStyleString(variantStyles[variant]),
-        ...sizeStyles[size],
-        ...style,
-      }}
-      {...rest}
-    />
-  );
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
 }
 
-function parseStyleString(input: string): CSSProperties {
-  return input.split(";").reduce((acc, rule) => {
-    const [property, value] = rule.split(":");
-    if (!property || !value) return acc;
-    const camelCase = property.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-    // @ts-ignore - indexing dynamic property
-    acc[camelCase] = value.trim();
-    return acc;
-  }, {} as CSSProperties);
-}
+/**
+ * Button component with multiple variants and sizes
+ *
+ * @example
+ * <Button variant="default">Click me</Button>
+ * <Button variant="outline" size="sm">Small</Button>
+ * <Button variant="ghost" asChild><Link to="/">Link</Link></Button>
+ */
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };

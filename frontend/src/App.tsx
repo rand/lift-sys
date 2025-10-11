@@ -6,6 +6,8 @@ import { PlannerView } from "./views/PlannerView";
 import { IdeView } from "./views/IdeView";
 import { PromptWorkbenchView } from "./views/PromptWorkbenchView";
 import { Button } from "./components/ui/button";
+import { ModeToggle } from "./components/mode-toggle";
+import { Separator } from "./components/ui/separator";
 import { useAuth } from "./lib/auth";
 import { SignInView } from "./views/SignInView";
 import { AuthCallbackView } from "./views/AuthCallbackView";
@@ -24,8 +26,8 @@ export default function App() {
 
   if (state.status === "loading") {
     return (
-      <div className="main-shell" style={{ alignItems: "center", justifyContent: "center" }}>
-        <p>Loading session…</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading session…</p>
       </div>
     );
   }
@@ -38,36 +40,41 @@ export default function App() {
 
   return (
     <div className="main-shell">
-      <aside style={{ padding: "1.5rem", background: "#111827", display: "grid", gap: "1.5rem" }}>
-        <div>
-          <h1 style={{ marginTop: 0 }}>lift-sys</h1>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.9rem" }}>Signed in as {userLabel}</p>
-          <Button variant="ghost" style={{ marginTop: "0.5rem" }} onClick={() => void signOut()}>
-            Sign out
-          </Button>
+      <aside className="border-r bg-card p-6 flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mt-0 mb-1">lift-sys</h1>
+            <p className="text-sm text-muted-foreground m-0">Signed in as {userLabel}</p>
+          </div>
+          <ModeToggle />
         </div>
-        <nav style={{ display: "grid", gap: "0.5rem" }}>
-          <Button variant={section === "configuration" ? "default" : "ghost"} onClick={() => setSection("configuration")}>
+        <Separator />
+        <nav className="flex flex-col gap-2">
+          <Button variant={section === "configuration" ? "default" : "ghost"} onClick={() => setSection("configuration")} className="justify-start">
             Configuration
           </Button>
-          <Button variant={section === "repository" ? "default" : "ghost"} onClick={() => setSection("repository")}>
+          <Button variant={section === "repository" ? "default" : "ghost"} onClick={() => setSection("repository")} className="justify-start">
             Repository
           </Button>
-          <Button variant={section === "prompt" ? "default" : "ghost"} onClick={() => setSection("prompt")}>
+          <Button variant={section === "prompt" ? "default" : "ghost"} onClick={() => setSection("prompt")} className="justify-start">
             Prompt Workbench
           </Button>
-          <Button variant={section === "ir" ? "default" : "ghost"} onClick={() => setSection("ir")}>
+          <Button variant={section === "ir" ? "default" : "ghost"} onClick={() => setSection("ir")} className="justify-start">
             IR Review
           </Button>
-          <Button variant={section === "planner" ? "default" : "ghost"} onClick={() => setSection("planner")}>
+          <Button variant={section === "planner" ? "default" : "ghost"} onClick={() => setSection("planner")} className="justify-start">
             Planner
           </Button>
-          <Button variant={section === "ide" ? "default" : "ghost"} onClick={() => setSection("ide")}>
+          <Button variant={section === "ide" ? "default" : "ghost"} onClick={() => setSection("ide")} className="justify-start">
             IDE
           </Button>
         </nav>
+        <Separator />
+        <Button variant="ghost" onClick={() => void signOut()} className="justify-start mt-auto">
+          Sign out
+        </Button>
       </aside>
-      <main style={{ padding: "2rem", background: "#0f172a" }}>
+      <main className="p-8 bg-background overflow-auto">
         {section === "configuration" && <ConfigurationView />}
         {section === "repository" && <RepositoryView />}
         {section === "prompt" && <PromptWorkbenchView />}

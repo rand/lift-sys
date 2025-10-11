@@ -1,12 +1,12 @@
 # lift-sys Development Plan
 ## Implementation Roadmap
 
-**Current Status:** 207/219 tests passing (94.5%) after merge with origin/main 🚀
-**Previous Status:** 182/182 tests passing (100% before merge)
-**Goal:** Complete OAuth authentication integration for session endpoints
+**Current Status:** 218/219 tests passing (99.5%) - Phase 1 Complete! 🚀
+**Previous Status:** 207/219 tests passing (94.5%) after merge with origin/main
+**Next Goal:** Phase 2 - Implement web experience for iterative refinement
 
 **Recent Major Achievements:**
-- ✅ **Prompt-to-IR Session Management (Phase 1)** - Full backend implementation with 45 new tests
+- ✅ **Prompt-to-IR Session Management (Phase 1 COMPLETE)** - Full backend with authentication, 63 tests (45 unit + 18 integration)
 - ✅ **OAuth & GitHub Integration** - Authentication system and repository client (from origin/main)
 - ✅ **Conflict-Driven Learning** - Full CDCL-inspired planner with implication graphs (PR #7)
 - ✅ **Stack Graph Analysis** - Symbol relationship tracking for effect analysis (PR #6)
@@ -178,11 +178,11 @@ uv pip install "textual[dev]"
 - Gap analysis issue list outlining missing hooks or telemetry.
 - Shared glossary defining “prompt session,” “IR draft,” and “typed hole request” for consistency.
 
-### Phase 1 – Backend prompt/spec iteration service ✅ MOSTLY COMPLETE
+### Phase 1 – Backend prompt/spec iteration service ✅ COMPLETE
 
 **Objective:** Introduce a backend service that converts natural-language briefs into IR sessions, tracks refinement state, and exposes APIs/WebSockets for UI clients.
 
-**Status:** 🟢 Core functionality complete (207/219 tests passing after merge with origin/main)
+**Status:** 🟢 Core functionality complete (Phase 1 COMPLETE ✅)
 
 **Key Tasks**
 - ✅ **1.1 Session model & storage** – Created `lift_sys/spec_sessions/` with full data models (`PromptSession`, `PromptRevision`, `IRDraft`, `HoleResolution`). Implemented `InMemorySessionStore` with Protocol-based interface. 16 unit tests passing.
@@ -198,18 +198,18 @@ uv pip install "textual[dev]"
   * DELETE /spec-sessions/{id} (delete session)
   All endpoints emit WebSocket progress events.
 - ✅ **1.5 Automated tests** – Added 18 integration tests covering all endpoints, workflows (create→resolve→finalize), session isolation, metadata preservation, revision tracking.
-- 🟡 **1.6 Auth integration (pending)** – Session endpoints need OAuth authentication integration from origin/main merge. 11 tests currently failing due to auth requirements.
+- ✅ **1.6 Auth integration** – All session endpoints now require OAuth authentication via `AuthenticatedUser` dependency. Demo user header support enabled in test fixtures. Audit logging added for all session operations with user.id tracking.
 
 **Deliverables**
 - ✅ New backend package `lift_sys/spec_sessions/` (models, storage, translator, manager)
 - ✅ FastAPI routes exposed and documented
 - ✅ WebSocket events verified via integration tests
-- 🟡 Auth integration pending
+- ✅ OAuth authentication integrated on all session endpoints
 
 **Test Status:**
 - 45 spec_sessions unit tests passing (models, storage, translator)
-- 18 integration tests for API endpoints (7 passing standalone, 11 need auth fix)
-- Total: 207/219 tests passing (94.5%)
+- 18 session integration tests passing (all endpoints authenticated)
+- Total: 218/219 tests passing (99.5%) - 1 unrelated test failing (test_repos_open_endpoint)
 
 **Dependencies**
 - ✅ Phase 0 artifacts complete (`design/ARCHITECTURE_PROMPT_TO_IR.md`, `design/ARTIFACT_INVENTORY.md`)

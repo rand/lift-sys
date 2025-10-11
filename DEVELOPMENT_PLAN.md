@@ -158,6 +158,103 @@ def test_tui_ir_to_code_generation():
 uv pip install "textual[dev]"
 ```
 
+---
+
+## Prompt-to-IR Iterative Workflow Execution Plan
+
+### Phase 0 – Align around existing pipelines and telemetry
+
+**Objective:** Document the current lifecycle and shared services so every new capability plugs into the same progress tracking, storage, and orchestration primitives.
+
+**Key Tasks**
+- **0.1 Architecture survey** – Catalogue current API routes, planner lifecycle, reverse/forward pipelines, and telemetry emitters. Produce a system diagram and call graph in `design/` that highlights where a new prompt session manager would hook in.
+- **0.2 Artifact inventory** – Enumerate existing IR grammars, typed-hole enums, evidence metadata, and persistence utilities. Confirm round-trip guarantees by running current serialization tests and capturing gaps.
+- **0.3 UI entry point audit** – Review React routes (`frontend/src/routes`), shared state containers, and WebSocket subscriptions to identify components that must surface the new session state. Document affordances that can be reused vs. those needing extension.
+- **0.4 CLI/TUI capability matrix** – Assess current Textual views and CLI commands. Record which services they call and what telemetry they consume so parity work in Phase 3 can inherit the same abstractions.
+
+**Deliverables**
+- Updated architectural notes in `design/ARCHITECTURE_PROMPT_TO_IR.md` (new file).
+- Gap analysis issue list outlining missing hooks or telemetry.
+- Shared glossary defining “prompt session,” “IR draft,” and “typed hole request” for consistency.
+
+### Phase 1 – Backend prompt/spec iteration service
+
+**Objective:** Introduce a backend service that converts natural-language briefs into IR sessions, tracks refinement state, and exposes APIs/WebSockets for UI clients.
+
+**Key Tasks**
+- **1.1 Session model & storage** – Create `lift_sys/spec_sessions/` with Pydantic models for `PromptSession`, `PromptRevision`, `IRDraft`, and `HoleResolution`. Decide on in-memory vs. persistent backing (initially in-memory with pluggable storage interface). Include unit tests covering lifecycle transitions.
+- **1.2 Prompt translation pipeline** – Implement `PromptToIRTranslator` with interfaces to the configured controller runtime. Add normalization through the existing `IRParser`, ensuring typed holes and metadata survive round-trips. Provide fakes for testing.
+- **1.3 Ambiguity detection** – Reuse reverse-mode heuristics to generate typed holes for ambiguous/missing logic. Integrate SMT checker calls on partial specs to flag contradictions. Create actionable messages with provenance and recommended follow-up prompts.
+- **1.4 FastAPI endpoints** – Add routes under `/spec-sessions` for create/update/list/finalize. Implement streaming progress responses over WebSocket with session-scoped channels. Update OpenAPI schema.
+- **1.5 Automated tests** – Extend integration suite with end-to-end tests simulating NL prompt submission, IR draft creation, hole updates, and finalization. Use snapshotting for telemetry payloads.
+
+**Deliverables**
+- New backend package with comprehensive tests.
+- FastAPI routes documented and exposed in OpenAPI/Swagger UI.
+- WebSocket events carrying session updates, verified via integration tests.
+
+**Dependencies**
+- Phase 0 artifacts (architecture diagrams, telemetry hooks) to ensure alignment with existing services.
+
+### Phase 2 – Web experience for iterative refinement
+
+**Objective:** Provide a browser-based “Prompt Workbench” that surfaces prompt sessions, IR drafts, and typed hole resolutions with interactive affordances.
+
+**Key Tasks**
+- **2.1 State wiring** – Extend global state management (e.g., Zustand/Redux) to store prompt sessions, subscribe to WebSocket streams, and reconcile optimistic UI updates with server confirmations.
+- **2.2 Prompt Workbench view** – Build a new route/page featuring NL prompt input, IR preview panel, and timeline of refinements. Ensure copy explains translator outputs vs. pending ambiguities.
+- **2.3 IR editor upgrades** – Convert `IrView` into an editable surface supporting inline hole resolution, syntax highlighting, validation badges, and history controls. Integrate auto-save and rollback.
+- **2.4 Ambiguity affordances** – Introduce components that display hole provenance, suggested clarifications, and quick actions (e.g., “Accept translator suggestion,” “Provide missing constraint”). Include accessible ARIA labeling.
+- **2.5 Spec source switching** – Add controls to switch between lifted specs (reverse mode) and prompt-born specs. Persist selection in session state and ensure planner graphs update accordingly.
+- **2.6 Frontend tests** – Author Playwright flows covering prompt submission, hole resolution, and finalization. Expand unit tests for new components and state selectors.
+
+**Deliverables**
+- New Prompt Workbench UI wired to backend APIs.
+- Enhanced IR editor with hole resolution UX.
+- Passing frontend/unit/e2e tests capturing the workflow.
+
+**Dependencies**
+- Backend session APIs from Phase 1.
+
+### Phase 3 – CLI, API, and agent parity
+
+**Objective:** Provide equivalent iterative spec refinement flows via CLI/TUI and ensure programmatic integrations can automate the same lifecycle.
+
+**Key Tasks**
+- **3.1 Textual UI expansion** – Add a Prompt Refinement tab mirroring web functionality: prompt input, IR diff viewer, hole list, and resolution commands. Ensure compatibility with existing event loop and keybindings.
+- **3.2 CLI commands** – Introduce `uv run lift-sys spec refine` (and supporting subcommands) to create/update/finalize prompt sessions. Support JSON streaming output for automation.
+- **3.3 Agent SDK updates** – Provide Python client helpers in `lift_sys/client/` (or similar) for programmatic use. Include async support and typed responses.
+- **3.4 API documentation** – Update OpenAPI docs, add usage examples in README/design docs, and publish sample cURL scripts demonstrating session lifecycle.
+- **3.5 Integration tests** – Add CLI snapshot tests and Textual simulation tests to confirm parity with web workflows.
+
+**Deliverables**
+- CLI and TUI tooling in sync with backend capabilities.
+- Updated API documentation and client helpers.
+- Automated coverage for terminal/agent flows.
+
+**Dependencies**
+- Phase 1 backend services.
+- UI copy and workflows defined in Phase 2 for consistency.
+
+### Phase 4 – Documentation and knowledge sharing
+
+**Objective:** Capture end-to-end workflows, architectural rationale, and onboarding material for the new prompt-to-IR capabilities.
+
+**Key Tasks**
+- **4.1 Flow guides** – Produce detailed walkthroughs (web, CLI, API) with screenshots or terminal transcripts showing prompt refinement, hole resolution, and IR finalization.
+- **4.2 System documentation** – Update `README.md`, `design/` docs, and `DEVELOPMENT_PLAN.md` to reflect new architecture, configuration steps, and developer guidance.
+- **4.3 Training materials** – Create internal blog post or Loom script outline summarizing workflows, best practices, and troubleshooting tips.
+- **4.4 Knowledge base updates** – Add FAQ entries about typed holes, ambiguity detection, and session management to reduce support load.
+- **4.5 Release notes** – Draft release summary highlighting new capabilities, migration considerations, and compatibility notes for existing users.
+
+**Deliverables**
+- Comprehensive documentation set published in repo.
+- Shared communication plan for internal/external stakeholders.
+- Checklist ensuring each workflow is covered with artifacts (screenshots, transcripts, diagrams).
+
+**Dependencies**
+- Completion of Phases 1–3 to capture accurate behavior.
+
 #### Acceptance Criteria:
 - ✅ Textual testing harness available
 - ✅ E2E test passes for TUI workflow

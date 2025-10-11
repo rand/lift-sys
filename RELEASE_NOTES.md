@@ -222,7 +222,7 @@ session = await client.acreate_session(prompt="...")
 ### Updated Documentation
 
 - **README.md**: Added Quick Start section with examples for all interfaces
-- **DEVELOPMENT_PLAN.md**: Updated status (Phase 3 complete)
+- **development_records/DEVELOPMENT_PLAN.md**: Updated status (Phase 3 complete)
 
 ---
 

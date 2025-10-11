@@ -114,13 +114,14 @@ class GitHubRepositoryClient:
         workspace_path.parent.mkdir(parents=True, exist_ok=True)
         target_branch = branch or repo_data.get("default_branch", "main")
 
-        if workspace_path.exists() and (workspace_path / ".git").exists():
-            repo = Repo(workspace_path)
-            self._update_repository(repo, repo_data, token, target_branch, force_refresh)
-        else:
-            repo = self._clone_repository(
-                repo_data, token, workspace_path, target_branch
-            )
+        repo = await asyncio.to_thread(
+            self._sync_repository,
+            repo_data,
+            token,
+            workspace_path,
+            target_branch,
+            force_refresh,
+        )
 
         last_synced = datetime.utcnow()
         return RepositoryMetadata(
@@ -197,6 +198,20 @@ class GitHubRepositoryClient:
         except GitCommandError as exc:  # pragma: no cover - git failures
             raise RepositoryAccessError(500, f"clone_failed: {exc}") from exc
         return repo
+
+    def _sync_repository(
+        self,
+        repo_data: dict[str, Any],
+        token: str,
+        workspace_path: Path,
+        branch: str,
+        force_refresh: bool,
+    ) -> Repo:
+        if workspace_path.exists() and (workspace_path / ".git").exists():
+            repo = Repo(workspace_path)
+            self._update_repository(repo, repo_data, token, branch, force_refresh)
+            return repo
+        return self._clone_repository(repo_data, token, workspace_path, branch)
 
     def _update_repository(
         self,

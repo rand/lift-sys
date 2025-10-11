@@ -39,6 +39,7 @@ class PlannerState:
     completed: List[str] = field(default_factory=list)
     conflicts: Dict[str, str] = field(default_factory=dict)
     decision_levels: Dict[str, int] = field(default_factory=dict)
+    checkpoints: List[str] = field(default_factory=list)
 
 
 class Planner:
@@ -90,6 +91,11 @@ class Planner:
                 continue
             filtered.append(step)
         return filtered
+
+    def record_checkpoint(self, label: str) -> None:
+        self.state.checkpoints.append(label)
+        self._record_event("checkpoint", {"label": label})
+        self._flush_events()
 
     def step(self, result: str, success: bool, reason: str | None = None) -> PlannerStepResult:
         if not self.current_plan:

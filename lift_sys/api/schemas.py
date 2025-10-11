@@ -41,10 +41,26 @@ class ForwardRequest(BaseModel):
 
 class IRResponse(BaseModel):
     ir: dict
+    progress: List[dict] = Field(default_factory=list)
 
     @classmethod
-    def from_ir(cls, ir: IntermediateRepresentation) -> "IRResponse":
-        return cls(ir=ir.to_dict())
+    def from_ir(
+        cls,
+        ir: IntermediateRepresentation,
+        *,
+        progress: Optional[List[Dict[str, object]]] = None,
+    ) -> "IRResponse":
+        return cls(ir=ir.to_dict(), progress=progress or [])
+
+
+class PlannerTelemetry(BaseModel):
+    nodes: List[dict] = Field(default_factory=list)
+    edges: List[dict] = Field(default_factory=list)
+    typed_holes: List[dict] = Field(default_factory=list)
+    invariants: List[dict] = Field(default_factory=list)
+    assists: List[dict] = Field(default_factory=list)
+    completed: List[str] = Field(default_factory=list)
+    conflicts: Dict[str, str] = Field(default_factory=dict)
 
 
 class DecisionLiteralModel(BaseModel):
@@ -57,8 +73,10 @@ class DecisionLiteralModel(BaseModel):
 class PlanResponse(BaseModel):
     steps: List[dict]
     goals: List[str]
-    decision_literals: Dict[str, DecisionLiteralModel]
-    recent_events: List[dict]
+    ir: Optional[dict] = None
+    telemetry: Optional[PlannerTelemetry] = None
+    decision_literals: Dict[str, DecisionLiteralModel] = Field(default_factory=dict)
+    recent_events: List[dict] = Field(default_factory=list)
 
 
 class ForwardResponse(BaseModel):
@@ -73,5 +91,6 @@ __all__ = [
     "DecisionLiteralModel",
     "IRResponse",
     "PlanResponse",
+    "PlannerTelemetry",
     "ForwardResponse",
 ]

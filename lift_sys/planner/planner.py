@@ -11,6 +11,7 @@ from .conflict_learning import (
     extract_reason_literals,
 )
 from .plan import Plan, PlanStep, derive_plan
+from ..ir.models import IntermediateRepresentation
 
 
 @dataclass(slots=True)
@@ -48,6 +49,7 @@ class Planner:
     def __init__(self) -> None:
         self.state = PlannerState()
         self.current_plan: Optional[Plan] = None
+        self.current_ir: Optional[IntermediateRepresentation] = None
         self.clauses = ClauseStore()
         self.graph = ImplicationGraph()
         self._event_queue: List[PlannerEvent] = []
@@ -56,6 +58,7 @@ class Planner:
 
     def load_ir(self, ir) -> Plan:
         self.current_plan = derive_plan(ir)
+        self.current_ir = ir
         self.state = PlannerState()
         self.clauses = ClauseStore()
         self.graph.reset()

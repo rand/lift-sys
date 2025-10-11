@@ -6,11 +6,17 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
+      "/api": {
+        target: "http://localhost:8000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
-  }
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    css: true,
+  },
 });

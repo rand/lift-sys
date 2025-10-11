@@ -24,7 +24,9 @@ from .stack_graphs import StackGraphAnalyzer
 
 @dataclass
 class LifterConfig:
-    codeql_queries: Iterable[str] = field(default_factory=list)
+    codeql_queries: Iterable[str] = field(
+        default_factory=lambda: ["security/default"]
+    )
     daikon_entrypoint: str = "main"
     stack_index_path: str | None = None
     run_codeql: bool = True
@@ -93,12 +95,10 @@ class SpecificationLifter:
         effects = self._build_effects(stack_findings, evidence_lookup)
         assertions = self._build_assertions(daikon_findings, evidence_lookup)
 
-        # Infer language from file extension
-        language = "python" if target_module.endswith(".py") else None
         metadata = Metadata(
             source_path=target_module,
             origin="reverse",
-            language=language,
+            language="python",
             evidence=evidence,
         )
         self._record_progress("reverse:ir-assembled")

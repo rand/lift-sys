@@ -63,11 +63,20 @@ class PlannerTelemetry(BaseModel):
     conflicts: Dict[str, str] = Field(default_factory=dict)
 
 
+class DecisionLiteralModel(BaseModel):
+    identifier: str
+    type: str
+    obligation: str
+    steps: List[str]
+
+
 class PlanResponse(BaseModel):
     steps: List[dict]
     goals: List[str]
     ir: Optional[dict] = None
     telemetry: Optional[PlannerTelemetry] = None
+    decision_literals: Dict[str, DecisionLiteralModel] = Field(default_factory=dict)
+    recent_events: List[dict] = Field(default_factory=list)
 
 
 class ForwardResponse(BaseModel):
@@ -79,6 +88,7 @@ __all__ = [
     "RepoRequest",
     "ReverseRequest",
     "ForwardRequest",
+    "DecisionLiteralModel",
     "IRResponse",
     "PlanResponse",
     "PlannerTelemetry",

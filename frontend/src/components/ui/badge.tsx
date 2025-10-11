@@ -5,6 +5,7 @@ const variants = {
   success: "#10b981",
   warning: "#f59e0b",
   error: "#ef4444",
+  secondary: "#334155",
 };
 
 type Variant = keyof typeof variants;

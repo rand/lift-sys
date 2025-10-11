@@ -1,12 +1,10 @@
 """Unit tests for the planning subsystem."""
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import pytest
 
 from lift_sys.ir.parser import IRParser
-from lift_sys.planner.plan import PlanStep, derive_plan
+from lift_sys.planner.plan import derive_plan
 from lift_sys.planner.planner import Planner
 
 
@@ -25,32 +23,81 @@ def test_plan_generation_includes_hole_resolution(parser: IRParser, sample_ir_te
     assert plan.goals == ["verified_ir", "code_generation"]
 
 
-def test_planner_learns_from_conflicts(parser: IRParser, sample_ir_text: str) -> None:
-    """The planner captures conflicts and surfaces fallback actions."""
+def test_planner_clause_learning_and_backjump(parser: IRParser, sample_ir_text: str) -> None:
+    """The planner records decisions, clauses, and backjump targets."""
 
     ir = parser.parse(sample_ir_text)
     planner = Planner()
-    plan = planner.load_ir(ir)
+    planner.load_ir(ir)
 
-    fallback_step = PlanStep(
-        identifier="rerun_with_constraints",
-        description="Retry verification with learnt constraints",
+    first = planner.step("parse_ir", success=True)
+    assert any(step.identifier == "verify_assertions" for step in first.next_steps)
+    assert any(event["type"] == "decision" for event in first.events)
+
+    conflict = planner.step(
+        "verify_assertions",
+        success=False,
+        reason="blocked_by:controller:synthesiser",
     )
 
-    original_next_steps = plan.next_steps
-
-    def next_steps_side_effect(completed):
-        if planner.state.conflicts:
-            return [fallback_step]
-        return original_next_steps(completed)
-
-    with patch.object(plan, "next_steps", side_effect=next_steps_side_effect) as mocked_next_steps:
-        ready_after_parse = planner.step("parse_ir", success=True)
-        assert any(step.identifier == "verify_assertions" for step in ready_after_parse)
-
-        ready_after_failure = planner.step("verify_assertions", success=False, reason="model: x = 0")
-
-    mocked_next_steps.assert_called()
-    assert planner.state.conflicts["verify_assertions"] == "model: x = 0"
-    assert fallback_step in ready_after_failure
+    assert planner.state.conflicts["verify_assertions"].startswith("blocked_by")
+    assert conflict.learned_clauses
+    learned_literals = conflict.learned_clauses[0].literals
+    assert "controller:verifier" in learned_literals
+    assert "!controller:synthesiser" in learned_literals
+    assert conflict.backjump_target == 0
+    assert any(event["type"] == "learned_clause" for event in conflict.events)
     assert planner.suggest_resolution()["verify_assertions"].startswith("Investigate")
+
+
+def test_learned_clause_blocks_future_candidates(parser: IRParser, sample_ir_text: str) -> None:
+    ir = parser.parse(sample_ir_text)
+    planner = Planner()
+    planner.load_ir(ir)
+
+    planner.step("parse_ir", success=True)
+    planner.step("verify_assertions", success=True)
+    planner.step("resolve_holes", success=True)
+
+    conflict = planner.step(
+        "finalise_ir",
+        success=False,
+        reason="blocked_by:controller:verifier,controller:planner",
+    )
+
+    assert conflict.learned_clauses
+    next_ids = [step.identifier for step in conflict.next_steps]
+    assert "finalise_ir" not in next_ids
+    events = planner.consume_events()
+    assert any(evt["type"] == "learned_clause" for evt in events)
+    assert any(evt["type"] == "next_decisions" for evt in events)
+
+
+def test_blocked_step_returns_once_dependency_resolved(
+    parser: IRParser, sample_ir_text: str
+) -> None:
+    """A learned clause only blocks while the dependency literal is absent."""
+
+    ir = parser.parse(sample_ir_text)
+    planner = Planner()
+    planner.load_ir(ir)
+
+    planner.step("parse_ir", success=True)
+    conflict = planner.step(
+        "verify_assertions",
+        success=False,
+        reason="blocked_by:controller:synthesiser",
+    )
+
+    blocked_candidates = [step.identifier for step in conflict.next_steps]
+    assert "verify_assertions" not in blocked_candidates
+
+    # Completing the synthesiser step activates the missing literal and should
+    # allow verify_assertions to be considered again.
+    planner.step("synthesise_code", success=True)
+    refreshed = planner._filter_next_steps(
+        planner.current_plan.next_steps(planner.state.completed)
+    )
+
+    refreshed_ids = [step.identifier for step in refreshed]
+    assert "verify_assertions" in refreshed_ids

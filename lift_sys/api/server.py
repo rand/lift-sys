@@ -654,8 +654,12 @@ async def get_plan(user: AuthenticatedUser = Depends(require_authenticated_user)
 
 
 @app.post("/spec-sessions", response_model=SessionResponse)
-async def create_session(request: CreateSessionRequest) -> SessionResponse:
+async def create_session(
+    request: CreateSessionRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> SessionResponse:
     """Create a new prompt refinement session."""
+    LOGGER.info("%s created new spec session", user.id)
     if not STATE.session_manager:
         STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
 
@@ -706,8 +710,11 @@ async def create_session(request: CreateSessionRequest) -> SessionResponse:
 
 
 @app.get("/spec-sessions", response_model=SessionListResponse)
-async def list_sessions() -> SessionListResponse:
+async def list_sessions(
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> SessionListResponse:
     """List all active sessions."""
+    LOGGER.debug("%s listed spec sessions", user.id)
     if not STATE.session_manager:
         return SessionListResponse(sessions=[])
 
@@ -732,8 +739,12 @@ async def list_sessions() -> SessionListResponse:
 
 
 @app.get("/spec-sessions/{session_id}", response_model=SessionResponse)
-async def get_session(session_id: str) -> SessionResponse:
+async def get_session(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> SessionResponse:
     """Get details of a specific session."""
+    LOGGER.debug("%s requested session %s", user.id, session_id)
     if not STATE.session_manager:
         raise HTTPException(status_code=404, detail="Session manager not initialized")
 
@@ -759,8 +770,10 @@ async def resolve_hole(
     session_id: str,
     hole_id: str,
     request: ResolveHoleRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
 ) -> SessionResponse:
     """Resolve a typed hole in a session."""
+    LOGGER.info("%s resolving hole %s in session %s", user.id, hole_id, session_id)
     if not STATE.session_manager:
         raise HTTPException(status_code=404, detail="Session manager not initialized")
 
@@ -800,8 +813,12 @@ async def resolve_hole(
 
 
 @app.post("/spec-sessions/{session_id}/finalize", response_model=IRResponse)
-async def finalize_session(session_id: str) -> IRResponse:
+async def finalize_session(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> IRResponse:
     """Finalize a session and return the completed IR."""
+    LOGGER.info("%s finalizing session %s", user.id, session_id)
     if not STATE.session_manager:
         raise HTTPException(status_code=404, detail="Session manager not initialized")
 
@@ -830,8 +847,12 @@ async def finalize_session(session_id: str) -> IRResponse:
 
 
 @app.get("/spec-sessions/{session_id}/assists", response_model=AssistsResponse)
-async def get_assists(session_id: str) -> AssistsResponse:
+async def get_assists(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> AssistsResponse:
     """Get actionable suggestions for resolving holes."""
+    LOGGER.debug("%s requested assists for session %s", user.id, session_id)
     if not STATE.session_manager:
         raise HTTPException(status_code=404, detail="Session manager not initialized")
 
@@ -848,8 +869,12 @@ async def get_assists(session_id: str) -> AssistsResponse:
 
 
 @app.delete("/spec-sessions/{session_id}")
-async def delete_session(session_id: str) -> Dict[str, str]:
+async def delete_session(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> Dict[str, str]:
     """Delete a session."""
+    LOGGER.info("%s deleting session %s", user.id, session_id)
     if not STATE.session_manager:
         raise HTTPException(status_code=404, detail="Session manager not initialized")
 

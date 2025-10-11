@@ -248,9 +248,11 @@ def api_client() -> Iterator[TestClient]:
     reset_state()
     stub_client = _StubGitHubClient()
     app.state.github_repositories = stub_client
+    app.state.allow_demo_user_header = True  # Enable demo auth for tests
     with TestClient(app) as client:
         client.headers.update({"x-demo-user": "pytest"})
         client.app.state.github_repositories = stub_client
+        client.app.state.allow_demo_user_header = True  # Enable demo auth for tests
         yield client
     reset_state()
 

@@ -1,6 +1,17 @@
 # lift-sys
 
-`lift-sys` is a modular, verifiable AI-native software development environment.
+`lift-sys` is a modular, verifiable AI-native software development environment, representing an ambitious vision for next-generation constrained code generation and reverse-mode formalization, aiming to democratize high-quality software creation while keeping users in control.
+
+Most AI coding tools still assume an engineer will clean up and validate outputs, which excludes semi-technical teammates and slows delivery. Tools aimed at non-technical users often amplify ambiguity, create unmaintainable code, and add risk in real codebases.
+
+`lift-sys` flips this. It makes high-quality software creation accessible while keeping engineers in control, across both greenfield and existing repositories. `lift-sys` brings human-centered, machine-verifiable affordances to understanding, creating, and editing code, empowering semi-technical contributors and engineers.
+
+Two complementary modes:
+
+* **Forward mode** turns natural language into a formal, human-readable specification and generates code that must satisfy types, policies, and executable proofs. The value: faster, safer creation of new features from intent, with evidence attached.
+* **Reverse mode** attaches to an existing repository, recovers a behavioral model from code and traces, and lifts it into a structured intermediate form. The value: safe edits and refactors in legacy code, with provenance and constraints ensuring correctness.
+
+Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
 ## Getting Started
 

@@ -202,6 +202,7 @@ def api_client() -> Iterator[TestClient]:
 
     reset_state()
     with TestClient(app) as client:
+        client.headers.update({"x-demo-user": "pytest"})
         yield client
     reset_state()
 

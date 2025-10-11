@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
@@ -32,8 +32,8 @@ from ..services.generation_service import GenerationService
 from ..services.orchestrator import HybridOrchestrator
 from ..services.reasoning_service import ReasoningService
 from ..services.verification_service import VerificationService
-from .middleware.auth_middleware import attach_demo_user
 from .middleware.rate_limiting import rate_limiter
+from .auth import AuthenticatedUser, configure_auth, require_authenticated_user
 from .routes import auth as auth_routes
 from .routes import generate as generate_routes
 from .routes import health as health_routes
@@ -50,16 +50,25 @@ from .schemas import (
 )
 
 app = FastAPI(title="lift-sys API", version="0.1.0")
+auth_router = configure_auth(app)
+
+allowed_origins_raw = os.getenv(
+    "LIFT_SYS_ALLOWED_ORIGINS", "http://localhost:3000"
+).split(",")
+allowed_origins = [origin.strip() for origin in allowed_origins_raw if origin.strip()]
+if not allowed_origins:
+    allowed_origins = ["http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
 )
 app.middleware("http")(rate_limiter())
-app.middleware("http")(attach_demo_user)
 app.include_router(health_routes.router)
+app.include_router(auth_router)
 app.include_router(auth_routes.router)
 app.include_router(provider_routes.router)
 app.include_router(generate_routes.router)
@@ -220,7 +229,8 @@ async def configure_hybrid_runtime() -> None:
 
 
 @app.get("/")
-async def root() -> Dict[str, str]:
+async def root(user: AuthenticatedUser = Depends(require_authenticated_user)) -> Dict[str, str]:
+    LOGGER.debug("Root endpoint accessed by %s", user.id)
     return {
         "name": "lift-sys API",
         "version": "0.1.0",
@@ -230,18 +240,25 @@ async def root() -> Dict[str, str]:
 
 
 @app.get("/health")
-async def health() -> Dict[str, str]:
+async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) -> Dict[str, str]:
+    LOGGER.debug("Health check by %s", user.id)
     return {"status": "ok"}
 
 
 @app.post("/config")
-async def configure(request: ConfigRequest) -> Dict[str, str]:
+async def configure(
+    request: ConfigRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
+) -> Dict[str, str]:
+    LOGGER.info("%s updated synthesizer configuration", user.id)
     STATE.set_config(request)
     return {"status": "configured"}
 
 
 @app.post("/repos/open")
-async def open_repository(request: RepoRequest) -> Dict[str, str]:
+async def open_repository(
+    request: RepoRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
+) -> Dict[str, str]:
+    LOGGER.info("%s requested repository open for %s", user.id, request.path)
     if not STATE.lifter:
         STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
     assert STATE.lifter
@@ -253,7 +270,10 @@ async def open_repository(request: RepoRequest) -> Dict[str, str]:
 
 
 @app.post("/reverse", response_model=IRResponse)
-async def reverse(request: ReverseRequest) -> IRResponse:
+async def reverse(
+    request: ReverseRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
+) -> IRResponse:
+    LOGGER.info("%s initiated reverse lift for %s", user.id, request.module)
     if not STATE.lifter:
         raise HTTPException(status_code=400, detail="lifter not configured")
     await STATE.publish_progress(
@@ -372,7 +392,10 @@ async def reverse(request: ReverseRequest) -> IRResponse:
 
 
 @app.post("/forward", response_model=ForwardResponse)
-async def forward(request: ForwardRequest) -> ForwardResponse:
+async def forward(
+    request: ForwardRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
+) -> ForwardResponse:
+    LOGGER.info("%s requested forward synthesis", user.id)
     if not STATE.synthesizer:
         raise HTTPException(status_code=400, detail="synthesizer not configured")
     try:
@@ -412,7 +435,8 @@ async def forward(request: ForwardRequest) -> ForwardResponse:
 
 
 @app.get("/plan", response_model=PlanResponse)
-async def get_plan() -> PlanResponse:
+async def get_plan(user: AuthenticatedUser = Depends(require_authenticated_user)) -> PlanResponse:
+    LOGGER.debug("%s fetched planner state", user.id)
     if not STATE.planner.current_plan:
         raise HTTPException(status_code=404, detail="plan not initialised")
     plan = STATE.planner.current_plan

@@ -3,18 +3,34 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from collections import deque
 from datetime import datetime
-from typing import AsyncIterator, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 
 from ..forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
 from ..ir.models import IntermediateRepresentation
 from ..ir.parser import IRParser
 from ..planner.planner import Planner
 from ..reverse_mode.lifter import LifterConfig, SpecificationLifter
+from ..auth.oauth_manager import OAuthManager
+from ..auth.provider_configs import build_default_configs
+from ..auth.token_store import TokenStore
+from ..providers import AnthropicProvider, GeminiProvider, LocalVLLMProvider, OpenAIProvider
+from ..services.generation_service import GenerationService
+from ..services.orchestrator import HybridOrchestrator
+from ..services.reasoning_service import ReasoningService
+from ..services.verification_service import VerificationService
+from .middleware.auth_middleware import attach_demo_user
+from .middleware.rate_limiting import rate_limiter
+from .routes import auth as auth_routes
+from .routes import generate as generate_routes
+from .routes import health as health_routes
+from .routes import providers as provider_routes
 from .schemas import (
     ConfigRequest,
     ForwardRequest,
@@ -27,6 +43,19 @@ from .schemas import (
 )
 
 app = FastAPI(title="lift-sys API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+app.middleware("http")(rate_limiter())
+app.middleware("http")(attach_demo_user)
+app.include_router(health_routes.router)
+app.include_router(auth_routes.router)
+app.include_router(provider_routes.router)
+app.include_router(generate_routes.router)
 
 
 class AppState:
@@ -107,6 +136,54 @@ STATE = AppState()
 
 def reset_state() -> None:
     STATE.reset()
+
+
+async def _echo_text_runner(prompt: str, _: Dict[str, Any]) -> str:
+    return prompt
+
+
+async def _echo_structured_runner(prompt: str, payload: Dict[str, Any]) -> str:
+    schema = payload.get("schema", {})
+    return json.dumps({"prompt": prompt, "schema": schema})
+
+
+@app.on_event("startup")
+async def configure_hybrid_runtime() -> None:
+    token_key = os.getenv("LIFT_SYS_TOKEN_KEY")
+    encryption_key = token_key.encode("utf-8") if token_key else TokenStore.generate_key()
+    token_storage: Dict[str, str] = {}
+    token_store = TokenStore(token_storage, encryption_key)
+
+    providers = {
+        "anthropic": AnthropicProvider(),
+        "openai": OpenAIProvider(),
+        "gemini": GeminiProvider(),
+    }
+
+    local_provider = LocalVLLMProvider(
+        structured_runner=_echo_structured_runner,
+        text_runner=_echo_text_runner,
+    )
+    await local_provider.initialize({})
+
+    orchestrator = HybridOrchestrator(external_provider=providers["anthropic"], local_provider=local_provider)
+    app.state.providers = {**providers, "local": local_provider}
+    app.state.hybrid_orchestrator = orchestrator
+    app.state.primary_provider = "anthropic"
+    app.state.services = {
+        "reasoning": ReasoningService(orchestrator),
+        "generation": GenerationService(orchestrator),
+        "verification": VerificationService(orchestrator),
+    }
+
+    redirect_base = os.getenv("LIFT_SYS_OAUTH_REDIRECT_BASE", "http://localhost:3000/api/auth")
+    oauth_configs = build_default_configs(redirect_base)
+    managers = {
+        name: OAuthManager(provider=name, client_config=config, token_store=token_store)
+        for name, config in oauth_configs.items()
+    }
+    app.state.oauth_managers = managers
+    app.state.token_store = token_store
 
 
 @app.get("/")

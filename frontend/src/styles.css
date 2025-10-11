@@ -19,6 +19,108 @@ body {
   min-height: 100vh;
 }
 
+.provider-selector {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.provider-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.provider-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.provider-card.selected {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.provider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.provider-name {
+  font-weight: 600;
+}
+
+.provider-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.provider-status.healthy {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.provider-status.degraded {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+.provider-status.unavailable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.provider-capabilities {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #c7d2fe;
+}
+
+.provider-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.provider-actions button {
+  border: none;
+  background: #1d4ed8;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.provider-actions button:nth-of-type(2) {
+  background: #6366f1;
+}
+
+.provider-actions button:hover {
+  opacity: 0.85;
+}
+
+.provider-expiry {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.loading {
+  color: #94a3b8;
+}
+
 @media (max-width: 768px) {
   .main-shell {
     grid-template-columns: 1fr;

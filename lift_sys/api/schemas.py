@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
 from ..ir.models import IntermediateRepresentation
@@ -37,7 +38,32 @@ class ConfigRequest(BaseModel):
 
 
 class RepoRequest(BaseModel):
-    path: str
+    identifier: str = Field(..., description="GitHub repository full name, e.g. owner/name")
+    branch: Optional[str] = Field(default=None, description="Branch to synchronise prior to analysis")
+
+
+class RepositorySummary(BaseModel):
+    identifier: str
+    owner: str
+    name: str
+    description: Optional[str] = None
+    default_branch: str = Field(..., serialization_alias="defaultBranch")
+    private: bool = False
+    last_synced: Optional[datetime] = Field(default=None, serialization_alias="lastSynced")
+
+
+class RepositoryMetadataModel(RepositorySummary):
+    workspace_path: Optional[str] = Field(default=None, serialization_alias="workspacePath")
+    source: str = "github"
+
+
+class RepoListResponse(BaseModel):
+    repositories: List[RepositorySummary]
+
+
+class RepoOpenResponse(BaseModel):
+    status: str
+    repository: RepositoryMetadataModel
 
 
 class ReverseRequest(BaseModel):
@@ -107,6 +133,10 @@ __all__ = [
     "SessionInfo",
     "ConfigRequest",
     "RepoRequest",
+    "RepositorySummary",
+    "RepositoryMetadataModel",
+    "RepoListResponse",
+    "RepoOpenResponse",
     "ReverseRequest",
     "ForwardRequest",
     "DecisionLiteralModel",

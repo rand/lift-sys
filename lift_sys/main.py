@@ -53,8 +53,8 @@ class LiftSysApp(App):
                 yield Label("Temperature")
                 self.temperature_input = Input(value=str(self.state.temperature))
                 yield self.temperature_input
-                yield Label("Repository Path")
-                self.repo_input = Input(placeholder="/path/to/repo")
+                yield Label("Repository Identifier")
+                self.repo_input = Input(placeholder="owner/repository")
                 yield self.repo_input
                 yield Static("Press Enter in any field to submit.")
             with TabPane("IR" ):
@@ -82,12 +82,14 @@ class LiftSysApp(App):
         self.status_panel.message = "Configuration saved"
 
     async def open_repo(self) -> None:
-        path = self.repo_input.value
+        identifier = self.repo_input.value
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{API_URL}/repos/open", json={"path": path})
+            response = await client.post(
+                f"{API_URL}/repos/open", json={"identifier": identifier}
+            )
             response.raise_for_status()
-        self.state.repository = path
-        self.status_panel.message = f"Repository {path} opened"
+        self.state.repository = identifier
+        self.status_panel.message = f"Repository {identifier} opened"
 
     async def action_refresh_plan(self) -> None:
         async with httpx.AsyncClient() as client:

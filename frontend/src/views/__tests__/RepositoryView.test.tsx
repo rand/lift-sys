@@ -31,9 +31,39 @@ describe("RepositoryView", () => {
   });
 
   it("updates scan timeline in response to WebSocket progress", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        repositories: [
+          {
+            identifier: "octocat/example",
+            owner: "octocat",
+            name: "example",
+            description: "Sample repository",
+            defaultBranch: "main",
+            private: false,
+            lastSynced: null,
+          },
+        ],
+      },
+    } as any);
     const postMock = vi.spyOn(api, "post").mockImplementation(async (url: string) => {
       if (url === "/repos/open") {
-        return { data: { status: "ready" } } as any;
+        return {
+          data: {
+            status: "ready",
+            repository: {
+              identifier: "octocat/example",
+              owner: "octocat",
+              name: "example",
+              description: "Sample repository",
+              defaultBranch: "main",
+              private: false,
+              workspacePath: "/tmp/repos/octocat/example",
+              lastSynced: new Date().toISOString(),
+              source: "github",
+            },
+          },
+        } as any;
       }
       if (url === "/reverse") {
         return { data: { progress: progressPayload } } as any;
@@ -47,11 +77,11 @@ describe("RepositoryView", () => {
       await Promise.resolve();
     });
 
-    await userEvent.type(screen.getByLabelText(/repository path/i), "/repo");
+    await screen.findByText(/example/);
     await userEvent.click(screen.getByRole("button", { name: /open repository/i }));
 
-    await waitFor(() => expect(postMock).toHaveBeenCalledWith("/repos/open", { path: "/repo" }));
-    expect(screen.getByText(/repository ready/i)).toBeInTheDocument();
+    await waitFor(() => expect(postMock).toHaveBeenCalledWith("/repos/open", { identifier: "octocat/example" }));
+    expect(screen.getByText(/Repository example synced/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /run reverse scan/i }));
 

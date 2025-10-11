@@ -4,9 +4,11 @@ from __future__ import annotations
 from .session_client import (
     SessionClient,
     PromptSession,
+    IRDraft,
     SessionListResponse,
     CreateSessionRequest,
     ResolveHoleRequest,
+    AssistSuggestion,
     AssistsResponse,
     IRResponse,
 )
@@ -14,9 +16,11 @@ from .session_client import (
 __all__ = [
     "SessionClient",
     "PromptSession",
+    "IRDraft",
     "SessionListResponse",
     "CreateSessionRequest",
     "ResolveHoleRequest",
+    "AssistSuggestion",
     "AssistsResponse",
     "IRResponse",
 ]

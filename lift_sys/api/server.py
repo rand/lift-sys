@@ -59,7 +59,14 @@ class AppState:
         )
         self.synthesizer = CodeSynthesizer(self.config)
         self.lifter = SpecificationLifter(
-            LifterConfig(codeql_queries=["security/default"], daikon_entrypoint="main"),
+            LifterConfig(
+                codeql_queries=["security/default"],
+                daikon_entrypoint="main",
+                stack_index_path=None,
+                run_codeql=True,
+                run_daikon=True,
+                run_stack_graphs=False,
+            ),
             repo=None,
         )
 
@@ -148,7 +155,16 @@ async def reverse(request: ReverseRequest) -> IRResponse:
             "message": f"Preparing reverse mode for {request.module}",
         }
     )
-    STATE.lifter.config = LifterConfig(codeql_queries=request.queries or ["security/default"], daikon_entrypoint=request.entrypoint)
+    analyses = set(request.analyses)
+    stack_index = request.stack_index_path or getattr(STATE.lifter.config, "stack_index_path", None)
+    STATE.lifter.config = LifterConfig(
+        codeql_queries=request.queries or ["security/default"],
+        daikon_entrypoint=request.entrypoint,
+        stack_index_path=stack_index,
+        run_codeql="codeql" in analyses,
+        run_daikon="daikon" in analyses,
+        run_stack_graphs="stack_graphs" in analyses,
+    )
     await STATE.publish_progress(
         {
             "type": "progress",
@@ -205,6 +221,9 @@ async def reverse(request: ReverseRequest) -> IRResponse:
             "message": "IR indexed for planner assists",
         }
     )
+    # Record lifter progress checkpoints in planner
+    for checkpoint in STATE.lifter.progress_log:
+        STATE.planner.record_checkpoint(checkpoint)
     now = datetime.utcnow().isoformat() + "Z"
     progress = [
         {

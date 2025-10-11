@@ -12,6 +12,7 @@ from ..ir.models import IntermediateRepresentation
 class PlannerState:
     completed: List[str] = field(default_factory=list)
     conflicts: Dict[str, str] = field(default_factory=dict)
+    checkpoints: List[str] = field(default_factory=list)
 
 
 class Planner:
@@ -27,6 +28,9 @@ class Planner:
         self.current_ir = ir
         self.state = PlannerState()
         return self.current_plan
+
+    def record_checkpoint(self, label: str) -> None:
+        self.state.checkpoints.append(label)
 
     def step(self, result: str, success: bool, reason: str | None = None) -> List[PlanStep]:
         if not self.current_plan:

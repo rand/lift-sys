@@ -13,6 +13,32 @@ Two complementary modes:
 
 Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
+## Key Features
+
+### Iterative Prompt-to-IR Refinement
+
+`lift-sys` now includes a complete session management system for iterative specification refinement:
+
+- **Natural Language Start**: Begin with a simple prompt describing your intent
+- **Typed Holes**: System identifies ambiguities (missing types, unclear constraints)
+- **AI-Assisted Resolution**: Get smart suggestions for each ambiguity
+- **Incremental Refinement**: Resolve one ambiguity at a time, see IR evolve
+- **SMT Verification**: Automatic validation ensures logical consistency
+- **Multi-Interface**: Same workflow available via Web UI, CLI, TUI, and Python SDK
+
+**Example workflow:**
+```
+Prompt: "A function that validates email addresses"
+  ↓
+System identifies holes: function_name, parameter_type, return_type
+  ↓
+You resolve iteratively with AI assists
+  ↓
+Get validated IR ready for code generation
+```
+
+See [Workflow Guides](docs/WORKFLOW_GUIDES.md) for detailed examples across all interfaces.
+
 ## Getting Started
 
 1. Install [`uv`](https://github.com/astral-sh/uv).
@@ -48,6 +74,68 @@ cd frontend && npm run dev
 ```bash
 uv run python -m lift_sys.main
 ```
+
+## Quick Start: Session Management
+
+### Web UI
+
+1. Navigate to http://localhost:5173
+2. Click "Prompt Workbench"
+3. Enter a prompt: "A function that adds two numbers"
+4. Click "Create Session"
+5. Resolve ambiguities with AI assists
+6. Finalize and export IR
+
+### CLI
+
+```bash
+# Create session
+uv run python -m lift_sys.cli session create \
+  --prompt "A function that adds two numbers"
+
+# List sessions
+uv run python -m lift_sys.cli session list
+
+# Get assists
+uv run python -m lift_sys.cli session assists <session-id>
+
+# Resolve a hole
+uv run python -m lift_sys.cli session resolve \
+  <session-id> hole_function_name "add_numbers"
+
+# Finalize
+uv run python -m lift_sys.cli session finalize <session-id> --output ir.json
+```
+
+### Python SDK
+
+```python
+from lift_sys.client import SessionClient
+
+client = SessionClient("http://localhost:8000")
+
+# Create session
+session = client.create_session(prompt="A function that adds two numbers")
+
+# Get AI suggestions
+assists = client.get_assists(session.session_id)
+
+# Resolve holes
+session = client.resolve_hole(
+    session_id=session.session_id,
+    hole_id="hole_function_name",
+    resolution_text="add_numbers"
+)
+
+# Finalize
+result = client.finalize_session(session.session_id)
+ir = result.ir
+```
+
+For complete examples and workflows, see:
+- [Workflow Guides](docs/WORKFLOW_GUIDES.md) - Step-by-step tutorials
+- [API Documentation](docs/API_SESSION_MANAGEMENT.md) - Complete API reference
+- [Example Script](examples/session_workflow.py) - Working Python example
 
 ## Project Structure
 

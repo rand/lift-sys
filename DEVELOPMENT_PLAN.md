@@ -1,11 +1,12 @@
 # lift-sys Development Plan
 ## Implementation Roadmap
 
-**Current Status:** 218/219 backend tests + 26 frontend tests passing - Phase 2 Complete! 🚀
-**Previous Status:** Phase 1 Complete (218/219 tests, 99.5%)
-**Next Goal:** Phase 3 - Add CLI/TUI and agent parity
+**Current Status:** 218/219 backend tests + 26 frontend tests + 31 CLI/TUI tests passing - Phase 3 Complete! 🚀
+**Previous Status:** Phase 2 Complete (Full frontend experience)
+**Next Goal:** Phase 4 - Documentation and knowledge sharing
 
 **Recent Major Achievements:**
+- ✅ **CLI/TUI and Agent Parity (Phase 3 COMPLETE)** - Python SDK, CLI commands, TUI integration, 31 tests (15 CLI + 16 TUI)
 - ✅ **Web Experience for Iterative Refinement (Phase 2 COMPLETE)** - Full frontend with Prompt Workbench, Enhanced IR View, 26 tests
 - ✅ **Prompt-to-IR Session Management (Phase 1 COMPLETE)** - Full backend with authentication, 63 tests (45 unit + 18 integration)
 - ✅ **OAuth & GitHub Integration** - Authentication system and repository client (from origin/main)
@@ -244,25 +245,33 @@ uv pip install "textual[dev]"
 **Dependencies**
 - ✅ Backend session APIs from Phase 1
 
-### Phase 3 – CLI, API, and agent parity
+### Phase 3 – CLI, API, and agent parity ✅ COMPLETE
 
+**Status:** ✅ **COMPLETE** - All 5 tasks delivered, 31 tests passing
 **Objective:** Provide equivalent iterative spec refinement flows via CLI/TUI and ensure programmatic integrations can automate the same lifecycle.
 
 **Key Tasks**
-- **3.1 Textual UI expansion** – Add a Prompt Refinement tab mirroring web functionality: prompt input, IR diff viewer, hole list, and resolution commands. Ensure compatibility with existing event loop and keybindings.
-- **3.2 CLI commands** – Introduce `uv run lift-sys spec refine` (and supporting subcommands) to create/update/finalize prompt sessions. Support JSON streaming output for automation.
-- **3.3 Agent SDK updates** – Provide Python client helpers in `lift_sys/client/` (or similar) for programmatic use. Include async support and typed responses.
-- **3.4 API documentation** – Update OpenAPI docs, add usage examples in README/design docs, and publish sample cURL scripts demonstrating session lifecycle.
-- **3.5 Integration tests** – Add CLI snapshot tests and Textual simulation tests to confirm parity with web workflows.
+- ✅ **3.1 Textual UI expansion** – Added Prompt Refinement tab to TUI with session creation, listing, and display. Full integration with SessionClient. (`lift_sys/main.py:20-177`)
+- ✅ **3.2 CLI commands** – Implemented `uv run python -m lift_sys.cli session` commands: create, list, get, resolve, finalize, delete, assists. JSON and rich output modes. (`lift_sys/cli/`)
+- ✅ **3.3 Agent SDK** – Complete Python client SDK with sync/async methods, dataclasses, and type safety. (`lift_sys/client/session_client.py` - 652 lines)
+- ✅ **3.4 API documentation** – Comprehensive API documentation with examples in Python, TypeScript, CLI, and cURL. (`docs/API_SESSION_MANAGEMENT.md` - ~600 lines, `examples/session_workflow.py`)
+- ✅ **3.5 Integration tests** – 31 tests (15 CLI + 16 TUI) covering all commands, workflows, and error handling. (`tests/unit/test_cli_commands.py`, `tests/unit/test_tui_session_methods.py`)
 
 **Deliverables**
-- CLI and TUI tooling in sync with backend capabilities.
-- Updated API documentation and client helpers.
-- Automated coverage for terminal/agent flows.
+- ✅ CLI commands with typer framework and rich formatting
+- ✅ TUI integration with session management tab
+- ✅ Python SDK with sync and async support
+- ✅ Comprehensive API documentation with multi-language examples
+- ✅ Working example script (`examples/session_workflow.py`)
+- ✅ 31 passing tests for CLI and TUI functionality
+
+**Test Coverage**
+- 15 CLI command tests: session creation, listing, retrieval, hole resolution, assists, finalization, deletion, error handling
+- 16 TUI session tests: SessionState management, method verification, async operations, widget integration
 
 **Dependencies**
-- Phase 1 backend services.
-- UI copy and workflows defined in Phase 2 for consistency.
+- ✅ Phase 1 backend services
+- ✅ UI copy and workflows defined in Phase 2 for consistency
 
 ### Phase 4 – Documentation and knowledge sharing
 

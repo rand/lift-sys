@@ -156,7 +156,19 @@ class AppState:
         )
 
     def reset(self) -> None:
+        """Reset all state to initial values.
+
+        Creates new instances of all stateful objects to ensure complete isolation
+        between tests. This is more thorough than just clearing data.
+        """
+        # Store progress subscribers to preserve them
+        old_subscribers = self._progress_subscribers.copy()
+
+        # Reinitialize everything
         self.__init__()
+
+        # Restore subscribers (they may be needed by running tests)
+        self._progress_subscribers = old_subscribers
 
     async def publish_progress(self, event: Dict[str, object]) -> Dict[str, object]:
         payload = dict(event)
@@ -191,7 +203,38 @@ STATE = AppState()
 
 
 def reset_state() -> None:
+    """Reset the global STATE object and clear all cached state."""
+    # Reset the global STATE object (recreates all attributes)
     STATE.reset()
+
+    # Also clear app.state attributes if they exist to ensure test isolation
+    # This is important for tests where app.state may hold stale references
+    _clear_app_state()
+
+
+def _clear_app_state() -> None:
+    """Clear app.state attributes for test isolation.
+
+    This function clears all state attributes set by the lifespan context manager
+    and test fixtures to ensure proper test isolation. It's safe to call even if
+    some attributes don't exist.
+    """
+    # List of attributes that may be set on app.state
+    state_attrs = [
+        'providers',
+        'hybrid_orchestrator',
+        'primary_provider',
+        'services',
+        'oauth_managers',
+        'token_store',
+        'default_user_id',
+        'github_repositories',
+        'allow_demo_user_header',
+    ]
+
+    for attr in state_attrs:
+        if hasattr(app.state, attr):
+            delattr(app.state, attr)
 
 
 def _metadata_to_schema(metadata: RepositoryMetadata) -> RepositoryMetadataModel:

@@ -28,8 +28,10 @@ class TestTUISessionManagement:
         """Test creating a session from a prompt in TUI."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -73,8 +75,10 @@ class TestTUISessionManagement:
         """Test creating session with empty prompt fails gracefully."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -94,8 +98,10 @@ class TestTUISessionManagement:
         """Test error handling when session creation fails."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -120,8 +126,10 @@ class TestTUISessionManagement:
         """Test listing sessions in TUI."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -167,8 +175,10 @@ class TestTUISessionManagement:
         """Test listing sessions when none exist."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -188,8 +198,10 @@ class TestTUISessionManagement:
         """Test error handling when listing sessions fails."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -211,8 +223,10 @@ class TestTUISessionManagement:
         """Test refreshing sessions list view."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[
                 PromptSession(
@@ -241,8 +255,10 @@ class TestTUISessionManagement:
         """Test refreshing session detail display with active session."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=PromptSession(
                 session_id="test-session",
                 status="active",
@@ -277,8 +293,10 @@ class TestTUISessionManagement:
         """Test refreshing session detail display with no active session."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -295,8 +313,10 @@ class TestTUISessionManagement:
         """Test list sessions action handler."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -327,8 +347,10 @@ class TestTUISessionManagement:
     def test_session_state_initialization(self):
         """Test SessionState dataclass initialization."""
         state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -353,8 +375,10 @@ class TestTUISessionManagement:
         )
 
         state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=session,
             sessions=[session],
         )
@@ -368,8 +392,10 @@ class TestTUISessionManagement:
         """Test complete TUI session workflow."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=None,
             sessions=[],
         )
@@ -427,8 +453,10 @@ class TestTUISessionManagement:
         """Test TUI handles sessions without current draft."""
         app = LiftSysApp()
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=PromptSession(
                 session_id="no-draft-session",
                 status="active",
@@ -457,8 +485,10 @@ class TestTUISessionManagement:
         # Create session with many ambiguities
         many_holes = [f"hole_{i}" for i in range(20)]
         app.state = SessionState(
-            app_config={},
-            ir_state=None,
+            endpoint="http://localhost:8000",
+            temperature=0.0,
+            repository=None,
+            ir=None,
             active_session=PromptSession(
                 session_id="many-holes-session",
                 status="active",

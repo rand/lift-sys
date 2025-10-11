@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ConfigurationView } from "./views/ConfigurationView";
 import { RepositoryView } from "./views/RepositoryView";
-import { IrView } from "./views/IrView";
+import { EnhancedIrView } from "./views/EnhancedIrView";
 import { PlannerView } from "./views/PlannerView";
 import { IdeView } from "./views/IdeView";
 import { PromptWorkbenchView } from "./views/PromptWorkbenchView";
@@ -71,7 +71,7 @@ export default function App() {
         {section === "configuration" && <ConfigurationView />}
         {section === "repository" && <RepositoryView />}
         {section === "prompt" && <PromptWorkbenchView />}
-        {section === "ir" && <IrView />}
+        {section === "ir" && <EnhancedIrView />}
         {section === "planner" && <PlannerView />}
         {section === "ide" && <IdeView />}
       </main>

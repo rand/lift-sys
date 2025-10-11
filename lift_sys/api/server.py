@@ -7,6 +7,7 @@ import logging
 import os
 from collections import deque
 from datetime import datetime
+from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Optional
 
 import uvicorn
@@ -17,10 +18,15 @@ from ..forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
 from ..ir.models import IntermediateRepresentation
 from ..ir.parser import IRParser
 from ..planner.planner import Planner
-from ..reverse_mode.lifter import LifterConfig, SpecificationLifter
+from ..reverse_mode.lifter import LifterConfig, SpecificationLifter, RepositoryHandle
 from ..auth.oauth_manager import OAuthManager
 from ..auth.provider_configs import build_default_configs
 from ..auth.token_store import TokenStore
+from ..services.github_repository import (
+    GitHubRepositoryClient,
+    RepositoryAccessError,
+    RepositoryMetadata,
+)
 from ..providers import (
     AnthropicProvider,
     BaseProvider,
@@ -46,6 +52,10 @@ from .schemas import (
     PlanResponse,
     PlannerTelemetry,
     RepoRequest,
+    RepoListResponse,
+    RepoOpenResponse,
+    RepositoryMetadataModel,
+    RepositorySummary as RepositorySummaryModel,
     ReverseRequest,
 )
 
@@ -86,6 +96,7 @@ class AppState:
         self.lifter: Optional[SpecificationLifter] = None
         self.progress_log = deque(maxlen=256)
         self._progress_subscribers: set[asyncio.Queue] = set()
+        self.repositories: Dict[str, RepositoryMetadata] = {}
         self.progress_log.append(
             {
                 "type": "status",
@@ -157,6 +168,20 @@ def reset_state() -> None:
     STATE.reset()
 
 
+def _metadata_to_schema(metadata: RepositoryMetadata) -> RepositoryMetadataModel:
+    return RepositoryMetadataModel(
+        identifier=metadata.identifier,
+        owner=metadata.owner,
+        name=metadata.name,
+        description=metadata.description,
+        default_branch=metadata.default_branch,
+        private=metadata.private,
+        last_synced=metadata.last_synced,
+        workspace_path=str(metadata.workspace_path),
+        source=metadata.source,
+    )
+
+
 async def _echo_text_runner(prompt: str, _: Dict[str, Any]) -> str:
     return prompt
 
@@ -226,6 +251,15 @@ async def configure_hybrid_runtime() -> None:
     app.state.oauth_managers = managers
     app.state.token_store = token_store
     app.state.default_user_id = default_user_id
+    workspace_root = Path(
+        os.getenv(
+            "LIFT_SYS_WORKSPACE_ROOT",
+            str(Path.home() / ".cache" / "lift-sys" / "repos"),
+        )
+    )
+    app.state.github_repositories = GitHubRepositoryClient(
+        token_store, workspace_root=workspace_root
+    )
 
 
 @app.get("/")
@@ -254,19 +288,67 @@ async def configure(
     return {"status": "configured"}
 
 
-@app.post("/repos/open")
+@app.get("/repos", response_model=RepoListResponse)
+async def list_repositories(
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> RepoListResponse:
+    client: Optional[GitHubRepositoryClient] = getattr(
+        app.state, "github_repositories", None
+    )
+    if client is None:
+        raise HTTPException(status_code=503, detail="github_integration_unavailable")
+    try:
+        summaries = await client.list_repositories(user.id)
+    except RepositoryAccessError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+    repositories = []
+    for summary in summaries:
+        cached = STATE.repositories.get(summary.identifier)
+        repositories.append(
+            RepositorySummaryModel(
+                identifier=summary.identifier,
+                owner=summary.owner,
+                name=summary.name,
+                description=summary.description,
+                default_branch=summary.default_branch,
+                private=summary.private,
+                last_synced=cached.last_synced if cached else None,
+            )
+        )
+    return RepoListResponse(repositories=repositories)
+
+
+@app.post("/repos/open", response_model=RepoOpenResponse)
 async def open_repository(
     request: RepoRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
-) -> Dict[str, str]:
-    LOGGER.info("%s requested repository open for %s", user.id, request.path)
+) -> RepoOpenResponse:
+    LOGGER.info("%s requested repository open for %s", user.id, request.identifier)
+    client: Optional[GitHubRepositoryClient] = getattr(
+        app.state, "github_repositories", None
+    )
+    if client is None:
+        raise HTTPException(status_code=503, detail="github_integration_unavailable")
+    try:
+        metadata = await client.ensure_repository(
+            user.id, request.identifier, branch=request.branch
+        )
+    except RepositoryAccessError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
     if not STATE.lifter:
         STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
     assert STATE.lifter
+    handle = RepositoryHandle(
+        identifier=metadata.identifier,
+        workspace_path=metadata.workspace_path,
+        branch=request.branch or metadata.default_branch,
+    )
     try:
-        STATE.lifter.load_repository(request.path)
-    except Exception as exc:  # pragma: no cover - defensive broad catch for repository errors
-        raise HTTPException(status_code=404, detail=f"repository not accessible: {exc}")
-    return {"status": "ready"}
+        STATE.lifter.load_repository(handle)
+    except Exception as exc:  # pragma: no cover - defensive broad catch
+        raise HTTPException(status_code=400, detail=f"unable to load repository: {exc}")
+    STATE.repositories[metadata.identifier] = metadata
+    return RepoOpenResponse(status="ready", repository=_metadata_to_schema(metadata))
 
 
 @app.post("/reverse", response_model=IRResponse)

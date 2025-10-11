@@ -51,6 +51,7 @@ async def test_tui_ir_to_code_generation(monkeypatch, sample_ir) -> None:
             if url.endswith("/config"):
                 return _DummyResponse({"status": "configured"})
             if url.endswith("/repos/open"):
+                assert "identifier" in json
                 return _DummyResponse({"status": "ready"})
             if url.endswith("/reverse"):
                 return _DummyResponse({"ir": sample_ir.to_dict()})
@@ -70,7 +71,7 @@ async def test_tui_ir_to_code_generation(monkeypatch, sample_ir) -> None:
         app.temperature_input.value = "0.0"
         await app.configure_backend()
 
-        app.repo_input.value = "/tmp/repo"
+        app.repo_input.value = "octocat/example"
         await app.open_repo()
 
         await app.run_reverse("module.py")

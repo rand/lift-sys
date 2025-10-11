@@ -4,13 +4,14 @@ import { RepositoryView } from "./views/RepositoryView";
 import { IrView } from "./views/IrView";
 import { PlannerView } from "./views/PlannerView";
 import { IdeView } from "./views/IdeView";
+import { PromptWorkbenchView } from "./views/PromptWorkbenchView";
 import { Button } from "./components/ui/button";
 import { useAuth } from "./lib/auth";
 import { SignInView } from "./views/SignInView";
 import { AuthCallbackView } from "./views/AuthCallbackView";
 import "./styles.css";
 
-type Section = "configuration" | "repository" | "ir" | "planner" | "ide";
+type Section = "configuration" | "repository" | "prompt" | "ir" | "planner" | "ide";
 
 export default function App() {
   const [section, setSection] = useState<Section>("configuration");
@@ -52,6 +53,9 @@ export default function App() {
           <Button variant={section === "repository" ? "default" : "ghost"} onClick={() => setSection("repository")}>
             Repository
           </Button>
+          <Button variant={section === "prompt" ? "default" : "ghost"} onClick={() => setSection("prompt")}>
+            Prompt Workbench
+          </Button>
           <Button variant={section === "ir" ? "default" : "ghost"} onClick={() => setSection("ir")}>
             IR Review
           </Button>
@@ -66,6 +70,7 @@ export default function App() {
       <main style={{ padding: "2rem", background: "#0f172a" }}>
         {section === "configuration" && <ConfigurationView />}
         {section === "repository" && <RepositoryView />}
+        {section === "prompt" && <PromptWorkbenchView />}
         {section === "ir" && <IrView />}
         {section === "planner" && <PlannerView />}
         {section === "ide" && <IdeView />}

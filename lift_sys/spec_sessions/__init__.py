@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from .models import HoleResolution, IRDraft, PromptRevision, PromptSession
 from .storage import InMemorySessionStore, SessionStore
+from .translator import PromptToIRTranslator
 
 __all__ = [
     "PromptSession",
@@ -11,4 +12,5 @@ __all__ = [
     "HoleResolution",
     "SessionStore",
     "InMemorySessionStore",
+    "PromptToIRTranslator",
 ]

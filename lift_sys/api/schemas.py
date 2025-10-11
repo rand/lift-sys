@@ -3,9 +3,28 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from ..ir.models import IntermediateRepresentation
+
+
+class UserIdentity(BaseModel):
+    """Representation of an authenticated user's identity."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    provider: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+    avatar_url: Optional[str] = Field(default=None, serialization_alias="avatarUrl")
+
+
+class SessionInfo(BaseModel):
+    """Session metadata exposed to the frontend."""
+
+    authenticated: bool = False
+    user: Optional[UserIdentity] = None
 
 
 class ConfigRequest(BaseModel):
@@ -84,6 +103,8 @@ class ForwardResponse(BaseModel):
 
 
 __all__ = [
+    "UserIdentity",
+    "SessionInfo",
     "ConfigRequest",
     "RepoRequest",
     "ReverseRequest",

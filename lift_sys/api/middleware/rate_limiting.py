@@ -36,10 +36,33 @@ def rate_limiter(
     async def middleware(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        user_id = getattr(request.state, "user_id", "anonymous")
+        user_id = _resolve_rate_limit_key(request)
         bucket = buckets[user_id]
         if not bucket.consume():
             raise HTTPException(status_code=429, detail="rate limit exceeded")
         return await call_next(request)
 
     return middleware
+
+
+def _resolve_rate_limit_key(request: Request) -> str:
+    """Determine the token bucket key for the incoming request."""
+
+    existing = getattr(request.state, "user_id", None)
+    if existing:
+        return existing
+
+    allow_demo = getattr(request.app.state, "allow_demo_user_header", False)
+    if allow_demo:
+        demo_user = request.headers.get("x-demo-user")
+        if demo_user:
+            user_id = f"demo:{demo_user}"
+            request.state.user_id = user_id
+            return user_id
+
+    session_user = request.session.get("user_id")
+    if session_user:
+        request.state.user_id = session_user
+        return session_user
+
+    return "anonymous"

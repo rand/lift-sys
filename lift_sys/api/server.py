@@ -404,17 +404,30 @@ async def get_plan() -> PlanResponse:
         goals=plan.goals,
         ir=ir.to_dict() if ir else None,
         telemetry=telemetry,
+        decision_literals={key: value.to_dict() for key, value in plan.decision_literals.items()},
+        recent_events=STATE.planner.recent_events(),
     )
 
 
 async def websocket_emitter() -> AsyncIterator[str]:
+    # Emit initial planner ready event
+    yield json.dumps({"type": "planner_ready", "data": {}})
+
+    # Subscribe to general progress events
     queue = STATE.subscribe_progress()
     try:
         while True:
+            # Check for planner events
+            planner_events = STATE.planner.consume_events()
+            for event in planner_events:
+                yield json.dumps(event)
+
+            # Check for general progress events
             try:
-                event = await asyncio.wait_for(queue.get(), timeout=5.0)
+                event = await asyncio.wait_for(queue.get(), timeout=0.2)
                 yield json.dumps(event)
             except asyncio.TimeoutError:
+                # Send heartbeat every 5 seconds
                 heartbeat = {"type": "heartbeat", "timestamp": datetime.utcnow().isoformat() + "Z"}
                 yield json.dumps(heartbeat)
     finally:

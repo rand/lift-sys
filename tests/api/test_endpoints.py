@@ -122,3 +122,25 @@ def test_plan_endpoint_returns_loaded_plan(api_client, api_state, sample_ir: Int
     assert response.status_code == 200
     plan = response.json()
     assert plan["goals"] == ["verified_ir", "code_generation"]
+    assert "decision_literals" in plan
+    verifier_literal = plan["decision_literals"].get("controller:verifier")
+    assert verifier_literal
+    assert "steps" in verifier_literal
+    assert plan["recent_events"] == []
+
+
+def test_progress_socket_streams_planner_events(api_client, api_state, sample_ir: IntermediateRepresentation) -> None:
+    configure_backend(api_client)
+    planner = api_state.planner
+    planner.load_ir(sample_ir)
+
+    planner.step("parse_ir", success=True)
+    planner.step("verify_assertions", success=False, reason="blocked_by:controller:synthesiser")
+
+    with api_client.websocket_connect("/ws/progress") as websocket:
+        ready = websocket.receive_json()
+        assert ready["type"] == "planner_ready"
+        observed = {websocket.receive_json()["type"] for _ in range(4)}
+        assert "decision" in observed
+        assert "learned_clause" in observed
+        assert "next_decisions" in observed

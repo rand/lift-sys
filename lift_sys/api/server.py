@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from collections import deque
 from datetime import datetime
@@ -20,7 +21,13 @@ from ..reverse_mode.lifter import LifterConfig, SpecificationLifter
 from ..auth.oauth_manager import OAuthManager
 from ..auth.provider_configs import build_default_configs
 from ..auth.token_store import TokenStore
-from ..providers import AnthropicProvider, GeminiProvider, LocalVLLMProvider, OpenAIProvider
+from ..providers import (
+    AnthropicProvider,
+    BaseProvider,
+    GeminiProvider,
+    LocalVLLMProvider,
+    OpenAIProvider,
+)
 from ..services.generation_service import GenerationService
 from ..services.orchestrator import HybridOrchestrator
 from ..services.reasoning_service import ReasoningService
@@ -56,6 +63,9 @@ app.include_router(health_routes.router)
 app.include_router(auth_routes.router)
 app.include_router(provider_routes.router)
 app.include_router(generate_routes.router)
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AppState:
@@ -147,6 +157,25 @@ async def _echo_structured_runner(prompt: str, payload: Dict[str, Any]) -> str:
     return json.dumps({"prompt": prompt, "schema": schema})
 
 
+async def _initialize_providers_with_tokens(
+    providers: dict[str, BaseProvider], token_store: TokenStore, user_id: str
+) -> None:
+    """Initialize provider instances using credentials from the token store."""
+
+    for name, provider in providers.items():
+        credentials = token_store.load_tokens(user_id, name)
+        if not credentials:
+            continue
+        try:
+            await provider.initialize(credentials)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            LOGGER.warning(
+                "failed to initialize provider '%s' with stored credentials: %s",
+                name,
+                exc,
+            )
+
+
 @app.on_event("startup")
 async def configure_hybrid_runtime() -> None:
     token_key = os.getenv("LIFT_SYS_TOKEN_KEY")
@@ -154,11 +183,14 @@ async def configure_hybrid_runtime() -> None:
     token_storage: Dict[str, str] = {}
     token_store = TokenStore(token_storage, encryption_key)
 
-    providers = {
+    providers: dict[str, BaseProvider] = {
         "anthropic": AnthropicProvider(),
         "openai": OpenAIProvider(),
         "gemini": GeminiProvider(),
     }
+
+    default_user_id = os.getenv("LIFT_SYS_DEFAULT_USER_ID", "demo-user")
+    await _initialize_providers_with_tokens(providers, token_store, default_user_id)
 
     local_provider = LocalVLLMProvider(
         structured_runner=_echo_structured_runner,
@@ -184,6 +216,7 @@ async def configure_hybrid_runtime() -> None:
     }
     app.state.oauth_managers = managers
     app.state.token_store = token_store
+    app.state.default_user_id = default_user_id
 
 
 @app.get("/")

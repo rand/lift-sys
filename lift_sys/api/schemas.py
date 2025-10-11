@@ -25,6 +25,14 @@ class ReverseRequest(BaseModel):
     module: str
     queries: List[str] = Field(default_factory=list)
     entrypoint: str = "main"
+    analyses: List[str] = Field(
+        default_factory=lambda: ["codeql", "daikon", "stack_graphs"],
+        description="Analyses to execute during reverse lifting",
+    )
+    stack_index_path: Optional[str] = Field(
+        default=None,
+        description="Path to stack-graph index directory",
+    )
 
 
 class ForwardRequest(BaseModel):

@@ -1,10 +1,4 @@
-import { useState } from "react";
-import { ConfigurationView } from "./views/ConfigurationView";
-import { RepositoryView } from "./views/RepositoryView";
-import { EnhancedIrView } from "./views/EnhancedIrView";
-import { PlannerView } from "./views/PlannerView";
-import { IdeView } from "./views/IdeView";
-import { PromptWorkbenchView } from "./views/PromptWorkbenchView";
+import { useState, lazy, Suspense } from "react";
 import { Button } from "./components/ui/button";
 import { ModeToggle } from "./components/mode-toggle";
 import { Separator } from "./components/ui/separator";
@@ -13,6 +7,14 @@ import { useAuth } from "./lib/auth";
 import { SignInView } from "./views/SignInView";
 import { AuthCallbackView } from "./views/AuthCallbackView";
 import "./styles.css";
+
+// Lazy load views for code splitting
+const ConfigurationView = lazy(() => import("./views/ConfigurationView").then(m => ({ default: m.ConfigurationView })));
+const RepositoryView = lazy(() => import("./views/RepositoryView").then(m => ({ default: m.RepositoryView })));
+const EnhancedIrView = lazy(() => import("./views/EnhancedIrView").then(m => ({ default: m.EnhancedIrView })));
+const PlannerView = lazy(() => import("./views/PlannerView").then(m => ({ default: m.PlannerView })));
+const IdeView = lazy(() => import("./views/IdeView").then(m => ({ default: m.IdeView })));
+const PromptWorkbenchView = lazy(() => import("./views/PromptWorkbenchView").then(m => ({ default: m.PromptWorkbenchView })));
 
 type Section = "configuration" | "repository" | "prompt" | "ir" | "planner" | "ide";
 
@@ -79,12 +81,18 @@ export default function App() {
         </Button>
         </aside>
         <main id="main-content" className="p-8 bg-background overflow-auto">
-          {section === "configuration" && <ConfigurationView />}
-          {section === "repository" && <RepositoryView />}
-          {section === "prompt" && <PromptWorkbenchView />}
-          {section === "ir" && <EnhancedIrView />}
-          {section === "planner" && <PlannerView />}
-          {section === "ide" && <IdeView />}
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+              <p className="text-muted-foreground animate-pulse">Loading...</p>
+            </div>
+          }>
+            {section === "configuration" && <ConfigurationView />}
+            {section === "repository" && <RepositoryView />}
+            {section === "prompt" && <PromptWorkbenchView />}
+            {section === "ir" && <EnhancedIrView />}
+            {section === "planner" && <PlannerView />}
+            {section === "ide" && <IdeView />}
+          </Suspense>
         </main>
       </div>
     </>

@@ -913,12 +913,14 @@ dev = [
 dev = [
     { name = "anyio" },
     { name = "mypy" },
+    { name = "playwright" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "pytest-playwright" },
     { name = "pytest-xdist" },
     { name = "ruff" },
 ]
@@ -957,12 +959,14 @@ provides-extras = ["dev"]
 dev = [
     { name = "anyio" },
     { name = "mypy", specifier = ">=1.18.2" },
+    { name = "playwright", specifier = ">=1.55.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark", specifier = ">=5.1.0" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "pytest-playwright", specifier = ">=0.7.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.14.0" },
 ]

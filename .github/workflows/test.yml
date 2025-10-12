@@ -49,6 +49,22 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Start API server
+        run: |
+          uv run uvicorn lift_sys.api.server:app --host 127.0.0.1 --port 8000 &
+          sleep 5
+          # Wait for server to be ready
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8000/ > /dev/null; then
+              echo "API server is ready"
+              break
+            fi
+            echo "Waiting for API server... ($i/30)"
+            sleep 1
+          done
+        env:
+          LIFT_SYS_ENABLE_DEMO_USER_HEADER: "1"
+
       - name: Run tests
         run: |
           uv run pytest tests/ \

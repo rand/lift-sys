@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { api } from "../lib/api";
+import { AlertCircle, ChevronDown } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { api } from "@/lib/api";
 
 type PlanSnapshot = {
   ir?: {
@@ -72,9 +74,13 @@ export function IrView() {
           return {
             ...section,
             content: (
-              <div style={{ display: "grid", gap: "0.5rem" }}>
-                <p>{ir.intent.summary}</p>
-                {ir.intent.rationale && <p style={{ opacity: 0.8 }}>Rationale: {ir.intent.rationale}</p>}
+              <div className="space-y-2">
+                <p className="text-sm">{ir.intent.summary}</p>
+                {ir.intent.rationale && (
+                  <p className="text-sm text-muted-foreground">
+                    Rationale: {ir.intent.rationale}
+                  </p>
+                )}
               </div>
             ),
           };
@@ -82,7 +88,7 @@ export function IrView() {
           return {
             ...section,
             content: (
-              <div style={{ display: "grid", gap: "0.5rem" }}>
+              <div className="space-y-2 text-sm">
                 <div>
                   <strong>Name:</strong> {ir.signature.name}
                 </div>
@@ -91,7 +97,7 @@ export function IrView() {
                 </div>
                 <div>
                   <strong>Parameters</strong>
-                  <ul>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
                     {ir.signature.parameters.length === 0 && <li>None</li>}
                     {ir.signature.parameters.map((parameter) => (
                       <li key={parameter.name}>
@@ -107,7 +113,7 @@ export function IrView() {
           return {
             ...section,
             content: (
-              <ul>
+              <ul className="list-disc list-inside text-sm space-y-1">
                 {ir.effects.length === 0 && <li>No side effects recorded.</li>}
                 {ir.effects.map((effect) => (
                   <li key={effect.description}>{effect.description}</li>
@@ -119,12 +125,14 @@ export function IrView() {
           return {
             ...section,
             content: (
-              <ul style={{ display: "grid", gap: "0.5rem" }}>
-                {ir.assertions.length === 0 && <li>No invariants provided.</li>}
+              <ul className="space-y-2">
+                {ir.assertions.length === 0 && <li className="text-sm">No invariants provided.</li>}
                 {ir.assertions.map((assertion) => (
                   <li key={assertion.predicate}>
-                    <div style={{ fontWeight: 600 }}>{assertion.predicate}</div>
-                    {assertion.rationale && <div style={{ fontSize: "0.85rem", opacity: 0.8 }}>{assertion.rationale}</div>}
+                    <div className="font-semibold text-sm">{assertion.predicate}</div>
+                    {assertion.rationale && (
+                      <div className="text-xs text-muted-foreground mt-1">{assertion.rationale}</div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -157,93 +165,109 @@ export function IrView() {
   }, [invariants]);
 
   return (
-    <Card title="Intermediate Representation">
-      {isLoading && <p>Loading planner snapshot…</p>}
-      {error && <p role="alert">Failed to load IR snapshot.</p>}
-      {!isLoading && !error && !ir && <p>Run reverse mode to generate an IR.</p>}
-      {ir && (
-        <div style={{ display: "grid", gap: "1.5rem" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {invariantBadges.map((badge) => (
-              <Badge key={badge.key} variant={badge.variant}>
-                {badge.predicate}
-              </Badge>
-            ))}
-            {invariantBadges.length === 0 && <Badge variant="warning">No invariants yet</Badge>}
-          </div>
-
-          <div style={{ display: "grid", gap: "1rem" }}>
-            {sections.map((section, index) => {
-              const clauseHoles = typedHoles.filter((hole) => hole.clause === section.id);
-              return (
-                <details key={section.id} open={index === 0} style={collapsibleStyle}>
-                  <summary style={summaryStyle}>{section.title}</summary>
-                  <div style={{ display: "grid", gap: "0.75rem" }}>
-                    {section.content}
-                    {clauseHoles.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                        {clauseHoles.map((hole) => (
-                          <Button
-                            key={hole.identifier}
-                            size="sm"
-                            variant={activeHole === hole.identifier ? "default" : "outline"}
-                            onClick={() => setActiveHole((current) => (current === hole.identifier ? null : hole.identifier))}
-                            style={chipStyle}
-                          >
-                            {`<?${hole.identifier}: ${hole.type_hint}>`}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </details>
-              );
-            })}
-          </div>
-
-          {activeHoleDetails && (
-            <aside style={assistPanelStyle} aria-live="polite">
-              <h3 style={{ margin: 0 }}>Planner Assist</h3>
-              <p style={{ margin: "0.5rem 0", opacity: 0.85 }}>
-                {activeHoleDetails.description || "No description provided."}
-              </p>
-              <Badge variant="info">{clauseLabels[activeHoleDetails.clause as keyof typeof clauseLabels]}</Badge>
-              {activeHoleDetails.assist && <p style={{ margin: "0.75rem 0 0" }}>{activeHoleDetails.assist}</p>}
-              <Button style={{ marginTop: "0.75rem" }} size="sm" onClick={() => setActiveHole(null)}>
-                Dismiss
-              </Button>
-            </aside>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Intermediate Representation</CardTitle>
+          <CardDescription>
+            View IR structure from reverse mode with typed holes and invariants
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isLoading && <p className="text-sm text-muted-foreground">Loading planner snapshot…</p>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Failed to load IR snapshot.</AlertDescription>
+            </Alert>
           )}
-        </div>
-      )}
-    </Card>
+          {!isLoading && !error && !ir && (
+            <p className="text-sm text-muted-foreground">Run reverse mode to generate an IR.</p>
+          )}
+          {ir && (
+            <>
+              {/* Invariant Badges */}
+              {invariantBadges.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {invariantBadges.map((badge) => (
+                    <Badge key={badge.key} variant={badge.variant}>
+                      {badge.predicate}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {invariantBadges.length === 0 && (
+                <Badge variant="warning">No invariants yet</Badge>
+              )}
+
+              {/* IR Sections */}
+              <div className="space-y-4">
+                {sections.map((section, index) => {
+                  const clauseHoles = typedHoles.filter((hole) => hole.clause === section.id);
+                  const hasHoles = clauseHoles.length > 0;
+
+                  return (
+                    <Card key={section.id} className="bg-card/60">
+                      <details open={index === 0}>
+                        <summary className="cursor-pointer font-semibold flex items-center gap-2 p-6 hover:opacity-80 transition-opacity">
+                          <ChevronDown className="h-4 w-4 transition-transform [[open]>&]:rotate-180" />
+                          {section.title}
+                          {hasHoles && (
+                            <Badge variant="warning" className="ml-2 text-xs">
+                              {clauseHoles.length} holes
+                            </Badge>
+                          )}
+                        </summary>
+                        <CardContent className="space-y-3 pt-0">
+                          {section.content}
+                          {clauseHoles.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {clauseHoles.map((hole) => (
+                                <Button
+                                  key={hole.identifier}
+                                  size="sm"
+                                  variant={activeHole === hole.identifier ? "default" : "outline"}
+                                  onClick={() => setActiveHole((current) => (current === hole.identifier ? null : hole.identifier))}
+                                  className="rounded-full"
+                                >
+                                  {`<?${hole.identifier}: ${hole.type_hint}>`}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </details>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Assist Panel */}
+              {activeHoleDetails && (
+                <Card className="bg-accent/90" aria-live="polite">
+                  <CardHeader>
+                    <CardTitle className="text-base">Planner Assist</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm opacity-85">
+                      {activeHoleDetails.description || "No description provided."}
+                    </p>
+                    <Badge variant="info">
+                      {clauseLabels[activeHoleDetails.clause as keyof typeof clauseLabels]}
+                    </Badge>
+                    {activeHoleDetails.assist && (
+                      <p className="text-sm mt-3">{activeHoleDetails.assist}</p>
+                    )}
+                    <Button size="sm" onClick={() => setActiveHole(null)}>
+                      Dismiss
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
-
-const collapsibleStyle: React.CSSProperties = {
-  background: "rgba(15, 23, 42, 0.6)",
-  borderRadius: "0.75rem",
-  padding: "0.75rem 1rem",
-  border: "1px solid rgba(148, 163, 184, 0.2)",
-};
-
-const summaryStyle: React.CSSProperties = {
-  fontWeight: 600,
-  cursor: "pointer",
-  outline: "none",
-};
-
-const chipStyle: React.CSSProperties = {
-  borderRadius: "999px",
-  paddingInline: "0.75rem",
-  paddingBlock: "0.25rem",
-};
-
-const assistPanelStyle: React.CSSProperties = {
-  border: "1px solid rgba(148,163,184,0.35)",
-  borderRadius: "0.75rem",
-  padding: "1rem",
-  background: "rgba(15, 23, 42, 0.9)",
-  display: "grid",
-  gap: "0.5rem",
-};

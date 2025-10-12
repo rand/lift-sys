@@ -2,9 +2,11 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ReactFlow, Background } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 import { api } from "../lib/api";
 
 type PlannerData = {
@@ -66,76 +68,84 @@ export function PlannerView() {
   });
 
   return (
-    <Card title="Planner">
-      <div style={toolbarStyle}>
-        <Button variant="outline" onClick={() => reverseMutation.mutate()} disabled={reverseMutation.isPending}>
-          {reverseMutation.isPending ? "Re-running Reverse…" : "Re-run Reverse"}
-        </Button>
-        <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-          Refresh Plan
-        </Button>
-        <Button variant="outline" onClick={() => forwardMutation.mutate()} disabled={forwardMutation.isPending || !data?.ir}>
-          {forwardMutation.isPending ? "Generating…" : "Re-run Forward"}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["plan"] })}
-          disabled={!data?.telemetry?.assists?.length}
-        >
-          Resolve Holes
-        </Button>
-      </div>
-
-      {!data && <p>No plan available.</p>}
-
-      {data && (
-        <div style={{ display: "grid", gap: "1.5rem" }}>
-          <div style={{ height: 320, background: "#0f172a", borderRadius: "0.75rem", overflow: "hidden" }}>
-            <ReactFlow nodes={plannerGraph.nodes} edges={plannerGraph.edges} fitView fitViewOptions={{ padding: 0.2 }}>
-              <Background gap={16} size={1} color="rgba(148,163,184,0.1)" />
-            </ReactFlow>
-          </div>
-
-          <section style={{ display: "grid", gap: "0.75rem" }}>
-            <h3 style={{ margin: 0 }}>Planner Assists</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              {data.telemetry?.assists?.length ? (
-                data.telemetry.assists.map((assist) => (
-                  <Badge key={assist.target} variant="info">
-                    {assist.message}
-                  </Badge>
-                ))
-              ) : (
-                <span style={{ opacity: 0.7 }}>No assists pending.</span>
-              )}
-            </div>
-          </section>
-
-          <section style={{ display: "grid", gap: "0.75rem" }}>
-            <h3 style={{ margin: 0 }}>Conflict Log</h3>
-            {data.telemetry?.conflicts && Object.keys(data.telemetry.conflicts).length > 0 ? (
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={tableHeaderStyle}>Step</th>
-                    <th style={tableHeaderStyle}>Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(data.telemetry.conflicts).map(([step, reason]) => (
-                    <tr key={step}>
-                      <td style={tableCellStyle}>{step}</td>
-                      <td style={tableCellStyle}>{reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <span style={{ opacity: 0.7 }}>No conflicts captured.</span>
-            )}
-          </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>Planner</CardTitle>
+        <CardDescription>
+          Visualize execution plan dependencies and resolve constraints
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex gap-3 flex-wrap">
+          <Button variant="outline" onClick={() => reverseMutation.mutate()} disabled={reverseMutation.isPending}>
+            {reverseMutation.isPending ? "Re-running Reverse…" : "Re-run Reverse"}
+          </Button>
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            Refresh Plan
+          </Button>
+          <Button variant="outline" onClick={() => forwardMutation.mutate()} disabled={forwardMutation.isPending || !data?.ir}>
+            {forwardMutation.isPending ? "Generating…" : "Re-run Forward"}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["plan"] })}
+            disabled={!data?.telemetry?.assists?.length}
+          >
+            Resolve Holes
+          </Button>
         </div>
-      )}
+
+        {!data && <p className="text-sm text-muted-foreground">No plan available.</p>}
+
+        {data && (
+          <div className="space-y-6">
+            <div className="h-80 bg-slate-950 rounded-xl overflow-hidden">
+              <ReactFlow nodes={plannerGraph.nodes} edges={plannerGraph.edges} fitView fitViewOptions={{ padding: 0.2 }}>
+                <Background gap={16} size={1} color="rgba(148,163,184,0.1)" />
+              </ReactFlow>
+            </div>
+
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold m-0">Planner Assists</h3>
+              <div className="flex flex-wrap gap-2">
+                {data.telemetry?.assists?.length ? (
+                  data.telemetry.assists.map((assist) => (
+                    <Badge key={assist.target} variant="info">
+                      {assist.message}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No assists pending.</span>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold m-0">Conflict Log</h3>
+              {data.telemetry?.conflicts && Object.keys(data.telemetry.conflicts).length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Step</TableHead>
+                      <TableHead>Reason</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(data.telemetry.conflicts).map(([step, reason]) => (
+                      <TableRow key={step}>
+                        <TableCell>{step}</TableCell>
+                        <TableCell>{reason}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <span className="text-sm text-muted-foreground">No conflicts captured.</span>
+              )}
+            </section>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }
@@ -213,28 +223,3 @@ function buildPlannerGraph(data: PlannerData | null | undefined) {
 
   return { nodes, edges };
 }
-
-const toolbarStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "0.75rem",
-  flexWrap: "wrap",
-  marginBottom: "1.5rem",
-};
-
-const tableStyle: React.CSSProperties = {
-  width: "100%",
-  borderCollapse: "collapse",
-  border: "1px solid rgba(148,163,184,0.25)",
-};
-
-const tableHeaderStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "0.5rem 0.75rem",
-  borderBottom: "1px solid rgba(148,163,184,0.25)",
-  background: "rgba(15,23,42,0.6)",
-};
-
-const tableCellStyle: React.CSSProperties = {
-  padding: "0.5rem 0.75rem",
-  borderBottom: "1px solid rgba(148,163,184,0.15)",
-};

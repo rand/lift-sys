@@ -174,6 +174,7 @@ class AssistResponse(BaseModel):
 
 
 class AssistsResponse(BaseModel):
+    session_id: str
     assists: list[AssistResponse]
 
 

@@ -142,8 +142,8 @@ class AssistsResponse:
             assists=[
                 AssistSuggestion(
                     hole_id=a["hole_id"],
-                    suggestions=a["suggestions"],
-                    context=a["context"],
+                    suggestions=[a["suggestion"]],  # API returns singular 'suggestion'
+                    context=a["description"],  # API uses 'description' for context
                 )
                 for a in data["assists"]
             ],

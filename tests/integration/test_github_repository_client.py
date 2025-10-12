@@ -21,6 +21,8 @@ def _create_remote_repo(directory: Path) -> Repo:
     (directory / "README.md").write_text("hello", encoding="utf-8")
     repo.index.add(["README.md"])
     repo.index.commit("initial commit")
+    # Rename default branch to 'main' to match GitHub's default
+    repo.git.branch("-M", "main")
     return repo
 
 

@@ -6,8 +6,6 @@
 
 `lift-sys` is a modular, verifiable AI-native software development environment, supporting next-generation constrained code generation and reverse-mode formalization, aiming to democratize high-quality software creation while keeping users in control.
 
-> **Test Status**: 269/295 tests passing (91.2%). The 26 failing tests are known test isolation issues documented in `development_records/TEST_ISOLATION_FIXES.md`. All core functionality is verified and working.
-
 Most AI coding tools still assume an engineer will clean up and validate outputs, which excludes semi-technical teammates and slows delivery. Tools aimed at non-technical users often amplify ambiguity, create unmaintainable code, and add risk in real codebases.
 
 `lift-sys` flips this. It makes high-quality software creation accessible while keeping engineers in control, across both greenfield and existing repositories. `lift-sys` brings human-centered, machine-verifiable affordances to understanding, creating, and editing code, empowering semi-technical contributors and engineers.

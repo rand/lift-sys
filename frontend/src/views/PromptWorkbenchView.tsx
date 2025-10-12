@@ -6,7 +6,15 @@
  */
 
 import { useState, useEffect } from "react";
-import { Button } from "../components/ui/button";
+import { CheckCircle2, X, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProgressStream } from "../lib/useProgressStream";
 import {
   createSession,
@@ -187,240 +195,239 @@ export function PromptWorkbenchView() {
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "1.5rem", height: "100%" }}>
+    <div className="grid grid-cols-[300px_1fr] gap-6 h-full">
       {/* Session List Sidebar */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem", overflowY: "auto" }}>
-        <div>
-          <h2 style={{ marginTop: 0, marginBottom: "0.75rem", fontSize: "1.25rem" }}>Sessions</h2>
-          <Button onClick={() => void loadSessions()} variant="ghost" style={{ width: "100%" }}>
-            Refresh
-          </Button>
-        </div>
+      <div className="flex flex-col gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">Sessions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => void loadSessions()} variant="outline" className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {sessions.length === 0 && (
-            <p style={{ color: "#94a3b8", fontSize: "0.875rem", fontStyle: "italic" }}>
-              No sessions yet. Create one to get started.
-            </p>
-          )}
-          {sessions.map(session => (
-            <div
-              key={session.session_id}
-              style={{
-                padding: "0.75rem",
-                background: activeSession?.session_id === session.session_id ? "#1e293b" : "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "0.375rem",
-                cursor: "pointer",
-              }}
-              onClick={() => void handleSelectSession(session)}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "0.875rem", fontWeight: 500 }}>
-                    {session.session_id.substring(0, 8)}...
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col gap-2">
+            {sessions.length === 0 && (
+              <p className="text-sm text-muted-foreground italic px-2">
+                No sessions yet. Create one to get started.
+              </p>
+            )}
+            {sessions.map(session => (
+              <Card
+                key={session.session_id}
+                className={`cursor-pointer transition-colors ${
+                  activeSession?.session_id === session.session_id
+                    ? "bg-accent border-brand"
+                    : "hover:bg-accent/50"
+                }`}
+                onClick={() => void handleSelectSession(session)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {session.session_id.substring(0, 8)}...
+                      </div>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {session.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {session.ambiguities.length} holes
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleDelete(session.session_id);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.25rem" }}>
-                    {session.status} • {session.ambiguities.length} holes
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleDelete(session.session_id);
-                  }}
-                  style={{ padding: "0.25rem" }}
-                >
-                  ✕
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Main Content */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", overflowY: "auto" }}>
-        {/* Create Session Form */}
-        <div>
-          <h2 style={{ marginTop: 0, marginBottom: "0.75rem", fontSize: "1.5rem" }}>Prompt Workbench</h2>
-          <p style={{ color: "#94a3b8", marginBottom: "1rem" }}>
-            Describe your specification in natural language. The system will translate it to IR and identify ambiguities.
-          </p>
+      <ScrollArea className="flex-1">
+        <div className="flex flex-col gap-6">
+          {/* Create Session Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Prompt Workbench</CardTitle>
+              <CardDescription>
+                Describe your specification in natural language. The system will translate it to IR and identify ambiguities.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g., A function that takes two integers and returns their sum..."
+                className="min-h-[120px] resize-y"
+              />
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => void handleCreateSession()} disabled={isLoading || !prompt.trim()} className="w-full">
+                {isLoading ? "Creating..." : "Create Session"}
+              </Button>
+            </CardFooter>
+          </Card>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g., A function that takes two integers and returns their sum..."
-              style={{
-                minHeight: "120px",
-                padding: "0.75rem",
-                background: "#1e293b",
-                border: "1px solid #334155",
-                borderRadius: "0.375rem",
-                color: "#f1f5f9",
-                fontSize: "0.875rem",
-                fontFamily: "inherit",
-                resize: "vertical",
-              }}
-            />
-            <Button onClick={() => void handleCreateSession()} disabled={isLoading || !prompt.trim()}>
-              {isLoading ? "Creating..." : "Create Session"}
-            </Button>
-          </div>
-
-          {error && (
-            <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "#7f1d1d", borderRadius: "0.375rem" }}>
-              <p style={{ margin: 0, color: "#fca5a5", fontSize: "0.875rem" }}>{error}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Active Session Details */}
-        {activeSession && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            {/* Session Info */}
-            <div style={{ padding: "1rem", background: "#1e293b", borderRadius: "0.375rem", border: "1px solid #334155" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                <div>
-                  <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Session {activeSession.session_id.substring(0, 12)}</h3>
-                  <div style={{ fontSize: "0.875rem", color: "#94a3b8" }}>
-                    Status: <span style={{ color: "#f1f5f9", fontWeight: 500 }}>{activeSession.status}</span>
-                    {" • "}
-                    Draft: <span style={{ color: "#f1f5f9", fontWeight: 500 }}>v{activeSession.current_draft?.version ?? 0}</span>
-                    {" • "}
-                    Validation: <span style={{ color: "#f1f5f9", fontWeight: 500 }}>{activeSession.current_draft?.validation_status ?? "N/A"}</span>
-                  </div>
-                </div>
-                {activeSession.status === "active" && activeSession.ambiguities.length === 0 && (
-                  <Button onClick={() => void handleFinalize()} disabled={isLoading}>
-                    Finalize
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* IR Preview */}
-            {activeSession.current_draft && (
-              <div>
-                <h3 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Intermediate Representation</h3>
-                <pre style={{
-                  padding: "1rem",
-                  background: "#0f172a",
-                  border: "1px solid #334155",
-                  borderRadius: "0.375rem",
-                  overflow: "auto",
-                  fontSize: "0.875rem",
-                  maxHeight: "300px",
-                }}>
-                  {JSON.stringify(activeSession.current_draft.ir, null, 2)}
-                </pre>
-              </div>
-            )}
-
-            {/* Ambiguities & Resolution */}
-            {activeSession.ambiguities.length > 0 && (
-              <div>
-                <h3 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-                  Ambiguities ({activeSession.ambiguities.length})
-                </h3>
-                <p style={{ color: "#94a3b8", fontSize: "0.875rem", marginBottom: "1rem" }}>
-                  Resolve these ambiguities to refine your specification.
-                </p>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  {activeSession.ambiguities.map(holeId => {
-                    const assist = assists.find(a => a.hole_id === holeId);
-
-                    return (
-                      <div
-                        key={holeId}
-                        style={{
-                          padding: "1rem",
-                          background: "#1e293b",
-                          border: "1px solid #334155",
-                          borderRadius: "0.375rem",
-                        }}
-                      >
-                        <div style={{ marginBottom: "0.75rem" }}>
-                          <code style={{ fontSize: "0.875rem", fontWeight: 500 }}>{holeId}</code>
-                          {assist && (
-                            <p style={{ color: "#94a3b8", fontSize: "0.875rem", marginTop: "0.5rem" }}>
-                              {assist.context}
-                            </p>
-                          )}
+          {/* Active Session Details */}
+          {activeSession && (
+            <>
+              {/* Session Info */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <CardTitle>Session {activeSession.session_id.substring(0, 12)}</CardTitle>
+                      <div className="flex flex-wrap gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Status:</span>
+                          <Badge>{activeSession.status}</Badge>
                         </div>
-
-                        {assist && assist.suggestions.length > 0 && (
-                          <div style={{ marginBottom: "0.75rem" }}>
-                            <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginBottom: "0.5rem" }}>Suggestions:</p>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                              {assist.suggestions.map((suggestion, idx) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => setResolutionInputs(prev => ({ ...prev, [holeId]: suggestion }))}
-                                  style={{
-                                    padding: "0.25rem 0.5rem",
-                                    background: "#334155",
-                                    border: "1px solid #475569",
-                                    borderRadius: "0.25rem",
-                                    color: "#cbd5e1",
-                                    fontSize: "0.75rem",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  {suggestion}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div style={{ display: "flex", gap: "0.5rem" }}>
-                          <input
-                            type="text"
-                            value={resolutionInputs[holeId] ?? ""}
-                            onChange={(e) => setResolutionInputs(prev => ({ ...prev, [holeId]: e.target.value }))}
-                            placeholder="Enter resolution..."
-                            style={{
-                              flex: 1,
-                              padding: "0.5rem",
-                              background: "#0f172a",
-                              border: "1px solid #334155",
-                              borderRadius: "0.375rem",
-                              color: "#f1f5f9",
-                              fontSize: "0.875rem",
-                            }}
-                          />
-                          <Button
-                            onClick={() => void handleResolveHole(holeId)}
-                            disabled={isLoading || !resolutionInputs[holeId]?.trim()}
-                            size="sm"
-                          >
-                            Resolve
-                          </Button>
+                        <Separator orientation="vertical" className="h-4" />
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Draft:</span>
+                          <Badge variant="secondary">v{activeSession.current_draft?.version ?? 0}</Badge>
+                        </div>
+                        <Separator orientation="vertical" className="h-4" />
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Validation:</span>
+                          <Badge variant="outline">{activeSession.current_draft?.validation_status ?? "N/A"}</Badge>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                    </div>
+                    {activeSession.status === "active" && activeSession.ambiguities.length === 0 && (
+                      <Button onClick={() => void handleFinalize()} disabled={isLoading}>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Finalize
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+              </Card>
 
-            {/* Success State */}
-            {activeSession.status === "finalized" && (
-              <div style={{ padding: "1rem", background: "#14532d", borderRadius: "0.375rem", border: "1px solid #16a34a" }}>
-                <p style={{ margin: 0, color: "#86efac", fontSize: "0.875rem" }}>
-                  ✓ Session finalized! The IR is now ready for code generation.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              {/* IR Preview */}
+              {activeSession.current_draft && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Intermediate Representation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[300px]">
+                      <pre className="text-sm font-mono bg-muted p-4 rounded-md">
+                        {JSON.stringify(activeSession.current_draft.ir, null, 2)}
+                      </pre>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Ambiguities & Resolution */}
+              {activeSession.ambiguities.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      Ambiguities ({activeSession.ambiguities.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Resolve these ambiguities to refine your specification.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {activeSession.ambiguities.map(holeId => {
+                      const assist = assists.find(a => a.hole_id === holeId);
+
+                      return (
+                        <Card key={holeId}>
+                          <CardContent className="pt-6 space-y-4">
+                            <div className="space-y-2">
+                              <code className="text-sm font-semibold bg-muted px-2 py-1 rounded">
+                                {holeId}
+                              </code>
+                              {assist && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                  {assist.context}
+                                </p>
+                              )}
+                            </div>
+
+                            {assist && assist.suggestions.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs text-muted-foreground">Suggestions:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {assist.suggestions.map((suggestion, idx) => (
+                                    <Button
+                                      key={idx}
+                                      variant="secondary"
+                                      size="sm"
+                                      className="text-xs h-7"
+                                      onClick={() => setResolutionInputs(prev => ({ ...prev, [holeId]: suggestion }))}
+                                    >
+                                      {suggestion}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2">
+                              <Input
+                                value={resolutionInputs[holeId] ?? ""}
+                                onChange={(e) => setResolutionInputs(prev => ({ ...prev, [holeId]: e.target.value }))}
+                                placeholder="Enter resolution..."
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={() => void handleResolveHole(holeId)}
+                                disabled={isLoading || !resolutionInputs[holeId]?.trim()}
+                                size="sm"
+                              >
+                                Resolve
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Success State */}
+              {activeSession.status === "finalized" && (
+                <Alert variant="success">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>
+                    Session finalized! The IR is now ready for code generation.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

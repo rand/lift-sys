@@ -46,6 +46,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     setState((previous) => ({ ...previous, status: "loading" }));
+
+    // In demo mode, check for existing demo user in localStorage
+    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+    if (isDemoMode) {
+      const demoUserJson = localStorage.getItem('demo_user');
+      if (demoUserJson) {
+        try {
+          const demoUser = JSON.parse(demoUserJson) as AuthUser;
+          setState({ status: "authenticated", user: demoUser });
+          return;
+        } catch {
+          // Invalid demo user data, treat as unauthenticated
+        }
+      }
+      setState({ status: "unauthenticated" });
+      return;
+    }
+
+    // Production session fetch
     try {
       const { data } = await api.get<SessionResponse>("/api/auth/session");
       if (data.authenticated && data.user) {
@@ -67,7 +86,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const signIn = useCallback(
-    (provider: OAuthProvider) => {
+    async (provider: OAuthProvider) => {
+      // Check if demo mode is enabled
+      const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+
+      if (isDemoMode) {
+        // In demo mode, create a mock authenticated session
+        const demoUser: AuthUser = {
+          id: `demo:${provider}-user`,
+          provider: provider,
+          email: `demo@${provider}.com`,
+          name: `Demo ${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
+          avatarUrl: null,
+        };
+        localStorage.setItem('demo_user', JSON.stringify(demoUser));
+        setState({ status: "authenticated", user: demoUser });
+        return;
+      }
+
+      // Production OAuth flow
       const callbackUrl = `${window.location.origin}/auth/callback`;
       const base = api.defaults.baseURL ?? window.location.origin;
       const loginUrl = new URL(`/api/auth/login/${provider}`, base);
@@ -78,6 +115,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+
+    if (isDemoMode) {
+      // In demo mode, just clear localStorage and state
+      localStorage.removeItem('demo_user');
+      setState({ status: "unauthenticated" });
+      return;
+    }
+
+    // Production logout
     try {
       await api.post("/api/auth/logout");
       setState({ status: "unauthenticated" });

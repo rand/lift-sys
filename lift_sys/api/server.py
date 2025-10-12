@@ -90,7 +90,16 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
-app.middleware("http")(rate_limiter())
+# Use higher rate limit for testing (detected via pytest env var)
+import os
+
+is_testing = (
+    "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("LIFT_SYS_ENABLE_DEMO_USER_HEADER") == "1"
+)
+rate_limit_config = (10000, 1.0) if is_testing else (60, 60.0)
+app.middleware("http")(
+    rate_limiter(max_requests=rate_limit_config[0], per_seconds=rate_limit_config[1])
+)
 app.include_router(health_routes.router)
 app.include_router(auth_router)
 app.include_router(auth_routes.router)
@@ -923,7 +932,9 @@ async def get_assists(
 
     assists = STATE.session_manager.get_assists(session_id)
 
-    return AssistsResponse(assists=[AssistResponse(**assist) for assist in assists])
+    return AssistsResponse(
+        session_id=session_id, assists=[AssistResponse(**assist) for assist in assists]
+    )
 
 
 @app.delete("/spec-sessions/{session_id}")

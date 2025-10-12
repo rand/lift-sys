@@ -61,7 +61,17 @@ class _StubGitHubClient:
         force_refresh: bool = False,
     ) -> RepositoryMetadata:
         repo_dir = Path(tempfile.mkdtemp(prefix="lift_stub_repo_"))
-        Repo.init(repo_dir)
+        repo = Repo.init(repo_dir)
+        # Configure git user for commits
+        with repo.config_writer() as writer:
+            writer.set_value("user", "name", "Test User")
+            writer.set_value("user", "email", "test@example.com")
+        # Create initial commit on main branch
+        (repo_dir / "README.md").write_text("stub repository", encoding="utf-8")
+        repo.index.add(["README.md"])
+        repo.index.commit("initial commit")
+        # Rename default branch to 'main' to match GitHub's default
+        repo.git.branch("-M", "main")
         return RepositoryMetadata(
             identifier=identifier,
             owner=self._summary.owner,

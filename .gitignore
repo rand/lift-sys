@@ -3,7 +3,6 @@ __pycache__/
 .env
 .venv/
 node_modules/
-package-lock.json
 *.log
 .pytest_cache/
 htmlcov/

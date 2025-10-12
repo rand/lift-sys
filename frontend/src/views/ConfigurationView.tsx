@@ -1,7 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2 } from "lucide-react";
 import { ProviderSelector } from "../components/ProviderSelector";
 import { Provider } from "../types/providers";
 import { api } from "../lib/api";
@@ -29,38 +34,82 @@ export function ConfigurationView() {
   }, []);
 
   return (
-    <Card title="Configuration">
-      <label style={{ display: "grid", gap: "0.5rem" }}>
-        Endpoint
-        <input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} style={inputStyle} />
-      </label>
-      <label style={{ display: "grid", gap: "0.5rem", marginTop: "1rem" }}>
-        Temperature
-        <input
-          type="number"
-          step="0.1"
-          value={temperature}
-          onChange={(event) => setTemperature(Number(event.target.value))}
-          style={inputStyle}
-        />
-      </label>
-      <Button style={{ marginTop: "1.5rem" }} onClick={() => mutation.mutate()}>
-        Save
-      </Button>
-      {mutation.isSuccess && <p>Configuration saved.</p>}
-      <section style={{ marginTop: "2rem" }}>
-        <h2>AI Providers</h2>
-        <ProviderSelector onSelect={updatePrimaryProvider} />
-        {primaryProvider && <p>Primary provider: {primaryProvider.toUpperCase()}</p>}
-      </section>
-    </Card>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Configuration</h1>
+        <p className="text-muted-foreground mt-2">
+          Configure model endpoints and AI provider settings
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Model Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="endpoint">Model Endpoint</Label>
+            <Input
+              id="endpoint"
+              type="url"
+              value={endpoint}
+              onChange={(event) => setEndpoint(event.target.value)}
+              placeholder="http://localhost:8001"
+            />
+            <p className="text-sm text-muted-foreground">
+              URL for the local or remote model API endpoint
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="temperature">Temperature</Label>
+            <Input
+              id="temperature"
+              type="number"
+              step="0.1"
+              min="0"
+              max="2"
+              value={temperature}
+              onChange={(event) => setTemperature(Number(event.target.value))}
+            />
+            <p className="text-sm text-muted-foreground">
+              Controls randomness: 0 is deterministic, higher values increase creativity
+            </p>
+          </div>
+        </CardContent>
+        <CardFooter className="flex gap-3">
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? "Saving..." : "Save Configuration"}
+          </Button>
+          {mutation.isSuccess && (
+            <Alert className="flex-1">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>Configuration saved successfully</AlertDescription>
+            </Alert>
+          )}
+        </CardFooter>
+      </Card>
+
+      <Separator />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Providers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ProviderSelector onSelect={updatePrimaryProvider} />
+          {primaryProvider && (
+            <Alert variant="success" className="mt-4">
+              <AlertDescription>
+                Primary provider: <span className="font-semibold">{primaryProvider.toUpperCase()}</span>
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "0.75rem",
-  borderRadius: "0.75rem",
-  border: "1px solid #334155",
-  background: "#0f172a",
-  color: "#e2e8f0",
-};

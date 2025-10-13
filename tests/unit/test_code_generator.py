@@ -7,6 +7,7 @@ import pytest
 from lift_sys.codegen import CodeGenerator, CodeGeneratorConfig
 from lift_sys.codegen.generator import IncompleteIRError, InvalidIRError
 from lift_sys.ir.models import (
+    AssertClause,
     HoleKind,
     IntentClause,
     IntermediateRepresentation,
@@ -362,3 +363,175 @@ class TestCodeGenerator:
         # Should contain NotImplementedError
         assert "NotImplementedError" in result.source_code
         assert "TODO: Implement stub" in result.source_code
+
+    def test_generate_with_assertions_assert_mode(self):
+        """Test generating code with assertions in assert mode."""
+        config = CodeGeneratorConfig(inject_assertions=True, assertion_mode="assert")
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Divide two numbers"),
+            signature=SigClause(
+                name="divide",
+                parameters=[
+                    Parameter("numerator", "float"),
+                    Parameter("denominator", "float"),
+                ],
+                returns="float",
+            ),
+            assertions=[
+                AssertClause(
+                    predicate="denominator != 0",
+                    rationale="Division by zero is not allowed",
+                ),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should include assertion
+        assert 'assert denominator != 0, "Division by zero is not allowed"' in result.source_code
+        ast.parse(result.source_code)
+
+    def test_generate_with_assertions_raise_mode(self):
+        """Test generating code with assertions in raise mode."""
+        config = CodeGeneratorConfig(inject_assertions=True, assertion_mode="raise")
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Calculate square root"),
+            signature=SigClause(
+                name="sqrt",
+                parameters=[Parameter("x", "float")],
+                returns="float",
+            ),
+            assertions=[
+                AssertClause(
+                    predicate="x >= 0", rationale="Cannot take square root of negative number"
+                ),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should include raise statement
+        assert "if not (x >= 0):" in result.source_code
+        assert (
+            'raise ValueError("Cannot take square root of negative number")' in result.source_code
+        )
+        ast.parse(result.source_code)
+
+    def test_generate_with_preconditions_and_postconditions(self):
+        """Test generating code with both preconditions and postconditions."""
+        config = CodeGeneratorConfig(inject_assertions=True, assertion_mode="assert")
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Calculate absolute value"),
+            signature=SigClause(
+                name="abs_value",
+                parameters=[Parameter("x", "int")],
+                returns="int",
+            ),
+            assertions=[
+                AssertClause(predicate="x is not None", rationale="Input must not be None"),
+                AssertClause(predicate="result >= 0", rationale="Result must be non-negative"),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should have precondition
+        assert 'assert x is not None, "Input must not be None"' in result.source_code
+
+        # Should have postcondition as comment (since stub)
+        assert "# Postconditions (TODO: enforce after implementation):" in result.source_code
+        assert '# assert result >= 0, "Result must be non-negative"' in result.source_code
+
+        ast.parse(result.source_code)
+
+    def test_generate_with_multiple_assertions(self):
+        """Test generating code with multiple assertions."""
+        config = CodeGeneratorConfig(inject_assertions=True, assertion_mode="assert")
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Process data"),
+            signature=SigClause(
+                name="process",
+                parameters=[
+                    Parameter("data", "list[int]"),
+                    Parameter("min_val", "int"),
+                    Parameter("max_val", "int"),
+                ],
+                returns="list[int]",
+            ),
+            assertions=[
+                AssertClause(predicate="len(data) > 0", rationale="Data cannot be empty"),
+                AssertClause(predicate="min_val < max_val", rationale="Min must be less than max"),
+                AssertClause(
+                    predicate="all(x >= min_val for x in data)",
+                    rationale="All values must be >= min",
+                ),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should have all preconditions
+        assert 'assert len(data) > 0, "Data cannot be empty"' in result.source_code
+        assert 'assert min_val < max_val, "Min must be less than max"' in result.source_code
+        assert (
+            'assert all(x >= min_val for x in data), "All values must be >= min"'
+            in result.source_code
+        )
+
+        ast.parse(result.source_code)
+
+    def test_generate_without_assertions(self):
+        """Test generating code with assertions disabled."""
+        config = CodeGeneratorConfig(inject_assertions=False)
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Test function"),
+            signature=SigClause(
+                name="test",
+                parameters=[Parameter("x", "int")],
+                returns=None,
+            ),
+            assertions=[
+                AssertClause(predicate="x > 0", rationale="x must be positive"),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should not include assertion
+        assert "assert x > 0" not in result.source_code
+        ast.parse(result.source_code)
+
+    def test_generate_with_comment_mode_assertions(self):
+        """Test generating code with assertions in comment mode."""
+        config = CodeGeneratorConfig(inject_assertions=True, assertion_mode="comment")
+        generator = CodeGenerator(config=config)
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Test function"),
+            signature=SigClause(
+                name="test",
+                parameters=[Parameter("x", "int")],
+                returns=None,
+            ),
+            assertions=[
+                AssertClause(predicate="x > 0", rationale="x must be positive"),
+            ],
+        )
+
+        result = generator.generate(ir)
+
+        # Should have assertion as comment
+        assert "# Assertion: x > 0 (x must be positive)" in result.source_code
+        # Should not have executable assertion
+        assert "assert x > 0" not in result.source_code
+        ast.parse(result.source_code)

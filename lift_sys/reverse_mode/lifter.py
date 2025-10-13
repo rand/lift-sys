@@ -26,6 +26,62 @@ from .analyzers import CodeQLAnalyzer, DaikonAnalyzer, Finding
 from .stack_graphs import StackGraphAnalyzer
 
 
+class LifterError(Exception):
+    """Base exception for all lifter errors."""
+
+    pass
+
+
+class RepositoryNotLoadedError(LifterError):
+    """Repository must be loaded before analysis."""
+
+    pass
+
+
+class AnalysisTimeoutError(LifterError):
+    """Analysis exceeded time limit."""
+
+    def __init__(self, file_path: str, timeout_seconds: float):
+        self.file_path = file_path
+        self.timeout_seconds = timeout_seconds
+        super().__init__(f"Analysis of {file_path} timed out after {timeout_seconds}s")
+
+
+class TotalTimeLimitExceededError(LifterError):
+    """Total analysis time exceeded configured limit."""
+
+    def __init__(self, elapsed: float, limit: float, files_analyzed: int, total_files: int):
+        self.elapsed = elapsed
+        self.limit = limit
+        self.files_analyzed = files_analyzed
+        self.total_files = total_files
+        super().__init__(
+            f"Total time limit exceeded ({elapsed:.1f}s > {limit}s) after analyzing "
+            f"{files_analyzed}/{total_files} files"
+        )
+
+
+class AnalysisError(LifterError):
+    """Error during file analysis."""
+
+    def __init__(self, file_path: str, original_error: Exception):
+        self.file_path = file_path
+        self.original_error = original_error
+        super().__init__(
+            f"Failed to analyze {file_path}: {type(original_error).__name__}: {original_error}"
+        )
+
+
+class FileTooLargeError(LifterError):
+    """File exceeds size limit."""
+
+    def __init__(self, file_path: str, size_mb: float, limit_mb: float):
+        self.file_path = file_path
+        self.size_mb = size_mb
+        self.limit_mb = limit_mb
+        super().__init__(f"File {file_path} is too large ({size_mb:.1f}MB > {limit_mb}MB limit)")
+
+
 @dataclass
 class LifterConfig:
     # Analysis tool configuration
@@ -109,10 +165,10 @@ class SpecificationLifter:
             List of Python file paths relative to repository root.
 
         Raises:
-            RuntimeError: If repository is not loaded.
+            RepositoryNotLoadedError: If repository is not loaded.
         """
         if not self.repo:
-            raise RuntimeError("Repository not loaded")
+            raise RepositoryNotLoadedError("Repository must be loaded before discovering files")
 
         repo_path = Path(self.repo.working_tree_dir)
         exclude = exclude_patterns or [
@@ -181,7 +237,8 @@ class SpecificationLifter:
             List of intermediate representations, one per successfully analyzed file.
 
         Raises:
-            RuntimeError: If repository is not loaded or total time limit exceeded.
+            RepositoryNotLoadedError: If repository is not loaded.
+            TotalTimeLimitExceededError: If total time limit is exceeded.
         """
         import signal
         import time
@@ -203,9 +260,15 @@ class SpecificationLifter:
             if self.config.max_total_time_seconds:
                 elapsed = time.time() - start_time
                 if elapsed > self.config.max_total_time_seconds:
-                    msg = f"total time limit exceeded ({elapsed:.1f}s > {self.config.max_total_time_seconds}s)"
-                    self._record_progress(msg)
-                    raise RuntimeError(msg)
+                    self._record_progress(
+                        f"total time limit exceeded ({elapsed:.1f}s > {self.config.max_total_time_seconds}s)"
+                    )
+                    raise TotalTimeLimitExceededError(
+                        elapsed=elapsed,
+                        limit=self.config.max_total_time_seconds,
+                        files_analyzed=i - 1,
+                        total_files=len(files),
+                    )
 
             self._record_progress(f"analyzing:{file_path}:{i}/{len(files)}")
 
@@ -229,20 +292,31 @@ class SpecificationLifter:
                 try:
                     ir = self.lift(str(file_path))
                     irs.append(ir)
+                    self._record_progress(f"success:{file_path}")
                 finally:
                     # Cancel the alarm
                     if self.config.timeout_per_file_seconds:
                         signal.alarm(0)
 
-            except TimeoutError as e:
-                error_msg = f"timeout:{file_path}:{str(e)}"
+            except TimeoutError:
+                # Wrap in our custom exception for better context
+                error = AnalysisTimeoutError(
+                    file_path=str(file_path), timeout_seconds=self.config.timeout_per_file_seconds
+                )
+                error_msg = f"timeout:{file_path}:{error}"
+                self._record_progress(error_msg)
+                failed.append((file_path, str(error)))
+            except AnalysisError as e:
+                # Already wrapped, just log and continue
+                error_msg = f"error:{file_path}:{e}"
                 self._record_progress(error_msg)
                 failed.append((file_path, str(e)))
             except Exception as e:
-                # Log error but continue with other files
-                error_msg = f"error:{file_path}:{str(e)}"
+                # Wrap unexpected errors for better context
+                wrapped_error = AnalysisError(file_path=str(file_path), original_error=e)
+                error_msg = f"error:{file_path}:{wrapped_error}"
                 self._record_progress(error_msg)
-                failed.append((file_path, str(e)))
+                failed.append((file_path, str(wrapped_error)))
 
         elapsed_total = time.time() - start_time
         if failed:
@@ -257,8 +331,20 @@ class SpecificationLifter:
         return irs
 
     def lift(self, target_module: str) -> IntermediateRepresentation:
+        """Lift a specification from a single module.
+
+        Args:
+            target_module: Path to the Python module to analyze.
+
+        Returns:
+            Intermediate representation of the module.
+
+        Raises:
+            RepositoryNotLoadedError: If repository is not loaded.
+            AnalysisError: If analysis fails for any reason.
+        """
         if not self.repo:
-            raise RuntimeError("Repository not loaded")
+            raise RepositoryNotLoadedError("Repository must be loaded before analysis")
         self.progress_log = []
         self._record_progress("reverse:start")
         repo_path = str(Path(self.repo.working_tree_dir))
@@ -440,4 +526,15 @@ class SpecificationLifter:
         return effects
 
 
-__all__ = ["LifterConfig", "SpecificationLifter"]
+__all__ = [
+    "LifterConfig",
+    "SpecificationLifter",
+    "RepositoryHandle",
+    # Exceptions
+    "LifterError",
+    "RepositoryNotLoadedError",
+    "AnalysisTimeoutError",
+    "TotalTimeLimitExceededError",
+    "AnalysisError",
+    "FileTooLargeError",
+]

@@ -6,6 +6,11 @@ import ast
 from dataclasses import dataclass
 
 from ..ir.models import IntermediateRepresentation, TypedHole
+from .assertion_injector import (
+    AssertionInjector,
+    AssertionMode,
+    DefaultAssertionInjector,
+)
 from .docstring_generator import DefaultDocstringGenerator, DocstringGenerator
 from .models import GeneratedCode, ValidationResult
 from .type_resolver import DefaultTypeResolver, TypeResolver
@@ -39,8 +44,11 @@ class InvalidIRError(GenerationError):
 class CodeGeneratorConfig:
     """Configuration for code generation."""
 
-    inject_assertions: bool = False  # Not implemented yet (lift-sys-26)
+    inject_assertions: bool = True
     """Whether to inject runtime assertion checks."""
+
+    assertion_mode: AssertionMode = "assert"
+    """How to handle assertion violations (assert/raise/log/comment)."""
 
     include_docstrings: bool = True
     """Whether to generate docstrings from intent."""
@@ -69,6 +77,7 @@ class CodeGenerator:
         config: CodeGeneratorConfig | None = None,
         type_resolver: TypeResolver | None = None,
         docstring_generator: DocstringGenerator | None = None,
+        assertion_injector: AssertionInjector | None = None,
     ):
         """Initialize with optional custom components.
 
@@ -76,12 +85,16 @@ class CodeGenerator:
             config: Configuration for code generation.
             type_resolver: Custom type resolver (optional).
             docstring_generator: Custom docstring generator (optional).
+            assertion_injector: Custom assertion injector (optional).
         """
         self.config = config or CodeGeneratorConfig()
         self.type_resolver = type_resolver or DefaultTypeResolver(
             target_version=self.config.target_python_version
         )
         self.docstring_generator = docstring_generator or DefaultDocstringGenerator()
+        self.assertion_injector = assertion_injector or DefaultAssertionInjector(
+            indent=self.config.indent
+        )
 
     def generate(self, ir: IntermediateRepresentation) -> GeneratedCode:
         """Generate code from a complete IR.
@@ -288,13 +301,12 @@ class CodeGenerator:
         return [sig]
 
     def _generate_body(self, ir: IntermediateRepresentation) -> list[str]:
-        """Generate function body.
+        """Generate function body with assertions.
 
-        For now, generates a simple stub implementation.
-        Future versions will handle:
-        - Assertions (lift-sys-26)
-        - Effects (more complex implementation)
-        - Actual logic synthesis
+        Injects assertions as:
+        - Preconditions: At start of function
+        - Postconditions: Before return (commented for stubs)
+        - Invariants: With preconditions
 
         Args:
             ir: IR with intent and assertions.
@@ -305,11 +317,35 @@ class CodeGenerator:
         lines = []
         indent = self.config.indent
 
-        # TODO: Add assertion injection (lift-sys-26)
-        # TODO: Add effect handling
-        # TODO: Add actual implementation synthesis
+        # Inject assertions if enabled
+        if self.config.inject_assertions and ir.assertions:
+            injected = self.assertion_injector.inject_all(
+                ir.assertions, mode=self.config.assertion_mode
+            )
 
-        # For now, generate a NotImplementedError stub
+            # Separate by position
+            preconditions = [a for a in injected if a.position == "precondition"]
+            invariants = [a for a in injected if a.position == "invariant"]
+            postconditions = [a for a in injected if a.position == "postcondition"]
+
+            # Add preconditions and invariants at start
+            for assertion in preconditions + invariants:
+                for line in assertion.code_lines:
+                    lines.append(f"{indent}{line}")
+
+            # Add blank line if we have preconditions
+            if preconditions or invariants:
+                lines.append("")
+
+            # Add postconditions as comments (since we're generating stubs)
+            if postconditions:
+                lines.append(f"{indent}# Postconditions (TODO: enforce after implementation):")
+                for assertion in postconditions:
+                    for line in assertion.code_lines:
+                        lines.append(f"{indent}# {line}")
+                lines.append("")
+
+        # Generate stub implementation
         lines.append(f'{indent}raise NotImplementedError("TODO: Implement {ir.signature.name}")')
 
         return lines

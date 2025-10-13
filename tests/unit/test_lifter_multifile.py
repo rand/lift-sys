@@ -176,10 +176,12 @@ class TestFileDiscovery:
 
     def test_discover_python_files_raises_without_repo(self):
         """Test that method raises error when repo not loaded."""
+        from lift_sys.reverse_mode.lifter import RepositoryNotLoadedError
+
         config = LifterConfig()
         lifter = SpecificationLifter(config)
 
-        with pytest.raises(RuntimeError, match="Repository not loaded"):
+        with pytest.raises(RepositoryNotLoadedError, match="Repository must be loaded"):
             lifter.discover_python_files()
 
     def test_discover_python_files_nested_directories(self, temp_repo, temp_dir):
@@ -409,10 +411,12 @@ class TestMultiFileLift:
     @patch("subprocess.run")
     def test_lift_all_raises_without_repo(self, mock_subprocess):
         """Test that lift_all raises error when repo not loaded."""
+        from lift_sys.reverse_mode.lifter import RepositoryNotLoadedError
+
         config = LifterConfig()
         lifter = SpecificationLifter(config)
 
-        with pytest.raises(RuntimeError, match="Repository not loaded"):
+        with pytest.raises(RepositoryNotLoadedError, match="Repository must be loaded"):
             lifter.lift_all()
 
     @patch("subprocess.run")
@@ -618,8 +622,10 @@ class TestConfigurationLimits:
             )
 
         with patch.object(lifter, "lift", side_effect=slow_lift):
-            # Should raise RuntimeError due to time limit
-            with pytest.raises(RuntimeError, match="total time limit exceeded"):
+            # Should raise TotalTimeLimitExceededError due to time limit
+            from lift_sys.reverse_mode.lifter import TotalTimeLimitExceededError
+
+            with pytest.raises(TotalTimeLimitExceededError, match="Total time limit exceeded"):
                 lifter.lift_all()
 
         # Should have stopped early
@@ -633,3 +639,179 @@ class TestConfigurationLimits:
         assert config.max_file_size_mb == 10.0  # Has a reasonable default
         assert config.timeout_per_file_seconds is None
         assert config.max_total_time_seconds is None
+
+
+@pytest.mark.unit
+class TestErrorHandling:
+    """Unit tests for improved error handling and custom exceptions."""
+
+    def test_repository_not_loaded_error_on_discover(self):
+        """Test that RepositoryNotLoadedError is raised when discovering files without loading repo."""
+        from lift_sys.reverse_mode.lifter import RepositoryNotLoadedError
+
+        config = LifterConfig()
+        lifter = SpecificationLifter(config)
+
+        with pytest.raises(RepositoryNotLoadedError, match="Repository must be loaded"):
+            lifter.discover_python_files()
+
+    def test_repository_not_loaded_error_on_lift_all(self):
+        """Test that RepositoryNotLoadedError is raised when lifting without loading repo."""
+        from lift_sys.reverse_mode.lifter import RepositoryNotLoadedError
+
+        config = LifterConfig()
+        lifter = SpecificationLifter(config)
+
+        with pytest.raises(RepositoryNotLoadedError, match="Repository must be loaded"):
+            lifter.lift_all()
+
+    def test_repository_not_loaded_error_on_lift(self):
+        """Test that RepositoryNotLoadedError is raised when lifting single file without repo."""
+        from lift_sys.reverse_mode.lifter import RepositoryNotLoadedError
+
+        config = LifterConfig()
+        lifter = SpecificationLifter(config)
+
+        with pytest.raises(RepositoryNotLoadedError, match="Repository must be loaded"):
+            lifter.lift("test.py")
+
+    @patch("subprocess.run")
+    def test_total_time_limit_error_has_context(self, mock_subprocess, temp_repo, temp_dir):
+        """Test that TotalTimeLimitExceededError includes useful context."""
+        from lift_sys.reverse_mode.lifter import TotalTimeLimitExceededError
+
+        # Create files
+        for i in range(5):
+            (Path(temp_dir) / f"file{i}.py").write_text(f"# File {i}")
+
+        temp_repo.index.add([f"file{i}.py" for i in range(5)])
+        temp_repo.index.commit("Add files")
+
+        mock_subprocess.return_value = Mock(returncode=0, stdout="{}", stderr="")
+
+        config = LifterConfig(max_total_time_seconds=0.1, run_codeql=False)
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        def slow_lift(module):
+            import time
+
+            time.sleep(0.05)
+            from lift_sys.ir.models import (
+                IntentClause,
+                IntermediateRepresentation,
+                Metadata,
+                SigClause,
+            )
+
+            return IntermediateRepresentation(
+                intent=IntentClause(summary="Test"),
+                signature=SigClause(name="test", parameters=[], returns="None"),
+                assertions=[],
+                metadata=Metadata(source_path=module, origin="reverse", language="python"),
+            )
+
+        with patch.object(lifter, "lift", side_effect=slow_lift):
+            try:
+                lifter.lift_all()
+                pytest.fail("Expected TotalTimeLimitExceededError")
+            except TotalTimeLimitExceededError as e:
+                # Check exception has useful attributes
+                assert e.elapsed > 0.1
+                assert e.limit == 0.1
+                assert e.files_analyzed >= 0
+                assert e.total_files == 5
+                # Check error message is informative
+                assert "Total time limit exceeded" in str(e)
+                assert "after analyzing" in str(e)
+
+    @patch("subprocess.run")
+    def test_analysis_error_wraps_exceptions(self, mock_subprocess, temp_repo, temp_dir):
+        """Test that AnalysisError wraps underlying exceptions with context."""
+
+        (Path(temp_dir) / "test.py").write_text("# test")
+        temp_repo.index.add(["test.py"])
+        temp_repo.index.commit("Add file")
+
+        mock_subprocess.return_value = Mock(returncode=0, stdout="{}", stderr="")
+
+        config = LifterConfig()
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        # Mock lift to raise a ValueError
+        original_error = ValueError("Something went wrong")
+        with patch.object(lifter, "lift", side_effect=original_error):
+            irs = lifter.lift_all()
+
+            # Should have 0 IRs (failed)
+            assert len(irs) == 0
+
+            # Check progress log has detailed error
+            error_logs = [log for log in lifter.progress_log if "error:" in log]
+            assert len(error_logs) > 0
+
+            # Error message should include file path and original error type
+            error_log = error_logs[0]
+            assert "test.py" in error_log
+            assert "ValueError" in error_log
+
+    def test_analysis_error_attributes(self):
+        """Test that AnalysisError preserves original error information."""
+        from lift_sys.reverse_mode.lifter import AnalysisError
+
+        original = ValueError("test error")
+        wrapped = AnalysisError(file_path="test.py", original_error=original)
+
+        assert wrapped.file_path == "test.py"
+        assert wrapped.original_error is original
+        assert "test.py" in str(wrapped)
+        assert "ValueError" in str(wrapped)
+        assert "test error" in str(wrapped)
+
+    def test_analysis_timeout_error_attributes(self):
+        """Test that AnalysisTimeoutError has useful attributes."""
+        from lift_sys.reverse_mode.lifter import AnalysisTimeoutError
+
+        error = AnalysisTimeoutError(file_path="slow.py", timeout_seconds=30.0)
+
+        assert error.file_path == "slow.py"
+        assert error.timeout_seconds == 30.0
+        assert "slow.py" in str(error)
+        assert "30" in str(error)
+        assert "timed out" in str(error).lower()
+
+    def test_file_too_large_error_attributes(self):
+        """Test that FileTooLargeError has useful attributes."""
+        from lift_sys.reverse_mode.lifter import FileTooLargeError
+
+        error = FileTooLargeError(file_path="huge.py", size_mb=50.5, limit_mb=10.0)
+
+        assert error.file_path == "huge.py"
+        assert error.size_mb == 50.5
+        assert error.limit_mb == 10.0
+        assert "huge.py" in str(error)
+        assert "50.5" in str(error)
+        assert "10" in str(error)
+        assert "too large" in str(error).lower()
+
+    @patch("subprocess.run")
+    def test_success_progress_logged(self, mock_subprocess, temp_repo, temp_dir, sample_ir):
+        """Test that successful analyses are logged as success."""
+        (Path(temp_dir) / "good.py").write_text("# good")
+        temp_repo.index.add(["good.py"])
+        temp_repo.index.commit("Add file")
+
+        mock_subprocess.return_value = Mock(returncode=0, stdout="{}", stderr="")
+
+        config = LifterConfig()
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        with patch.object(lifter, "lift", return_value=sample_ir):
+            lifter.lift_all()
+
+            # Check for success log
+            success_logs = [log for log in lifter.progress_log if "success:" in log]
+            assert len(success_logs) > 0
+            assert "good.py" in success_logs[0]

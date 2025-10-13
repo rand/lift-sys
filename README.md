@@ -141,6 +141,133 @@ For complete examples and workflows, see:
 - [API Documentation](docs/API_SESSION_MANAGEMENT.md) - Complete API reference
 - [Example Script](examples/session_workflow.py) - Working Python example
 
+## Reverse Mode: Analyzing Existing Code
+
+Reverse mode extracts specifications from existing codebases using static and dynamic analysis. It supports both single-file and whole-project analysis modes.
+
+### Two Analysis Modes
+
+**Project Mode** (default): Analyzes all Python files in a repository
+- Automatically discovers and analyzes all `.py` files
+- Excludes common directories (venv, node_modules, __pycache__)
+- Shows progress tracking for multi-file analysis
+- Returns multiple IRs, one per file
+
+**File Mode**: Analyzes a specific module
+- Targets a single Python file
+- Backward compatible with previous behavior
+- Returns a single IR
+
+### Web UI
+
+1. Navigate to http://localhost:5173
+2. Click "Repository"
+3. Connect a GitHub repository or use local repository
+4. Choose analysis mode:
+   - **Entire Project**: Analyze all files in the repository
+   - **Single File**: Analyze a specific module
+5. Click "Analyze" to start reverse mode analysis
+6. View results with search and filtering
+7. Click "View Details" on any file to see the complete specification
+
+### API
+
+**Project Mode** (analyze entire repository):
+```bash
+curl -X POST http://localhost:8000/api/reverse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "module": null,
+    "analyze_all": true,
+    "queries": ["security/default"],
+    "entrypoint": "main"
+  }'
+```
+
+**File Mode** (analyze single file):
+```bash
+curl -X POST http://localhost:8000/api/reverse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "module": "src/utils.py",
+    "queries": ["security/default"],
+    "entrypoint": "main"
+  }'
+```
+
+Response format:
+```json
+{
+  "irs": [
+    {
+      "intent": {"summary": "Function description"},
+      "signature": {"name": "function_name", "parameters": [], "returns": "str"},
+      "effects": [],
+      "assertions": [],
+      "metadata": {
+        "source_path": "src/utils.py",
+        "origin": "reverse",
+        "language": "python"
+      }
+    }
+  ],
+  "progress": []
+}
+```
+
+### Python SDK
+
+```python
+from lift_sys.reverse_mode.lifter import SpecificationLifter, LifterConfig
+
+# Initialize lifter
+config = LifterConfig(
+    codeql_queries=["security/default"],
+    run_codeql=True,
+    run_daikon=True
+)
+lifter = SpecificationLifter(config)
+
+# Load repository
+lifter.load_repository("/path/to/repo")
+
+# Project mode: analyze all files
+irs = lifter.lift_all(max_files=100)  # Optional limit
+print(f"Analyzed {len(irs)} files")
+
+# File mode: analyze single file
+ir = lifter.lift("src/utils.py")
+print(f"Function: {ir.signature.name}")
+```
+
+### Progress Tracking
+
+When analyzing multiple files, the API provides real-time progress updates via WebSocket:
+
+```json
+{
+  "type": "progress",
+  "scope": "reverse",
+  "stage": "file_analysis",
+  "status": "running",
+  "message": "Analyzing src/utils.py (5/20)",
+  "current": 5,
+  "total": 20,
+  "file": "src/utils.py"
+}
+```
+
+### Analysis Features
+
+- **File Discovery**: Automatically finds all Python files, excluding common build/cache directories
+- **Partial Results**: Analysis continues even if individual files fail
+- **Progress Callbacks**: Real-time updates during multi-file analysis
+- **Metadata Preservation**: Each IR includes source file path and analysis provenance
+- **Search & Filter**: Results can be filtered by file path, function name, or content
+- **Navigation**: Click through from overview to detailed specifications
+
+For more details, see [Reverse Mode Documentation](docs/REVERSE_MODE.md).
+
 ## Project Structure
 
 - `lift_sys/`: Core backend, IR, verification, planning, and workflow modules.

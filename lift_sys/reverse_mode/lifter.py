@@ -28,12 +28,19 @@ from .stack_graphs import StackGraphAnalyzer
 
 @dataclass
 class LifterConfig:
+    # Analysis tool configuration
     codeql_queries: Iterable[str] = field(default_factory=lambda: ["security/default"])
     daikon_entrypoint: str = "main"
     stack_index_path: str | None = None
     run_codeql: bool = True
     run_daikon: bool = True
     run_stack_graphs: bool = True
+
+    # Resource limits
+    max_files: int | None = None  # Maximum number of files to analyze (None = no limit)
+    max_file_size_mb: float = 10.0  # Maximum file size in MB (default: 10MB)
+    timeout_per_file_seconds: float | None = None  # Timeout per file analysis (None = no limit)
+    max_total_time_seconds: float | None = None  # Maximum total analysis time (None = no limit)
 
 
 @dataclass
@@ -125,6 +132,9 @@ class SpecificationLifter:
         ]
 
         python_files = []
+        max_size_bytes = self.config.max_file_size_mb * 1024 * 1024
+        skipped_large_files = []
+
         for py_file in repo_path.rglob("*.py"):
             # Skip if any part of the path matches excluded directories
             if any(excl in py_file.parts for excl in exclude if "*" not in excl):
@@ -132,7 +142,27 @@ class SpecificationLifter:
             # Skip if matches exclude pattern with wildcards
             if any(py_file.match(excl) for excl in exclude if "*" in excl):
                 continue
+
+            # Check file size limit
+            try:
+                file_size = py_file.stat().st_size
+                if file_size > max_size_bytes:
+                    size_mb = file_size / (1024 * 1024)
+                    skipped_large_files.append((py_file.relative_to(repo_path), size_mb))
+                    self._record_progress(
+                        f"skipped:{py_file.relative_to(repo_path)}:too large ({size_mb:.1f}MB)"
+                    )
+                    continue
+            except (OSError, FileNotFoundError):
+                # Skip files that can't be read
+                continue
+
             python_files.append(py_file.relative_to(repo_path))
+
+        if skipped_large_files:
+            self._record_progress(
+                f"skipped {len(skipped_large_files)} large files (>{self.config.max_file_size_mb}MB)"
+            )
 
         return sorted(python_files)
 
@@ -144,25 +174,39 @@ class SpecificationLifter:
         """Lift specifications for all Python files in the repository.
 
         Args:
-            max_files: Optional limit on number of files to analyze. If None, analyzes all files.
+            max_files: Optional limit on number of files to analyze. If None, uses config.max_files.
             progress_callback: Optional callback function(file_path, current, total) called for each file.
 
         Returns:
             List of intermediate representations, one per successfully analyzed file.
 
         Raises:
-            RuntimeError: If repository is not loaded.
+            RuntimeError: If repository is not loaded or total time limit exceeded.
         """
+        import signal
+        import time
+
         files = self.discover_python_files()
 
-        if max_files and len(files) > max_files:
-            self._record_progress(f"limiting to first {max_files} of {len(files)} files")
-            files = files[:max_files]
+        # Apply file limit from parameter or config
+        effective_max = max_files or self.config.max_files
+        if effective_max and len(files) > effective_max:
+            self._record_progress(f"limiting to first {effective_max} of {len(files)} files")
+            files = files[:effective_max]
 
         irs: list[IntermediateRepresentation] = []
         failed: list[tuple[Path, str]] = []
+        start_time = time.time()
 
         for i, file_path in enumerate(files, 1):
+            # Check total time limit
+            if self.config.max_total_time_seconds:
+                elapsed = time.time() - start_time
+                if elapsed > self.config.max_total_time_seconds:
+                    msg = f"total time limit exceeded ({elapsed:.1f}s > {self.config.max_total_time_seconds}s)"
+                    self._record_progress(msg)
+                    raise RuntimeError(msg)
+
             self._record_progress(f"analyzing:{file_path}:{i}/{len(files)}")
 
             # Call progress callback for real-time updates
@@ -170,18 +214,45 @@ class SpecificationLifter:
                 progress_callback(str(file_path), i, len(files))
 
             try:
-                ir = self.lift(str(file_path))
-                irs.append(ir)
+                # Set up timeout if configured
+                if self.config.timeout_per_file_seconds:
+
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError(
+                            f"Analysis timed out after {self.config.timeout_per_file_seconds}s"
+                        )
+
+                    # Set the signal handler and alarm (Unix/Linux only)
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(int(self.config.timeout_per_file_seconds))
+
+                try:
+                    ir = self.lift(str(file_path))
+                    irs.append(ir)
+                finally:
+                    # Cancel the alarm
+                    if self.config.timeout_per_file_seconds:
+                        signal.alarm(0)
+
+            except TimeoutError as e:
+                error_msg = f"timeout:{file_path}:{str(e)}"
+                self._record_progress(error_msg)
+                failed.append((file_path, str(e)))
             except Exception as e:
                 # Log error but continue with other files
                 error_msg = f"error:{file_path}:{str(e)}"
                 self._record_progress(error_msg)
                 failed.append((file_path, str(e)))
 
+        elapsed_total = time.time() - start_time
         if failed:
-            self._record_progress(f"completed with {len(failed)} failures out of {len(files)}")
+            self._record_progress(
+                f"completed with {len(failed)} failures out of {len(files)} in {elapsed_total:.1f}s"
+            )
         else:
-            self._record_progress(f"completed successfully: {len(irs)} files analyzed")
+            self._record_progress(
+                f"completed successfully: {len(irs)} files analyzed in {elapsed_total:.1f}s"
+            )
 
         return irs
 

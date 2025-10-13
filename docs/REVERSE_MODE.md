@@ -504,6 +504,7 @@ print("All staged files passed reverse mode analysis")
 
 ## Related Documentation
 
+- [Performance Guide](PERFORMANCE.md) - Benchmarks, optimization, and resource planning
 - [API Session Management](API_SESSION_MANAGEMENT.md) - Forward mode documentation
 - [Workflow Guides](WORKFLOW_GUIDES.md) - Complete usage examples
 - [FAQ](FAQ.md) - Common questions and answers

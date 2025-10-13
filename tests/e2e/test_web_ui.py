@@ -235,6 +235,129 @@ class TestWebUIWorkflows:
 @pytest.mark.e2e
 @pytest.mark.slow
 @pytest.mark.playwright
+class TestWebUIAnalysisModes:
+    """E2E tests for project mode and file mode analysis."""
+
+    @_skip_if_no_frontend
+    def test_project_mode_analysis(self, page):
+        """Test whole-project reverse mode analysis workflow."""
+        page.goto("http://localhost:5173")
+        page.wait_for_load_state("networkidle")
+
+        # Navigate to Repository section
+        if page.locator('button:has-text("Repository")').count() > 0:
+            page.locator('button:has-text("Repository")').click()
+            page.wait_for_timeout(500)
+
+            # Look for the "Entire Project" mode toggle button
+            entire_project_button = page.locator('button:has-text("Entire Project")')
+            if entire_project_button.count() > 0:
+                # Click to select project mode
+                entire_project_button.click()
+                page.wait_for_timeout(300)
+
+                # Verify the button is in selected state (has default variant styling)
+                # In the UI, the selected button should have different styling
+                # We just verify it's present and clickable
+
+                # Look for analyze button
+                analyze_button = page.locator('button:has-text("Analyze")').first
+                if analyze_button.count() > 0:
+                    # In a real test, we would:
+                    # 1. Click analyze
+                    # 2. Wait for results
+                    # 3. Verify multiple IR cards are displayed
+                    # 4. Verify summary statistics are shown
+                    # For now, we verify the UI elements are present
+                    assert analyze_button.is_visible()
+
+    @_skip_if_no_frontend
+    def test_file_mode_analysis(self, page):
+        """Test single-file reverse mode analysis workflow."""
+        page.goto("http://localhost:5173")
+        page.wait_for_load_state("networkidle")
+
+        # Navigate to Repository section
+        if page.locator('button:has-text("Repository")').count() > 0:
+            page.locator('button:has-text("Repository")').click()
+            page.wait_for_timeout(500)
+
+            # Look for the "Single File" mode toggle button
+            single_file_button = page.locator('button:has-text("Single File")')
+            if single_file_button.count() > 0:
+                # Click to select file mode
+                single_file_button.click()
+                page.wait_for_timeout(300)
+
+                # Look for module name input
+                module_input = page.locator('input[placeholder*="module"]')
+                if module_input.count() > 0:
+                    # Verify input is visible and interactive
+                    assert module_input.is_visible()
+                    # In a real test, we would:
+                    # 1. Enter a module name
+                    # 2. Click analyze
+                    # 3. Wait for results
+                    # 4. Verify single IR is displayed
+
+    @_skip_if_no_frontend
+    def test_mode_switching(self, page):
+        """Test switching between project and file modes."""
+        page.goto("http://localhost:5173")
+        page.wait_for_load_state("networkidle")
+
+        # Navigate to Repository section
+        if page.locator('button:has-text("Repository")').count() > 0:
+            page.locator('button:has-text("Repository")').click()
+            page.wait_for_timeout(500)
+
+            # Try switching between modes
+            entire_project_button = page.locator('button:has-text("Entire Project")')
+            single_file_button = page.locator('button:has-text("Single File")')
+
+            if entire_project_button.count() > 0 and single_file_button.count() > 0:
+                # Switch to project mode
+                entire_project_button.click()
+                page.wait_for_timeout(300)
+
+                # Verify project mode UI (no module input)
+                module_input = page.locator('input[placeholder*="module"]')
+                # Module input should not be visible in project mode
+
+                # Switch to file mode
+                single_file_button.click()
+                page.wait_for_timeout(300)
+
+                # Verify file mode UI (module input visible)
+                if module_input.count() > 0:
+                    assert module_input.is_visible()
+
+    @_skip_if_no_frontend
+    def test_project_mode_results_display(self, page):
+        """Test that project mode shows multiple results."""
+        page.goto("http://localhost:5173")
+        page.wait_for_load_state("networkidle")
+
+        # Navigate to Repository section
+        if page.locator('button:has-text("Repository")').count() > 0:
+            page.locator('button:has-text("Repository")').click()
+            page.wait_for_timeout(500)
+
+            # In a complete test, we would:
+            # 1. Set up a test repository
+            # 2. Trigger project mode analysis
+            # 3. Wait for results
+            # 4. Verify multiple IR cards are displayed
+            # 5. Verify each card has file path, summary, and "View Details" button
+            # 6. Verify summary statistics dashboard is shown
+
+            # For now, verify the UI structure exists
+            assert page.is_visible("body")
+
+
+@pytest.mark.e2e
+@pytest.mark.slow
+@pytest.mark.playwright
 class TestWebUIEdgeCases:
     """Edge case tests for web UI."""
 

@@ -518,12 +518,31 @@ async def reverse(
                 "message": "Discovering Python files in repository",
             }
         )
-        irs = STATE.lifter.lift_all()
+
+        # Define progress callback for real-time updates
+        def progress_callback(file_path: str, current: int, total: int):
+            # Fire-and-forget progress event
+            asyncio.create_task(
+                STATE.publish_progress(
+                    {
+                        "type": "progress",
+                        "scope": "reverse",
+                        "stage": "file_analysis",
+                        "status": "running",
+                        "message": f"Analyzing {file_path} ({current}/{total})",
+                        "current": current,
+                        "total": total,
+                        "file": file_path,
+                    }
+                )
+            )
+
+        irs = STATE.lifter.lift_all(progress_callback=progress_callback)
         await STATE.publish_progress(
             {
                 "type": "progress",
                 "scope": "reverse",
-                "stage": "discovery",
+                "stage": "file_analysis",
                 "status": "completed",
                 "message": f"Analyzed {len(irs)} Python file(s)",
             }

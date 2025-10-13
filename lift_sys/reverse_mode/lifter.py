@@ -136,11 +136,16 @@ class SpecificationLifter:
 
         return sorted(python_files)
 
-    def lift_all(self, max_files: int | None = None) -> list[IntermediateRepresentation]:
+    def lift_all(
+        self,
+        max_files: int | None = None,
+        progress_callback: callable[[str, int, int]] | None = None,
+    ) -> list[IntermediateRepresentation]:
         """Lift specifications for all Python files in the repository.
 
         Args:
             max_files: Optional limit on number of files to analyze. If None, analyzes all files.
+            progress_callback: Optional callback function(file_path, current, total) called for each file.
 
         Returns:
             List of intermediate representations, one per successfully analyzed file.
@@ -159,6 +164,11 @@ class SpecificationLifter:
 
         for i, file_path in enumerate(files, 1):
             self._record_progress(f"analyzing:{file_path}:{i}/{len(files)}")
+
+            # Call progress callback for real-time updates
+            if progress_callback:
+                progress_callback(str(file_path), i, len(files))
+
             try:
                 ir = self.lift(str(file_path))
                 irs.append(ir)

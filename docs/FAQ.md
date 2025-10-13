@@ -4,6 +4,7 @@ Common questions and answers about the lift-sys prompt-to-IR refinement system.
 
 ## Table of Contents
 - [General Questions](#general-questions)
+- [Reverse Mode](#reverse-mode)
 - [Session Management](#session-management)
 - [Typed Holes and Ambiguities](#typed-holes-and-ambiguities)
 - [AI Assists](#ai-assists)
@@ -49,6 +50,195 @@ Prompt-to-IR refinement is an iterative process where you start with a natural l
 - Quick prototypes (use direct code generation)
 - Well-defined specs (start with IR directly)
 - Non-deterministic requirements
+
+---
+
+## Reverse Mode
+
+### What is reverse mode?
+
+Reverse mode analyzes existing code to extract formal specifications. It uses static analysis (CodeQL), dynamic analysis (Daikon), and program analysis (stack graphs) to understand what code does and generate IR automatically.
+
+**Key capabilities:**
+- Extract function signatures and types
+- Identify security vulnerabilities
+- Discover runtime invariants
+- Infer API relationships
+- Generate formal specifications
+
+### When should I use reverse mode?
+
+**Use reverse mode for:**
+- Understanding legacy code
+- Documenting undocumented code
+- Security audits
+- Pre-refactoring analysis
+- Codebase assessment
+
+**Use forward mode for:**
+- Creating new features
+- Greenfield development
+- Specification-driven design
+
+### Project mode vs. File mode - which should I use?
+
+**Project Mode** (analyze entire repository):
+- **Use when:**
+  - You want comprehensive codebase understanding
+  - Conducting security audit
+  - Generating documentation for entire project
+  - Initial codebase assessment
+- **Pros:** Complete coverage, batch processing, cross-file analysis
+- **Cons:** Slower, more resource-intensive
+
+**File Mode** (analyze single module):
+- **Use when:**
+  - You know which file to analyze
+  - Quick investigation needed
+  - Debugging specific module
+  - Analyzing API endpoints
+- **Pros:** Fast results, lower resource usage, immediate feedback
+- **Cons:** Doesn't show cross-file dependencies
+
+**Best practice:** Start with project mode for initial understanding, then use file mode for deep dives.
+
+### How long does reverse mode analysis take?
+
+Typical times (MacBook Pro M1):
+- **Single file**: 5-10 seconds
+- **Small project** (10-50 files): 1-5 minutes
+- **Medium project** (50-200 files): 5-20 minutes
+- **Large project** (200+ files): 20+ minutes
+
+**Speed tips:**
+- Disable unused analyzers (Daikon is slow)
+- Use `max_files` parameter to limit analysis
+- Exclude test files with custom patterns
+- Use file mode for targeted analysis
+
+### What if analysis fails for some files?
+
+Analysis continues even if individual files fail. Check the progress log:
+
+```python
+irs = lifter.lift_all()
+
+# Check for errors
+errors = [log for log in lifter.progress_log if "error:" in log]
+print(f"Analyzed {len(irs)} files with {len(errors)} errors")
+```
+
+Failed files are skipped, and you get IRs for successful analyses.
+
+### Can I analyze non-Python code?
+
+Currently, reverse mode only supports Python. Support for other languages is planned:
+- JavaScript/TypeScript (planned)
+- Java (planned)
+- Go (under consideration)
+- Rust (under consideration)
+
+### How do I interpret the extracted IR?
+
+Each IR contains:
+- **Intent**: What the function does (summary + rationale)
+- **Signature**: Function name, parameters, types, return type
+- **Effects**: Side effects (I/O, API calls, state changes)
+- **Assertions**: Preconditions, postconditions, invariants
+- **Metadata**: Source file, analysis evidence, provenance
+
+**Example workflow:**
+1. Review intent summary for high-level understanding
+2. Check assertions for constraints and edge cases
+3. Examine effects for external dependencies
+4. Review evidence for security findings
+
+See [REVERSE_MODE.md](REVERSE_MODE.md) for detailed examples.
+
+### What analysis tools does reverse mode use?
+
+**CodeQL** (static security analysis):
+- Finds security vulnerabilities
+- Identifies code quality issues
+- Supports custom queries
+- Can be disabled for faster analysis
+
+**Daikon** (dynamic invariant detection):
+- Discovers runtime invariants
+- Requires test execution
+- Finds pre/postconditions
+- Can be disabled for faster analysis
+
+**Stack Graphs** (program analysis):
+- Infers API relationships
+- Discovers symbol usage
+- Maps call graphs
+- Currently experimental
+
+### Can I customize which files are analyzed?
+
+Yes! Use custom exclusion patterns:
+
+```python
+files = lifter.discover_python_files(
+    exclude_patterns=[
+        "tests/*",           # Skip tests
+        "migrations/*",      # Skip migrations
+        "scripts/*",         # Skip scripts
+        "*_test.py",         # Skip test files
+        "setup.py",          # Skip setup
+    ]
+)
+
+# Then analyze filtered files
+for file in files:
+    ir = lifter.lift(str(file))
+```
+
+### How do I save and share reverse mode results?
+
+**Save to JSON:**
+```python
+import json
+
+irs = lifter.lift_all()
+
+# Save individual IRs
+for ir in irs:
+    filename = ir.metadata.source_path.replace("/", "_") + ".ir.json"
+    with open(filename, "w") as f:
+        json.dump(ir.to_dict(), f, indent=2)
+
+# Or save all in one file
+with open("all_irs.json", "w") as f:
+    json.dump([ir.to_dict() for ir in irs], f, indent=2)
+```
+
+**Share via API:**
+```bash
+# Export from API
+curl http://localhost:8000/api/reverse \
+  -d '{"module": null, "analyze_all": true}' \
+  > results.json
+
+# Share results.json with team
+```
+
+### Can I use reverse mode in CI/CD?
+
+Yes! See [REVERSE_MODE.md](REVERSE_MODE.md#integration-examples) for detailed CI/CD integration examples.
+
+**Quick example:**
+```bash
+#!/bin/bash
+# Check for security issues
+
+curl -X POST http://localhost:8000/api/reverse \
+  -d '{"module": null, "analyze_all": true}' \
+  | jq '[.irs[] | select(.metadata.evidence[] | .analysis == "codeql")] | length'
+
+# Exit 1 if security issues found
+```
 
 ---
 

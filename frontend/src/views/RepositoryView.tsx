@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, CheckCircle2, AlertCircle, Search, Filter, FileCode, File } from "lucide-react";
+import { RefreshCw, CheckCircle2, AlertCircle, Search, Filter, FileCode, File, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +55,8 @@ export function RepositoryView() {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [analysisResults, setAnalysisResults] = useState<any[] | null>(null);
   const [resultsSearchQuery, setResultsSearchQuery] = useState("");
+  const [currentFileProgress, setCurrentFileProgress] = useState<{file: string, current: number, total: number} | null>(null);
+  const [selectedIr, setSelectedIr] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"updated" | "created" | "pushed" | "full_name">("updated");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -215,6 +217,25 @@ export function RepositoryView() {
       return changed ? next : previous;
     });
   }, [reverseEvents, timeline.length]);
+
+  // Track real-time file analysis progress
+  useEffect(() => {
+    const fileAnalysisEvents = reverseEvents.filter((event) => event.stage === "file_analysis");
+    if (fileAnalysisEvents.length === 0) {
+      return;
+    }
+
+    const latest = fileAnalysisEvents[fileAnalysisEvents.length - 1];
+    if (latest.status === "running" && latest.current && latest.total && latest.file) {
+      setCurrentFileProgress({
+        file: String(latest.file),
+        current: Number(latest.current),
+        total: Number(latest.total),
+      });
+    } else if (latest.status === "completed") {
+      setCurrentFileProgress(null);
+    }
+  }, [reverseEvents]);
 
   return (
     <div className="space-y-6">
@@ -419,17 +440,43 @@ export function RepositoryView() {
             )}
           </div>
 
-          <div className="flex gap-3 flex-wrap">
-            <Button onClick={() => openRepo.mutate()} disabled={!selectedRepo || openRepo.isPending}>
-              {openRepo.isPending ? "Opening…" : "Open Repository"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => reverseMutation.mutate()}
-              disabled={reverseMutation.isPending || openRepo.isError || !activeRepository}
-            >
-              {reverseMutation.isPending ? "Scanning…" : "Run Reverse Scan"}
-            </Button>
+          <div className="space-y-3">
+            <div className="flex gap-3 flex-wrap">
+              <Button onClick={() => openRepo.mutate()} disabled={!selectedRepo || openRepo.isPending}>
+                {openRepo.isPending ? "Opening…" : "Open Repository"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => reverseMutation.mutate()}
+                disabled={reverseMutation.isPending || openRepo.isError || !activeRepository}
+              >
+                {reverseMutation.isPending ? "Scanning…" : "Run Reverse Scan"}
+              </Button>
+            </div>
+
+            {/* Real-time Progress Indicator */}
+            {currentFileProgress && (
+              <Alert>
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Analyzing: {currentFileProgress.file}</span>
+                      <span className="text-muted-foreground">
+                        {currentFileProgress.current} / {currentFileProgress.total}
+                      </span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-brand h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(currentFileProgress.current / currentFileProgress.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {openRepo.isSuccess && activeRepository && (
@@ -570,7 +617,11 @@ export function RepositoryView() {
                               {ir.intent?.summary || "No summary available"}
                             </div>
                           </div>
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedIr(ir)}
+                          >
                             View Details
                           </Button>
                         </div>
@@ -606,6 +657,149 @@ export function RepositoryView() {
                 </p>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Detailed IR View */}
+      {selectedIr && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIr(null)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Results
+              </Button>
+            </div>
+            <CardTitle className="text-xl mt-4">
+              {selectedIr.metadata?.source_path || "Specification Details"}
+            </CardTitle>
+            <CardDescription>
+              {selectedIr.intent?.summary || "No summary available"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Signature Section */}
+            {selectedIr.signature && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Signature</h3>
+                <div className="bg-muted p-4 rounded-lg font-mono text-sm">
+                  <div>
+                    <span className="text-blue-600 dark:text-blue-400">def</span>{" "}
+                    <span className="font-bold">{selectedIr.signature.name}</span>(
+                    {selectedIr.signature.parameters?.map((p: any, idx: number) => (
+                      <span key={idx}>
+                        {idx > 0 && ", "}
+                        <span>{p.name}</span>
+                        {p.type_hint && (
+                          <span className="text-gray-600 dark:text-gray-400">: {p.type_hint}</span>
+                        )}
+                      </span>
+                    ))}
+                    )
+                    {selectedIr.signature.returns && (
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {" "}
+                        -&gt; {selectedIr.signature.returns}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Intent Section */}
+            {selectedIr.intent && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Intent</h3>
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm">{selectedIr.intent.summary}</p>
+                  {selectedIr.intent.rationale && (
+                    <p className="text-sm text-muted-foreground italic">
+                      {selectedIr.intent.rationale}
+                    </p>
+                  )}
+                  {selectedIr.intent.holes && selectedIr.intent.holes.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      <div className="text-xs font-medium text-muted-foreground">
+                        Typed Holes ({selectedIr.intent.holes.length}):
+                      </div>
+                      {selectedIr.intent.holes.map((hole: any, idx: number) => (
+                        <Badge key={idx} variant="warning" className="text-xs mr-1">
+                          {hole.identifier}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Effects Section */}
+            {selectedIr.effects && selectedIr.effects.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Effects</h3>
+                <div className="space-y-2">
+                  {selectedIr.effects.map((effect: any, idx: number) => (
+                    <div key={idx} className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">{effect.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assertions Section */}
+            {selectedIr.assertions && selectedIr.assertions.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Assertions</h3>
+                <div className="space-y-2">
+                  {selectedIr.assertions.map((assertion: any, idx: number) => (
+                    <div key={idx} className="bg-muted p-3 rounded-lg space-y-1">
+                      <code className="text-sm font-mono">{assertion.predicate}</code>
+                      {assertion.rationale && (
+                        <p className="text-xs text-muted-foreground italic">
+                          {assertion.rationale}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Metadata Section */}
+            {selectedIr.metadata && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Metadata</h3>
+                <div className="bg-muted p-3 rounded-lg">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {selectedIr.metadata.origin && (
+                      <div>
+                        <span className="text-muted-foreground">Origin:</span>{" "}
+                        <span className="font-medium">{selectedIr.metadata.origin}</span>
+                      </div>
+                    )}
+                    {selectedIr.metadata.language && (
+                      <div>
+                        <span className="text-muted-foreground">Language:</span>{" "}
+                        <span className="font-medium">{selectedIr.metadata.language}</span>
+                      </div>
+                    )}
+                    {selectedIr.metadata.source_path && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Path:</span>{" "}
+                        <span className="font-mono text-xs">{selectedIr.metadata.source_path}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

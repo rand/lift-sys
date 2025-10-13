@@ -8,6 +8,14 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}Starting lift-sys...${NC}"
 
+# Load environment variables from .env if it exists
+if [ -f .env ]; then
+    echo -e "${BLUE}Loading environment variables from .env${NC}"
+    set -a
+    source .env
+    set +a
+fi
+
 # Function to cleanup background processes on exit
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"

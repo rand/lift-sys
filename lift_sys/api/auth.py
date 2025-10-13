@@ -12,6 +12,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
+from ..auth.token_store import TokenStore
 from .schemas import SessionInfo, UserIdentity
 
 LOGGER = logging.getLogger(__name__)
@@ -142,6 +143,7 @@ def configure_auth(app: FastAPI) -> APIRouter:
 
     @router.get("/callback/{provider}")
     async def auth_callback(request: Request, provider: str):
+        LOGGER.info("OAuth callback started for provider: %s", provider)
         client = context.get_client(provider)
         try:
             token = await client.authorize_access_token(request)
@@ -154,11 +156,22 @@ def configure_auth(app: FastAPI) -> APIRouter:
             raise HTTPException(status_code=400, detail="profile_unavailable")
 
         user_identity = UserIdentity(**profile)
+        LOGGER.info("User authenticated: %s from provider %s", user_identity.id, provider)
         request.session["user"] = user_identity.model_dump()
         request.session["user_id"] = user_identity.id
         tokens: dict[str, Any] = request.session.get("tokens", {})
         tokens[provider] = token
         request.session["tokens"] = tokens
+
+        # Persist token to TokenStore for repository access
+        LOGGER.info("Attempting to save token to TokenStore for user %s", user_identity.id)
+        token_store: TokenStore | None = getattr(request.app.state, "token_store", None)
+        LOGGER.info("TokenStore availability: %s", token_store is not None)
+        if token_store:
+            token_store.save_tokens(user_identity.id, provider, token)
+            LOGGER.info("Successfully saved %s token for user %s", provider, user_identity.id)
+        else:
+            LOGGER.warning("TokenStore not available in app.state, token not persisted")
 
         redirect_target = request.session.pop(
             _REDIRECT_KEY, os.getenv("LIFT_SYS_POST_LOGIN_REDIRECT", "http://localhost:3000")
@@ -167,6 +180,15 @@ def configure_auth(app: FastAPI) -> APIRouter:
 
     @router.post("/logout")
     async def logout(request: Request) -> JSONResponse:
+        # Clear tokens from TokenStore if user is logged in
+        user_id = request.session.get("user_id")
+        if user_id:
+            token_store: TokenStore | None = getattr(request.app.state, "token_store", None)
+            if token_store:
+                for provider in token_store.list_providers(user_id):
+                    token_store.delete_tokens(user_id, provider)
+                    LOGGER.info("Deleted %s token for user %s", provider, user_id)
+
         request.session.clear()
         return JSONResponse({"authenticated": False})
 

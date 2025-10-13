@@ -92,6 +92,89 @@ class SpecificationLifter:
             else:
                 raise
 
+    def discover_python_files(self, exclude_patterns: list[str] | None = None) -> list[Path]:
+        """Find all Python files in the repository.
+
+        Args:
+            exclude_patterns: Directory patterns to exclude from search.
+
+        Returns:
+            List of Python file paths relative to repository root.
+
+        Raises:
+            RuntimeError: If repository is not loaded.
+        """
+        if not self.repo:
+            raise RuntimeError("Repository not loaded")
+
+        repo_path = Path(self.repo.working_tree_dir)
+        exclude = exclude_patterns or [
+            "venv",
+            ".venv",
+            "node_modules",
+            "__pycache__",
+            ".git",
+            "build",
+            "dist",
+            ".eggs",
+            ".egg-info",
+            ".tox",
+            ".pytest_cache",
+            ".mypy_cache",
+            "htmlcov",
+        ]
+
+        python_files = []
+        for py_file in repo_path.rglob("*.py"):
+            # Skip if any part of the path matches excluded directories
+            if any(excl in py_file.parts for excl in exclude if "*" not in excl):
+                continue
+            # Skip if matches exclude pattern with wildcards
+            if any(py_file.match(excl) for excl in exclude if "*" in excl):
+                continue
+            python_files.append(py_file.relative_to(repo_path))
+
+        return sorted(python_files)
+
+    def lift_all(self, max_files: int | None = None) -> list[IntermediateRepresentation]:
+        """Lift specifications for all Python files in the repository.
+
+        Args:
+            max_files: Optional limit on number of files to analyze. If None, analyzes all files.
+
+        Returns:
+            List of intermediate representations, one per successfully analyzed file.
+
+        Raises:
+            RuntimeError: If repository is not loaded.
+        """
+        files = self.discover_python_files()
+
+        if max_files and len(files) > max_files:
+            self._record_progress(f"limiting to first {max_files} of {len(files)} files")
+            files = files[:max_files]
+
+        irs: list[IntermediateRepresentation] = []
+        failed: list[tuple[Path, str]] = []
+
+        for i, file_path in enumerate(files, 1):
+            self._record_progress(f"analyzing:{file_path}:{i}/{len(files)}")
+            try:
+                ir = self.lift(str(file_path))
+                irs.append(ir)
+            except Exception as e:
+                # Log error but continue with other files
+                error_msg = f"error:{file_path}:{str(e)}"
+                self._record_progress(error_msg)
+                failed.append((file_path, str(e)))
+
+        if failed:
+            self._record_progress(f"completed with {len(failed)} failures out of {len(files)}")
+        else:
+            self._record_progress(f"completed successfully: {len(irs)} files analyzed")
+
+        return irs
+
     def lift(self, target_module: str) -> IntermediateRepresentation:
         if not self.repo:
             raise RuntimeError("Repository not loaded")

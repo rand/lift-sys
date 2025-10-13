@@ -18,7 +18,7 @@ export function ConfigurationView() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      await api.post("/config", { model_endpoint: endpoint, temperature });
+      await api.post("/api/config", { model_endpoint: endpoint, temperature });
     },
   });
 

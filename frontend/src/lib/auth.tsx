@@ -48,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((previous) => ({ ...previous, status: "loading" }));
 
     // In demo mode, check for existing demo user in localStorage
-    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+    // Respect explicit VITE_DEMO_MODE=false, otherwise default to dev mode
+    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'false' ? false : (import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV);
     if (isDemoMode) {
       const demoUserJson = localStorage.getItem('demo_user');
       if (demoUserJson) {
@@ -88,7 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (provider: OAuthProvider) => {
       // Check if demo mode is enabled
-      const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+      // Respect explicit VITE_DEMO_MODE=false, otherwise default to dev mode
+      const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'false' ? false : (import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV);
 
       if (isDemoMode) {
         // In demo mode, create a mock authenticated session
@@ -106,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Production OAuth flow
       const callbackUrl = `${window.location.origin}/auth/callback`;
-      const base = api.defaults.baseURL ?? window.location.origin;
+      const base = api.defaults.baseURL || window.location.origin;
       const loginUrl = new URL(`/api/auth/login/${provider}`, base);
       loginUrl.searchParams.set("redirect", callbackUrl);
       window.location.href = loginUrl.toString();
@@ -115,7 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV;
+    // Respect explicit VITE_DEMO_MODE=false, otherwise default to dev mode
+    const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'false' ? false : (import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV);
 
     if (isDemoMode) {
       // In demo mode, just clear localStorage and state

@@ -19,7 +19,7 @@ def configure_backend(
     provider: str = "vllm",
 ):
     response = client.post(
-        "/config",
+        "/api/config",
         json={
             "model_endpoint": endpoint,
             "temperature": temperature,
@@ -50,19 +50,21 @@ def test_reverse_endpoint_happy_path(
 
     with patch.object(api_state.lifter, "lift", return_value=sample_ir):
         response = api_client.post(
-            "/reverse",
+            "/api/reverse",
             json={"module": "module.py", "queries": ["security/default"], "entrypoint": "main"},
         )
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["ir"]["signature"]["name"] == sample_ir.signature.name
+    assert "irs" in payload
+    assert len(payload["irs"]) == 1
+    assert payload["irs"][0]["signature"]["name"] == sample_ir.signature.name
     assert api_state.planner.current_plan is not None
 
 
 def test_reverse_endpoint_rejects_when_unconfigured(api_client) -> None:
     response = api_client.post(
-        "/reverse",
+        "/api/reverse",
         json={"module": "module.py", "queries": ["security/default"], "entrypoint": "main"},
     )
     assert response.status_code == 400
@@ -75,7 +77,7 @@ def test_forward_endpoint_generates_payload(
     assert api_state.synthesizer is not None
 
     payload = api_client.post(
-        "/forward",
+        "/api/forward",
         json={"ir": sample_ir.to_dict()},
     )
 
@@ -89,7 +91,7 @@ def test_forward_endpoint_generates_payload(
 
 def test_forward_endpoint_requires_configuration(api_client) -> None:
     response = api_client.post(
-        "/forward",
+        "/api/forward",
         json={"ir": {}},
     )
     assert response.status_code == 400
@@ -100,7 +102,7 @@ def test_open_repository_uses_lifter(api_client, api_state) -> None:
     assert api_state.lifter is not None
 
     with patch.object(api_state.lifter, "load_repository", return_value=MagicMock()) as loader:
-        response = api_client.post("/repos/open", json={"identifier": "octocat/example"})
+        response = api_client.post("/api/repos/open", json={"identifier": "octocat/example"})
 
     assert response.status_code == 200
     loader.assert_called_once()
@@ -110,7 +112,7 @@ def test_open_repository_uses_lifter(api_client, api_state) -> None:
 
 
 def test_list_repositories(api_client) -> None:
-    response = api_client.get("/repos")
+    response = api_client.get("/api/repos")
 
     assert response.status_code == 200
     payload = response.json()
@@ -119,7 +121,7 @@ def test_list_repositories(api_client) -> None:
 
 
 def test_plan_endpoint_requires_plan(api_client) -> None:
-    response = api_client.get("/plan")
+    response = api_client.get("/api/plan")
     assert response.status_code == 404
 
 
@@ -133,11 +135,11 @@ def test_plan_endpoint_returns_loaded_plan(
 
     with patch.object(api_state.lifter, "lift", return_value=sample_ir):
         api_client.post(
-            "/reverse",
+            "/api/reverse",
             json={"module": "module.py", "queries": ["security/default"], "entrypoint": "main"},
         )
 
-    response = api_client.get("/plan")
+    response = api_client.get("/api/plan")
     assert response.status_code == 200
     plan = response.json()
     assert plan["goals"] == ["verified_ir", "code_generation"]

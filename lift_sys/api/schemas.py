@@ -71,7 +71,10 @@ class RepoOpenResponse(BaseModel):
 
 
 class ReverseRequest(BaseModel):
-    module: str
+    module: str | None = Field(
+        default=None,
+        description="Target module path for single-file analysis. If None, analyzes entire project.",
+    )
     queries: list[str] = Field(default_factory=list)
     entrypoint: str = "main"
     analyses: list[str] = Field(
@@ -82,6 +85,10 @@ class ReverseRequest(BaseModel):
         default=None,
         description="Path to stack-graph index directory",
     )
+    analyze_all: bool = Field(
+        default=True,
+        description="If True and module is None, analyzes all Python files in project",
+    )
 
 
 class ForwardRequest(BaseModel):
@@ -89,7 +96,10 @@ class ForwardRequest(BaseModel):
 
 
 class IRResponse(BaseModel):
-    ir: dict
+    irs: list[dict] = Field(
+        default_factory=list,
+        description="List of intermediate representations, one per analyzed file",
+    )
     progress: list[dict] = Field(default_factory=list)
 
     @classmethod
@@ -99,7 +109,18 @@ class IRResponse(BaseModel):
         *,
         progress: list[dict[str, object]] | None = None,
     ) -> IRResponse:
-        return cls(ir=ir.to_dict(), progress=progress or [])
+        """Create response from single IR (backward compatibility)."""
+        return cls(irs=[ir.to_dict()], progress=progress or [])
+
+    @classmethod
+    def from_irs(
+        cls,
+        irs: list[IntermediateRepresentation],
+        *,
+        progress: list[dict[str, object]] | None = None,
+    ) -> IRResponse:
+        """Create response from multiple IRs (whole-project mode)."""
+        return cls(irs=[ir.to_dict() for ir in irs], progress=progress or [])
 
 
 class PlannerTelemetry(BaseModel):

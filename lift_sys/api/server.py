@@ -365,13 +365,13 @@ async def root(user: AuthenticatedUser = Depends(require_authenticated_user)) ->
     }
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) -> dict[str, str]:
     LOGGER.debug("Health check by %s", user.id)
     return {"status": "ok"}
 
 
-@app.post("/config")
+@app.post("/api/config")
 async def configure(
     request: ConfigRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> dict[str, str]:
@@ -380,15 +380,29 @@ async def configure(
     return {"status": "configured"}
 
 
-@app.get("/repos", response_model=RepoListResponse)
+@app.get("/api/repos", response_model=RepoListResponse)
 async def list_repositories(
     user: AuthenticatedUser = Depends(require_authenticated_user),
+    page: int = 1,
+    per_page: int = 30,
+    sort: str = "updated",
+    direction: str = "desc",
 ) -> RepoListResponse:
+    """List repositories with pagination and sorting.
+
+    Args:
+        page: Page number (1-indexed)
+        per_page: Number of repositories per page (default 30, max 100)
+        sort: Sort by 'created', 'updated', 'pushed', or 'full_name'
+        direction: Sort direction 'asc' or 'desc'
+    """
     client: GitHubRepositoryClient | None = getattr(app.state, "github_repositories", None)
     if client is None:
         raise HTTPException(status_code=503, detail="github_integration_unavailable")
     try:
-        summaries = await client.list_repositories(user.id)
+        summaries = await client.list_repositories(
+            user.id, page=page, per_page=per_page, sort=sort, direction=direction
+        )
     except RepositoryAccessError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     repositories = []
@@ -408,7 +422,7 @@ async def list_repositories(
     return RepoListResponse(repositories=repositories)
 
 
-@app.post("/repos/open", response_model=RepoOpenResponse)
+@app.post("/api/repos/open", response_model=RepoOpenResponse)
 async def open_repository(
     request: RepoRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> RepoOpenResponse:
@@ -439,22 +453,17 @@ async def open_repository(
     return RepoOpenResponse(status="ready", repository=_metadata_to_schema(metadata))
 
 
-@app.post("/reverse", response_model=IRResponse)
+@app.post("/api/reverse", response_model=IRResponse)
 async def reverse(
     request: ReverseRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> IRResponse:
-    LOGGER.info("%s initiated reverse lift for %s", user.id, request.module)
+    target_desc = request.module if request.module else "entire project"
+    LOGGER.info("%s initiated reverse lift for %s", user.id, target_desc)
+
     if not STATE.lifter:
         raise HTTPException(status_code=400, detail="lifter not configured")
-    await STATE.publish_progress(
-        {
-            "type": "progress",
-            "scope": "reverse",
-            "stage": "initialise",
-            "status": "running",
-            "message": f"Preparing reverse mode for {request.module}",
-        }
-    )
+
+    # Configure lifter
     analyses = set(request.analyses)
     stack_index = request.stack_index_path or getattr(STATE.lifter.config, "stack_index_path", None)
     STATE.lifter.config = LifterConfig(
@@ -465,25 +474,61 @@ async def reverse(
         run_daikon="daikon" in analyses,
         run_stack_graphs="stack_graphs" in analyses,
     )
-    await STATE.publish_progress(
-        {
-            "type": "progress",
-            "scope": "reverse",
-            "stage": "codeql_scan",
-            "status": "running",
-            "message": "Executing CodeQL queries",
-        }
-    )
-    ir = STATE.lifter.lift(request.module)
-    await STATE.publish_progress(
-        {
-            "type": "progress",
-            "scope": "reverse",
-            "stage": "codeql_scan",
-            "status": "completed",
-            "message": "CodeQL analysis complete",
-        }
-    )
+
+    # Choose analysis mode based on request
+    if request.module:
+        # Single file mode (backward compatible)
+        await STATE.publish_progress(
+            {
+                "type": "progress",
+                "scope": "reverse",
+                "stage": "initialise",
+                "status": "running",
+                "message": f"Analyzing single file: {request.module}",
+            }
+        )
+        await STATE.publish_progress(
+            {
+                "type": "progress",
+                "scope": "reverse",
+                "stage": "codeql_scan",
+                "status": "running",
+                "message": "Executing CodeQL queries",
+            }
+        )
+        ir = STATE.lifter.lift(request.module)
+        irs = [ir]
+        await STATE.publish_progress(
+            {
+                "type": "progress",
+                "scope": "reverse",
+                "stage": "codeql_scan",
+                "status": "completed",
+                "message": "CodeQL analysis complete",
+            }
+        )
+    else:
+        # Whole project mode (default)
+        await STATE.publish_progress(
+            {
+                "type": "progress",
+                "scope": "reverse",
+                "stage": "discovery",
+                "status": "running",
+                "message": "Discovering Python files in repository",
+            }
+        )
+        irs = STATE.lifter.lift_all()
+        await STATE.publish_progress(
+            {
+                "type": "progress",
+                "scope": "reverse",
+                "stage": "discovery",
+                "status": "completed",
+                "message": f"Analyzed {len(irs)} Python file(s)",
+            }
+        )
+
     await STATE.publish_progress(
         {
             "type": "progress",
@@ -493,7 +538,11 @@ async def reverse(
             "message": "Inferring invariants with Daikon",
         }
     )
-    STATE.planner.load_ir(ir)
+
+    # Load all IRs into planner
+    for ir in irs:
+        STATE.planner.load_ir(ir)
+
     await STATE.publish_progress(
         {
             "type": "progress",
@@ -509,7 +558,7 @@ async def reverse(
             "scope": "planner",
             "stage": "plan_ready",
             "status": "completed",
-            "message": "Planner loaded reverse-mode IR",
+            "message": f"Planner loaded {len(irs)} IR(s)",
         }
     )
     await STATE.publish_progress(
@@ -521,11 +570,20 @@ async def reverse(
             "message": "IR indexed for planner assists",
         }
     )
+
     # Record lifter progress checkpoints in planner
     for checkpoint in STATE.lifter.progress_log:
         STATE.planner.record_checkpoint(checkpoint)
+
     now = datetime.now(UTC).isoformat() + "Z"
     progress = [
+        {
+            "id": "discovery",
+            "label": "File Discovery",
+            "status": "completed",
+            "message": f"Found {len(irs)} Python file(s)",
+            "timestamp": now,
+        },
         {
             "id": "codeql_scan",
             "label": "CodeQL Analysis",
@@ -558,10 +616,10 @@ async def reverse(
             ],
         },
     ]
-    return IRResponse.from_ir(ir, progress=progress)
+    return IRResponse.from_irs(irs, progress=progress)
 
 
-@app.post("/forward", response_model=ForwardResponse)
+@app.post("/api/forward", response_model=ForwardResponse)
 async def forward(
     request: ForwardRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> ForwardResponse:
@@ -604,7 +662,7 @@ async def forward(
     return ForwardResponse(request_payload=payload)
 
 
-@app.get("/plan", response_model=PlanResponse)
+@app.get("/api/plan", response_model=PlanResponse)
 async def get_plan(user: AuthenticatedUser = Depends(require_authenticated_user)) -> PlanResponse:
     LOGGER.debug("%s fetched planner state", user.id)
     if not STATE.planner.current_plan:
@@ -716,7 +774,7 @@ async def get_plan(user: AuthenticatedUser = Depends(require_authenticated_user)
 # Session management endpoints
 
 
-@app.post("/spec-sessions", response_model=SessionResponse)
+@app.post("/api/spec-sessions", response_model=SessionResponse)
 async def create_session(
     request: CreateSessionRequest,
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -774,7 +832,7 @@ async def create_session(
         raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 
-@app.get("/spec-sessions", response_model=SessionListResponse)
+@app.get("/api/spec-sessions", response_model=SessionListResponse)
 async def list_sessions(
     user: AuthenticatedUser = Depends(require_authenticated_user),
 ) -> SessionListResponse:

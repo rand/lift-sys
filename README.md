@@ -266,7 +266,9 @@ When analyzing multiple files, the API provides real-time progress updates via W
 - **Search & Filter**: Results can be filtered by file path, function name, or content
 - **Navigation**: Click through from overview to detailed specifications
 
-For more details, see [Reverse Mode Documentation](docs/REVERSE_MODE.md).
+For more details, see:
+- [Reverse Mode Documentation](docs/REVERSE_MODE.md) - Complete feature guide
+- [Performance Guide](docs/PERFORMANCE.md) - Benchmarks and optimization
 
 ## Project Structure
 

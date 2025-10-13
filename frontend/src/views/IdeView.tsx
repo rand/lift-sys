@@ -25,7 +25,7 @@ export function IdeView() {
     queryKey: ["plan"],
     queryFn: async () => {
       try {
-        const response = await api.get("/plan");
+        const response = await api.get("/api/plan");
         return response.data;
       } catch (error: any) {
         if (error?.response?.status === 404) {

@@ -77,11 +77,33 @@ class GitHubRepositoryClient:
         self._http_client = http_client
         self._client_lock = asyncio.Lock()
 
-    async def list_repositories(self, user_id: str) -> list[RepositorySummary]:
-        """Return repositories the authenticated user can access."""
+    async def list_repositories(
+        self,
+        user_id: str,
+        *,
+        page: int = 1,
+        per_page: int = 30,
+        sort: str = "updated",
+        direction: str = "desc",
+    ) -> list[RepositorySummary]:
+        """Return repositories the authenticated user can access.
+
+        Args:
+            user_id: The authenticated user ID
+            page: Page number (1-indexed)
+            per_page: Number of repositories per page (max 100)
+            sort: Sort by 'created', 'updated', 'pushed', or 'full_name'
+            direction: Sort direction 'asc' or 'desc'
+        """
 
         token = self._get_token(user_id)
-        response = await self._request("GET", "/user/repos", token)
+        params = {
+            "page": page,
+            "per_page": min(per_page, 100),  # GitHub API max is 100
+            "sort": sort,
+            "direction": direction,
+        }
+        response = await self._request("GET", "/user/repos", token, params=params)
         repos: list[RepositorySummary] = []
         for item in response.json():
             owner = item.get("owner", {}).get("login", "")
@@ -160,13 +182,15 @@ class GitHubRepositoryClient:
         parts = identifier.split("/")
         return self.workspace_root.joinpath(*parts)
 
-    async def _request(self, method: str, path: str, token: str) -> httpx.Response:
+    async def _request(
+        self, method: str, path: str, token: str, params: dict[str, Any] | None = None
+    ) -> httpx.Response:
         client = await self._ensure_client()
         headers = {
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
         }
-        response = await client.request(method, path, headers=headers)
+        response = await client.request(method, path, headers=headers, params=params)
         if response.status_code == 401:
             raise RepositoryAccessError(403, "github_token_invalid")
         if response.status_code == 404:

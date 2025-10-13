@@ -33,7 +33,7 @@ export function PlannerView() {
     queryKey: ["plan"],
     queryFn: async () => {
       try {
-        const response = await api.get("/plan");
+        const response = await api.get("/api/plan");
         return response.data;
       } catch (error: any) {
         if (error?.response?.status === 404) {
@@ -50,14 +50,14 @@ export function PlannerView() {
   const forwardMutation = useMutation({
     mutationFn: async () => {
       if (!data?.ir) return null;
-      const response = await api.post("/forward", { ir: data.ir });
+      const response = await api.post("/api/forward", { ir: data.ir });
       return response.data;
     },
   });
 
   const reverseMutation = useMutation({
     mutationFn: async () => {
-      const response = await api.post("/reverse", {
+      const response = await api.post("/api/reverse", {
         module: "module.py",
         queries: ["security/default"],
         entrypoint: "main",

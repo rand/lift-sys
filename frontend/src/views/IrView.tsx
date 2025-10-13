@@ -48,7 +48,7 @@ export function IrView() {
     queryKey: ["plan"],
     queryFn: async () => {
       try {
-        const response = await api.get("/plan");
+        const response = await api.get("/api/plan");
         return response.data;
       } catch (err: any) {
         if (err?.response?.status === 404) {

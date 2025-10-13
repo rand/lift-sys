@@ -36,10 +36,7 @@ const mockSessions = [
   },
 ];
 
-describe.skip("PromptWorkbenchView", () => {
-  // FIXME: Tests need to be updated after design system migration
-  // The component structure changed significantly with shadcn/ui components
-  // These tests expect the old DOM structure and text content
+describe("PromptWorkbenchView", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -67,17 +64,15 @@ describe.skip("PromptWorkbenchView", () => {
     expect(screen.getByText("Create Session")).toBeInTheDocument();
   });
 
-  it("shows error when creating session without prompt", async () => {
+  it("disables create button when no prompt is entered", async () => {
     vi.mocked(sessionApi.listSessions).mockResolvedValue({ sessions: [] });
 
     renderWithProvider(<PromptWorkbenchView />);
 
     const createButton = screen.getByText("Create Session");
-    fireEvent.click(createButton);
 
-    await waitFor(() => {
-      expect(screen.getByText("Please enter a prompt")).toBeInTheDocument();
-    });
+    // Button should be disabled when prompt is empty
+    expect(createButton).toBeDisabled();
   });
 
   it("creates session when prompt is provided", async () => {
@@ -107,8 +102,11 @@ describe.skip("PromptWorkbenchView", () => {
     renderWithProvider(<PromptWorkbenchView />);
 
     await waitFor(() => {
-      expect(screen.getByText(/session-123/i)).toBeInTheDocument();
-      expect(screen.getByText(/active • 1 holes/i)).toBeInTheDocument();
+      // Session ID is truncated to first 8 chars: "session-"
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
+      // Status and holes count are displayed separately with badges
+      expect(screen.getByText("active")).toBeInTheDocument();
+      expect(screen.getByText("1 holes")).toBeInTheDocument();
     });
   });
 
@@ -121,13 +119,18 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Find and click the session card
     await waitFor(() => {
-      const sessionCard = screen.getByText(/session-123/i);
-      fireEvent.click(sessionCard.closest("div")!);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
 
+    const sessionText = screen.getByText(/session-/);
+    const card = sessionText.closest('[class*="cursor-pointer"]');
+    fireEvent.click(card!);
+
     await waitFor(() => {
-      expect(screen.getByText(/Session session-123/i)).toBeInTheDocument();
+      // Session title shows first 12 chars: "Session session-123"
+      expect(screen.getByText(/Session session-123/)).toBeInTheDocument();
       expect(screen.getByText(/Intermediate Representation/i)).toBeInTheDocument();
     });
   });
@@ -147,10 +150,14 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Find and click the session card
     await waitFor(() => {
-      const sessionCard = screen.getByText(/session-123/i);
-      fireEvent.click(sessionCard.closest("div")!);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
+
+    const sessionText = screen.getByText(/session-/);
+    const card = sessionText.closest('[class*="cursor-pointer"]');
+    fireEvent.click(card!);
 
     await waitFor(() => {
       expect(screen.getByText(/Ambiguities \(1\)/i)).toBeInTheDocument();
@@ -177,10 +184,14 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Find and click the session card
     await waitFor(() => {
-      const sessionCard = screen.getByText(/session-123/i);
-      fireEvent.click(sessionCard.closest("div")!);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
+
+    const sessionText = screen.getByText(/session-/);
+    const card = sessionText.closest('[class*="cursor-pointer"]');
+    fireEvent.click(card!);
 
     await waitFor(() => {
       const intSuggestion = screen.getByText("int");
@@ -216,10 +227,14 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Find and click the session card
     await waitFor(() => {
-      const sessionCard = screen.getByText(/session-123/i);
-      fireEvent.click(sessionCard.closest("div")!);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
+
+    const sessionText = screen.getByText(/session-/);
+    const card = sessionText.closest('[class*="cursor-pointer"]');
+    fireEvent.click(card!);
 
     await waitFor(() => {
       expect(screen.getByText("Finalize")).toBeInTheDocument();
@@ -246,10 +261,14 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Find and click the session card
     await waitFor(() => {
-      const sessionCard = screen.getByText(/session-123/i);
-      fireEvent.click(sessionCard.closest("div")!);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
+
+    const sessionText = screen.getByText(/session-/);
+    const card = sessionText.closest('[class*="cursor-pointer"]');
+    fireEvent.click(card!);
 
     await waitFor(() => {
       const finalizeButton = screen.getByText("Finalize");
@@ -267,10 +286,19 @@ describe.skip("PromptWorkbenchView", () => {
 
     renderWithProvider(<PromptWorkbenchView />);
 
+    // Wait for session to be displayed
     await waitFor(() => {
-      const deleteButton = screen.getByText("✕");
-      fireEvent.click(deleteButton);
+      expect(screen.getByText(/session-/)).toBeInTheDocument();
     });
+
+    // Find the delete button (it's an icon button within the session card)
+    // There are two buttons: "Create Session" (disabled) and the delete button in the session card
+    const buttons = screen.getAllByRole("button");
+    // The delete button is the second one (index 1) - the first is "Create Session"
+    const deleteButton = buttons[1];
+
+    expect(deleteButton).toBeDefined();
+    fireEvent.click(deleteButton);
 
     await waitFor(() => {
       expect(sessionApi.deleteSession).toHaveBeenCalledWith("session-123");

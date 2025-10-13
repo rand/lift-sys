@@ -476,3 +476,160 @@ class TestMultiFileLift:
         source_paths = {ir.metadata.source_path for ir in irs}
         assert "alpha.py" in source_paths
         assert "beta.py" in source_paths
+
+
+@pytest.mark.unit
+class TestConfigurationLimits:
+    """Unit tests for configuration-based resource limits."""
+
+    def test_max_file_size_limit_excludes_large_files(self, temp_repo, temp_dir):
+        """Test that files exceeding max_file_size_mb are excluded."""
+        # Create small and large files
+        small_file = Path(temp_dir) / "small.py"
+        large_file = Path(temp_dir) / "large.py"
+
+        small_file.write_text("# Small file\nprint('hello')")
+        # Create a file larger than 1MB
+        large_file.write_text("# Large file\n" + "x = 1\n" * 100000)
+
+        temp_repo.index.add(["small.py", "large.py"])
+        temp_repo.index.commit("Add files")
+
+        # Set small size limit
+        config = LifterConfig(max_file_size_mb=0.5)  # 0.5MB limit
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        files = lifter.discover_python_files()
+
+        # Only small file should be discovered
+        assert len(files) == 1
+        assert Path("small.py") in files
+        assert Path("large.py") not in files
+
+        # Check progress log
+        assert any("skipped" in log and "too large" in log for log in lifter.progress_log)
+
+    def test_config_max_files_limit(self, temp_repo, temp_dir):
+        """Test that config.max_files limits number of files analyzed."""
+        # Create 5 files
+        for i in range(5):
+            (Path(temp_dir) / f"file{i}.py").write_text(f"# File {i}")
+
+        temp_repo.index.add([f"file{i}.py" for i in range(5)])
+        temp_repo.index.commit("Add files")
+
+        # Set config max_files to 3
+        config = LifterConfig(max_files=3, run_codeql=False, run_daikon=False)
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        with patch.object(lifter, "lift") as mock_lift:
+            # Mock lift to return simple IR
+            from lift_sys.ir.models import (
+                IntentClause,
+                IntermediateRepresentation,
+                Metadata,
+                SigClause,
+            )
+
+            mock_lift.return_value = IntermediateRepresentation(
+                intent=IntentClause(summary="Test"),
+                signature=SigClause(name="test", parameters=[], returns="None"),
+                assertions=[],
+                metadata=Metadata(source_path="test.py", origin="reverse", language="python"),
+            )
+
+            # lift_all should respect config.max_files
+            irs = lifter.lift_all()
+
+        assert len(irs) == 3
+        assert any("limiting to first 3 of 5" in log for log in lifter.progress_log)
+
+    def test_parameter_overrides_config_max_files(self, temp_repo, temp_dir):
+        """Test that max_files parameter overrides config.max_files."""
+        # Create 5 files
+        for i in range(5):
+            (Path(temp_dir) / f"file{i}.py").write_text(f"# File {i}")
+
+        temp_repo.index.add([f"file{i}.py" for i in range(5)])
+        temp_repo.index.commit("Add files")
+
+        # Set config max_files to 3, but override with parameter 2
+        config = LifterConfig(max_files=3, run_codeql=False, run_daikon=False)
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        with patch.object(lifter, "lift") as mock_lift:
+            from lift_sys.ir.models import (
+                IntentClause,
+                IntermediateRepresentation,
+                Metadata,
+                SigClause,
+            )
+
+            mock_lift.return_value = IntermediateRepresentation(
+                intent=IntentClause(summary="Test"),
+                signature=SigClause(name="test", parameters=[], returns="None"),
+                assertions=[],
+                metadata=Metadata(source_path="test.py", origin="reverse", language="python"),
+            )
+
+            # Parameter should override config
+            irs = lifter.lift_all(max_files=2)
+
+        assert len(irs) == 2
+        assert any("limiting to first 2 of 5" in log for log in lifter.progress_log)
+
+    @patch("subprocess.run")
+    def test_max_total_time_limit_stops_analysis(self, mock_subprocess, temp_repo, temp_dir):
+        """Test that max_total_time_seconds stops analysis when exceeded."""
+        # Create 5 files
+        for i in range(5):
+            (Path(temp_dir) / f"file{i}.py").write_text(f"# File {i}")
+
+        temp_repo.index.add([f"file{i}.py" for i in range(5)])
+        temp_repo.index.commit("Add files")
+
+        mock_subprocess.return_value = Mock(returncode=0, stdout="{}", stderr="")
+
+        # Set very short time limit
+        config = LifterConfig(max_total_time_seconds=0.1, run_codeql=False)
+        lifter = SpecificationLifter(config)
+        lifter.load_repository(str(temp_dir))
+
+        # Mock lift to take some time
+        def slow_lift(module):
+            import time
+
+            time.sleep(0.05)  # Each file takes 50ms
+            from lift_sys.ir.models import (
+                IntentClause,
+                IntermediateRepresentation,
+                Metadata,
+                SigClause,
+            )
+
+            return IntermediateRepresentation(
+                intent=IntentClause(summary="Test"),
+                signature=SigClause(name="test", parameters=[], returns="None"),
+                assertions=[],
+                metadata=Metadata(source_path=module, origin="reverse", language="python"),
+            )
+
+        with patch.object(lifter, "lift", side_effect=slow_lift):
+            # Should raise RuntimeError due to time limit
+            with pytest.raises(RuntimeError, match="total time limit exceeded"):
+                lifter.lift_all()
+
+        # Should have stopped early
+        assert any("total time limit exceeded" in log for log in lifter.progress_log)
+
+    def test_no_limits_by_default(self, temp_repo, temp_dir):
+        """Test that default config has no artificial limits."""
+        config = LifterConfig()
+
+        assert config.max_files is None
+        assert config.max_file_size_mb == 10.0  # Has a reasonable default
+        assert config.timeout_per_file_seconds is None
+        assert config.max_total_time_seconds is None

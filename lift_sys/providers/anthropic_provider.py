@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import AsyncIterator
 from typing import Any
 
-import httpx
+from anthropic import AsyncAnthropic
 
 from .base import BaseProvider, ProviderCapabilities
-
-ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 
 
 class AnthropicProvider(BaseProvider):
@@ -23,15 +20,16 @@ class AnthropicProvider(BaseProvider):
                 streaming=True, structured_output=False, reasoning=True
             ),
         )
-        self._client: httpx.AsyncClient | None = None
+        self._client: AsyncAnthropic | None = None
         self._api_key: str | None = None
-        self._default_model = "claude-3-sonnet-20240229"
+        self._default_model = "claude-sonnet-4-20250514"
 
     async def initialize(self, credentials: dict[str, Any]) -> None:
         token = credentials.get("access_token") or credentials.get("api_key")
         if not token:
             raise ValueError("Anthropic credentials require an access token or API key")
         self._api_key = token
+        self._client = AsyncAnthropic(api_key=token)
 
     async def generate_text(
         self,
@@ -39,12 +37,13 @@ class AnthropicProvider(BaseProvider):
         max_tokens: int = 1024,
         temperature: float = 0.7,
         model: str | None = None,
+        system_prompt: str | None = None,
         **_: Any,
     ) -> str:
-        client = await self._ensure_client()
-        if not self._api_key:
+        if not self._client:
             raise RuntimeError("Anthropic provider not initialized")
-        payload = {
+
+        kwargs = {
             "model": model or self._default_model,
             "max_tokens": max_tokens,
             "temperature": temperature,
@@ -55,17 +54,14 @@ class AnthropicProvider(BaseProvider):
                 }
             ],
         }
-        response = await client.post(
-            ANTHROPIC_API_URL,
-            headers={
-                "x-api-key": self._api_key,
-                "anthropic-version": "2023-06-01",
-            },
-            content=json.dumps(payload),
-        )
-        response.raise_for_status()
-        data = response.json()
-        return "".join(part.get("text", "") for part in data["content"])
+
+        if system_prompt:
+            kwargs["system"] = system_prompt
+
+        response = await self._client.messages.create(**kwargs)
+
+        # Extract text from response
+        return "".join(block.text for block in response.content if hasattr(block, "text"))
 
     async def generate_stream(self, prompt: str, **kwargs: Any) -> AsyncIterator[str]:
         text = await self.generate_text(prompt, **kwargs)
@@ -75,7 +71,7 @@ class AnthropicProvider(BaseProvider):
         raise NotImplementedError("Anthropic structured output is not yet implemented")
 
     async def check_health(self) -> bool:
-        return self._api_key is not None
+        return self._client is not None
 
     @property
     def supports_streaming(self) -> bool:
@@ -85,12 +81,7 @@ class AnthropicProvider(BaseProvider):
     def supports_structured_output(self) -> bool:
         return False
 
-    async def _ensure_client(self) -> httpx.AsyncClient:
-        if self._client is None:
-            self._client = httpx.AsyncClient(timeout=30.0)
-        return self._client
-
     async def aclose(self) -> None:
         if self._client is not None:
-            await self._client.aclose()
+            await self._client.close()
             self._client = None

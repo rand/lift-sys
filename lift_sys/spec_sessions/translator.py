@@ -402,46 +402,50 @@ Generate an improved IR that incorporates the refinement."""
         resolution: str,
     ) -> IntermediateRepresentation:
         """Apply a resolution to an IR by removing the hole and updating the IR."""
-        # We need to work with the existing IR object since it's part of the draft
-        # Remove the hole from all clauses
-        ir.intent.holes = [h for h in ir.intent.holes if h.identifier != hole.identifier]
-        ir.signature.holes = [h for h in ir.signature.holes if h.identifier != hole.identifier]
+        # Create a new IR from dict to avoid mutating the original
+        ir_dict = ir.to_dict()
+        new_ir = IntermediateRepresentation.from_dict(ir_dict)
 
-        for effect in ir.effects:
+        # Remove the hole from all clauses
+        new_ir.intent.holes = [h for h in new_ir.intent.holes if h.identifier != hole.identifier]
+        new_ir.signature.holes = [
+            h for h in new_ir.signature.holes if h.identifier != hole.identifier
+        ]
+
+        for effect in new_ir.effects:
             effect.holes = [h for h in effect.holes if h.identifier != hole.identifier]
 
-        for assertion in ir.assertions:
+        for assertion in new_ir.assertions:
             assertion.holes = [h for h in assertion.holes if h.identifier != hole.identifier]
 
         # Apply the resolution based on hole kind
         if hole.kind == HoleKind.SIGNATURE:
             # Update signature with resolved information
             if hole.identifier == "return_type":
-                # Use dataclass replace to update
-                ir.signature.returns = resolution
+                new_ir.signature.returns = resolution
             elif "type" in hole.identifier:
                 # Parameter type resolution
                 param_name = hole.identifier.replace("_type", "")
-                for param in ir.signature.parameters:
+                for param in new_ir.signature.parameters:
                     if param.name == param_name:
                         param.type_hint = resolution
 
         elif hole.kind == HoleKind.INTENT:
             # Enhance intent with resolution
-            if ir.intent.rationale:
-                ir.intent.rationale += f"\n{resolution}"
+            if new_ir.intent.rationale:
+                new_ir.intent.rationale += f"\n{resolution}"
             else:
-                ir.intent.rationale = resolution
+                new_ir.intent.rationale = resolution
 
         elif hole.kind == HoleKind.EFFECT:
             # Add effect with resolution
-            ir.effects.append(EffectClause(description=resolution))
+            new_ir.effects.append(EffectClause(description=resolution))
 
         elif hole.kind == HoleKind.ASSERTION:
             # Add assertion with resolution
-            ir.assertions.append(AssertClause(predicate=resolution))
+            new_ir.assertions.append(AssertClause(predicate=resolution))
 
-        return ir
+        return new_ir
 
 
 __all__ = ["PromptToIRTranslator"]

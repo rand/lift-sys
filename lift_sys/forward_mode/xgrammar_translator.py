@@ -62,6 +62,32 @@ class XGrammarIRTranslator:
         """
         system_prompt = get_prompt_for_ir_generation(prompt)
 
+        # Check if provider supports constrained generation (Modal with XGrammar)
+        if (
+            hasattr(self.provider, "generate_structured")
+            and self.provider.capabilities.structured_output
+        ):
+            # Use constrained generation - guaranteed to match schema
+            try:
+                ir_json = await self.provider.generate_structured(
+                    prompt=system_prompt,
+                    schema=self.schema,
+                    max_tokens=2000,
+                    temperature=0.3,
+                )
+
+                # Convert to IR objects
+                ir = self._json_to_ir(ir_json, language=language)
+
+                # Add provenance
+                ir = self._add_provenance(ir, prompt)
+
+                return ir
+
+            except Exception as e:
+                raise ValueError(f"Failed to generate IR with constrained generation: {e}") from e
+
+        # Fallback to text generation with retry logic for providers without structured output
         for attempt in range(max_retries):
             try:
                 # Generate IR JSON using LLM

@@ -30,6 +30,7 @@ from ..providers import (
     BaseProvider,
     GeminiProvider,
     LocalVLLMProvider,
+    ModalProvider,
     OpenAIProvider,
 )
 from ..reverse_mode.improvement_detector import ImprovementDetector
@@ -147,7 +148,7 @@ class AppState:
             }
         )
 
-    def set_config(self, config: ConfigRequest) -> None:
+    def set_config(self, config: ConfigRequest, provider: BaseProvider | None = None) -> None:
         self.config = SynthesizerConfig(
             model_endpoint=config.model_endpoint,
             temperature=config.temperature,
@@ -170,7 +171,11 @@ class AppState:
         )
 
         # Initialize session management
-        self.translator = PromptToIRTranslator(synthesizer=self.synthesizer, parser=self.parser)
+        self.translator = PromptToIRTranslator(
+            synthesizer=self.synthesizer,
+            parser=self.parser,
+            provider=provider,  # Pass provider for LLM-based IR generation
+        )
         self.session_manager = SpecSessionManager(
             store=self.session_store,
             translator=self.translator,
@@ -319,6 +324,26 @@ async def lifespan(app: FastAPI):
     default_user_id = os.getenv("LIFT_SYS_DEFAULT_USER_ID", "demo-user")
     await _initialize_providers_with_tokens(providers, token_store, default_user_id)
 
+    # Initialize Anthropic provider from environment variable if available
+    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    if anthropic_api_key and providers.get("anthropic"):
+        try:
+            await providers["anthropic"].initialize({"api_key": anthropic_api_key})
+            LOGGER.info("Initialized Anthropic provider from environment variable")
+        except Exception as e:
+            LOGGER.warning(f"Failed to initialize Anthropic provider: {e}")
+
+    # Initialize Modal provider from environment variable if available
+    modal_endpoint_url = os.getenv("MODAL_ENDPOINT_URL")
+    if modal_endpoint_url:
+        try:
+            modal_provider = ModalProvider(endpoint_url=modal_endpoint_url)
+            await modal_provider.initialize({})
+            providers["modal"] = modal_provider
+            LOGGER.info(f"Initialized Modal provider with endpoint: {modal_endpoint_url}")
+        except Exception as e:
+            LOGGER.warning(f"Failed to initialize Modal provider: {e}")
+
     local_provider = LocalVLLMProvider(
         structured_runner=_echo_structured_runner,
         text_runner=_echo_text_runner,
@@ -384,10 +409,12 @@ async def health(user: AuthenticatedUser = Depends(require_authenticated_user)) 
 
 @app.post("/api/config")
 async def configure(
-    request: ConfigRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
+    config_request: ConfigRequest, user: AuthenticatedUser = Depends(require_authenticated_user)
 ) -> dict[str, str]:
     LOGGER.info("%s updated synthesizer configuration", user.id)
-    STATE.set_config(request)
+    # Get provider from app state
+    provider = getattr(app.state, "providers", {}).get("anthropic")
+    STATE.set_config(config_request, provider=provider)
     return {"status": "configured"}
 
 
@@ -449,7 +476,9 @@ async def open_repository(
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
     if not STATE.lifter:
-        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
+        # Get provider from app state
+        provider = getattr(app.state, "providers", {}).get("anthropic")
+        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"), provider=provider)
     assert STATE.lifter
     handle = RepositoryHandle(
         identifier=metadata.identifier,
@@ -812,7 +841,10 @@ async def create_session(
     """Create a new prompt refinement session."""
     LOGGER.info("%s created new spec session", user.id)
     if not STATE.session_manager:
-        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
+        # Get provider from app state - prefer Modal for constrained IR generation
+        providers = getattr(app.state, "providers", {})
+        provider = providers.get("modal") or providers.get("anthropic")
+        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"), provider=provider)
 
     assert STATE.session_manager
 
@@ -823,7 +855,7 @@ async def create_session(
     try:
         if request.prompt:
             # Create from natural language prompt
-            session = STATE.session_manager.create_from_prompt(
+            session = await STATE.session_manager.create_from_prompt(
                 prompt=request.prompt,
                 metadata=request.metadata,
             )
@@ -888,7 +920,9 @@ async def import_reverse_ir(
     )
 
     if not STATE.session_manager:
-        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
+        # Get provider from app state
+        provider = getattr(app.state, "providers", {}).get("anthropic")
+        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"), provider=provider)
 
     assert STATE.session_manager
 

@@ -63,14 +63,16 @@ class ContextAwareMockProvider(BaseProvider):
         """Generate code with quality dependent on semantic context presence."""
         self.call_count += 1
 
-        # Check if semantic context is present in prompt
-        has_semantic_context = "codebase context:" in prompt.lower()
+        # Check if LSP-based semantic context is present (repository-specific modules)
+        # LSP context includes repo paths like "lift_sys/", "experiments/", "from *.py)"
+        # Knowledge base context only has generic modules like "re", "pathlib", "datetime"
+        has_lsp_context = any(marker in prompt for marker in ["lift_sys/", "experiments/", ".py)"])
 
         prompt_lower = prompt.lower()
 
         # Email validation function
         if "email" in prompt_lower and "valid" in prompt_lower:
-            if has_semantic_context:
+            if has_lsp_context:
                 # Enhanced: Uses re.compile, has error handling
                 impl = {
                     "implementation": {
@@ -120,7 +122,7 @@ class ContextAwareMockProvider(BaseProvider):
 
         # File operations function
         elif "file" in prompt_lower or "path" in prompt_lower:
-            if has_semantic_context:
+            if has_lsp_context:
                 # Enhanced: Uses pathlib.Path, proper error handling
                 impl = {
                     "implementation": {
@@ -162,7 +164,7 @@ class ContextAwareMockProvider(BaseProvider):
 
         # Timestamp function
         elif "time" in prompt_lower or "timestamp" in prompt_lower:
-            if has_semantic_context:
+            if has_lsp_context:
                 # Enhanced: Uses datetime.datetime
                 impl = {
                     "implementation": {
@@ -195,7 +197,7 @@ class ContextAwareMockProvider(BaseProvider):
 
         # Decimal calculation function
         elif "decimal" in prompt_lower or "price" in prompt_lower:
-            if has_semantic_context:
+            if has_lsp_context:
                 # Enhanced: Uses Decimal for precision
                 impl = {
                     "implementation": {

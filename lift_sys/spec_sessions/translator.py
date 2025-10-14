@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from ..forward_mode.synthesizer import CodeSynthesizer
+from ..forward_mode.xgrammar_translator import XGrammarIRTranslator
 from ..ir.models import (
     AssertClause,
     EffectClause,
@@ -18,17 +19,25 @@ from ..ir.models import (
     TypedHole,
 )
 from ..ir.parser import IRParser
+from ..providers.base import BaseProvider
 from .models import IRDraft
 
 
 class PromptToIRTranslator:
     """Converts natural language prompts to IR drafts with ambiguity detection."""
 
-    def __init__(self, synthesizer: CodeSynthesizer | None = None, parser: IRParser | None = None):
+    def __init__(
+        self,
+        synthesizer: CodeSynthesizer | None = None,
+        parser: IRParser | None = None,
+        provider: BaseProvider | None = None,
+    ):
         self.synthesizer = synthesizer
         self.parser = parser or IRParser()
+        self.provider = provider
+        self.xgrammar_translator = XGrammarIRTranslator(provider) if provider else None
 
-    def translate(
+    async def translate(
         self,
         prompt: str,
         context: IntermediateRepresentation | None = None,
@@ -45,11 +54,14 @@ class PromptToIRTranslator:
         Returns:
             IRDraft with initial IR structure and detected ambiguities
         """
-        # If we have a synthesizer, use LLM to generate structured IR
-        if self.synthesizer:
-            ir = self._translate_with_llm(prompt, context)
+        # If we have xgrammar translator, use it for structured generation
+        if self.xgrammar_translator:
+            ir = await self._translate_with_xgrammar(prompt, context)
+        elif self.synthesizer:
+            # Fallback to synthesizer if available
+            ir = await self._translate_with_llm(prompt, context)
         else:
-            # Fallback: rule-based translation
+            # Final fallback: rule-based translation
             ir = self._translate_rule_based(prompt, context)
 
         # Detect ambiguities and create holes
@@ -67,34 +79,40 @@ class PromptToIRTranslator:
 
         return draft
 
-    def _translate_with_llm(
+    async def _translate_with_xgrammar(
         self,
         prompt: str,
         context: IntermediateRepresentation | None,
     ) -> IntermediateRepresentation:
-        """Use LLM to translate prompt to IR structure."""
-        # This would integrate with the controller runtime to generate structured IR
-        # For now, we'll use a simplified approach that generates JSON schema
+        """Use xgrammar translator for constrained IR generation."""
+        if not self.xgrammar_translator:
+            raise ValueError("XGrammar translator not initialized")
 
-        # Build a prompt for the LLM that requests IR structure
-        system_prompt = """You are an expert at converting natural language specifications into formal IR structures.
-Generate a JSON representation with the following structure:
-{
-  "intent": {"summary": "...", "rationale": "..."},
-  "signature": {"name": "...", "parameters": [...], "returns": "..."},
-  "effects": [...],
-  "assertions": [...]
-}
-
-Mark any ambiguous or unclear aspects by including holes in the appropriate sections."""
-
-        user_prompt = f"Convert this specification to IR:\n\n{prompt}"
-
+        # If refining existing IR, incorporate context into prompt
         if context:
-            user_prompt += f"\n\nRefine this existing IR:\n{self.parser.dumps(context)}"
+            refined_prompt = f"""Refine this existing specification:
 
-        # In a real implementation, this would call the synthesizer
-        # For now, we'll fall back to rule-based
+Current specification:
+{self.parser.dumps(context)}
+
+User's refinement request:
+{prompt}
+
+Generate an improved IR that incorporates the refinement."""
+            return await self.xgrammar_translator.translate(refined_prompt)
+
+        # Fresh generation
+        return await self.xgrammar_translator.translate(prompt)
+
+    async def _translate_with_llm(
+        self,
+        prompt: str,
+        context: IntermediateRepresentation | None,
+    ) -> IntermediateRepresentation:
+        """Use LLM to translate prompt to IR structure (fallback method)."""
+        # This is a fallback when xgrammar is not available
+        # In practice, this would use the synthesizer to generate IR
+        # For now, fall back to rule-based
         return self._translate_rule_based(prompt, context)
 
     def _translate_rule_based(

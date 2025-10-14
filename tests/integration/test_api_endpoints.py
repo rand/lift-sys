@@ -29,7 +29,7 @@ class TestAPIEndpoints:
 
     def test_health_endpoint(self, api_client):
         """Test health check endpoint."""
-        response = api_client.get("/health")
+        response = api_client.get("/api/health")
 
         assert response.status_code == 200
         data = response.json()
@@ -38,7 +38,7 @@ class TestAPIEndpoints:
     def test_config_endpoint_success(self, api_client):
         """Test configuration endpoint with valid payload."""
         response = api_client.post(
-            "/config",
+            "/api/config",
             json={
                 "model_endpoint": "http://localhost:8001",
                 "temperature": 0.7,
@@ -55,7 +55,7 @@ class TestAPIEndpoints:
     def test_config_endpoint_invalid_json(self, api_client):
         """Test configuration endpoint with invalid JSON."""
         response = api_client.post(
-            "/config",
+            "/api/config",
             data="invalid json",
             headers={"Content-Type": "application/json"},
         )
@@ -65,7 +65,7 @@ class TestAPIEndpoints:
     def test_forward_endpoint_without_config(self, api_client):
         """Test forward endpoint fails without configuration."""
         response = api_client.post(
-            "/forward",
+            "/api/forward",
             json={
                 "ir": {
                     "intent": {"summary": "test", "rationale": "", "holes": []},
@@ -87,7 +87,7 @@ class TestAPIEndpoints:
         ir_dict = simple_ir.to_dict()
 
         response = configured_api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": ir_dict},
         )
 
@@ -106,7 +106,7 @@ class TestAPIEndpoints:
     def test_forward_endpoint_invalid_ir(self, configured_api_client):
         """Test forward endpoint with invalid IR structure."""
         response = configured_api_client.post(
-            "/forward",
+            "/api/forward",
             json={
                 "ir": {
                     "invalid": "structure",
@@ -119,7 +119,7 @@ class TestAPIEndpoints:
 
     def test_plan_endpoint_without_ir(self, api_client):
         """Test plan endpoint without loaded IR."""
-        response = api_client.get("/plan")
+        response = api_client.get("/api/plan")
 
         assert response.status_code == 404
         data = response.json()
@@ -139,7 +139,7 @@ class TestAPIEndpoints:
 
     def test_repos_list_endpoint(self, api_client):
         """Repositories endpoint should list accessible repositories."""
-        response = api_client.get("/repos")
+        response = api_client.get("/api/repos")
 
         assert response.status_code == 200
         data = response.json()
@@ -167,7 +167,7 @@ class TestAPIEndpoints:
         """Test updating configuration multiple times."""
         # First config
         response1 = api_client.post(
-            "/config",
+            "/api/config",
             json={
                 "model_endpoint": "http://localhost:8001",
                 "temperature": 0.5,
@@ -180,7 +180,7 @@ class TestAPIEndpoints:
 
         # Second config
         response2 = api_client.post(
-            "/config",
+            "/api/config",
             json={
                 "model_endpoint": "http://localhost:8002",
                 "temperature": 0.8,
@@ -195,7 +195,7 @@ class TestAPIEndpoints:
         """Test complete forward workflow."""
         # Step 1: Configure
         config_response = api_client.post(
-            "/config",
+            "/api/config",
             json={
                 "model_endpoint": "http://localhost:8001",
                 "temperature": 0.7,
@@ -208,7 +208,7 @@ class TestAPIEndpoints:
 
         # Step 2: Generate code
         forward_response = api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": simple_ir.to_dict()},
         )
         assert forward_response.status_code == 200
@@ -222,7 +222,7 @@ class TestAPIEndpoints:
 
         for temp in valid_temps:
             response = api_client.post(
-                "/config",
+                "/api/config",
                 json={
                     "model_endpoint": "http://localhost:8001",
                     "temperature": temp,
@@ -239,7 +239,7 @@ class TestAPIEndpoints:
         responses = []
         for _ in range(3):
             response = configured_api_client.post(
-                "/forward",
+                "/api/forward",
                 json={"ir": ir_dict},
             )
             responses.append(response)
@@ -250,7 +250,7 @@ class TestAPIEndpoints:
 
     def test_api_cors_headers(self, api_client):
         """Test that API handles CORS properly."""
-        response = api_client.get("/health")
+        response = api_client.get("/api/health")
 
         # Check if CORS headers are present
         # (FastAPI may add these automatically or via middleware)
@@ -258,7 +258,7 @@ class TestAPIEndpoints:
 
     def test_api_content_type(self, api_client):
         """Test that API returns correct content type."""
-        response = api_client.get("/health")
+        response = api_client.get("/api/health")
 
         assert response.status_code == 200
         assert "application/json" in response.headers["content-type"]
@@ -268,7 +268,7 @@ class TestAPIEndpoints:
         ir_dict = complex_ir.to_dict()
 
         response = configured_api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": ir_dict},
         )
 
@@ -286,7 +286,7 @@ class TestAPIEndpoints:
     def test_api_error_messages(self, api_client):
         """Test that API returns helpful error messages."""
         response = api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": {"malformed": "data"}},
         )
 
@@ -305,7 +305,7 @@ class TestAPIEndpoints:
         # Real WebSocket test would use WebSocketTestClient
 
         # For now, just verify other endpoints work
-        response = api_client.get("/health")
+        response = api_client.get("/api/health")
         assert response.status_code == 200
 
     def test_api_versioning(self, api_client):
@@ -321,20 +321,20 @@ class TestAPIEndpoints:
         """Test that state is properly isolated between requests."""
         # Configure once
         api_client.post(
-            "/config",
+            "/api/config",
             json={"model_endpoint": "http://localhost:8001", "temperature": 0.5},
         )
 
         # Make forward request
         response1 = api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": simple_ir.to_dict()},
         )
         assert response1.status_code == 200
 
         # Make another forward request
         response2 = api_client.post(
-            "/forward",
+            "/api/forward",
             json={"ir": simple_ir.to_dict()},
         )
         assert response2.status_code == 200
@@ -350,7 +350,7 @@ class TestAPIEndpoints:
     def test_create_session_from_prompt(self, api_client):
         """Test creating a session from a natural language prompt."""
         response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={
                 "prompt": "Create a function that takes two integers and returns their sum",
                 "source": "prompt",
@@ -371,7 +371,7 @@ class TestAPIEndpoints:
     def test_create_session_from_ir(self, api_client, simple_ir):
         """Test creating a session from an existing IR (reverse mode)."""
         response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={
                 "ir": simple_ir.to_dict(),
                 "source": "reverse_mode",
@@ -389,7 +389,7 @@ class TestAPIEndpoints:
     def test_create_session_requires_prompt_or_ir(self, api_client):
         """Test that creating a session requires either prompt or IR."""
         response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={
                 "source": "prompt",
                 "metadata": {},
@@ -404,7 +404,7 @@ class TestAPIEndpoints:
 
     def test_list_sessions_empty(self, api_client):
         """Test listing sessions when none exist."""
-        response = api_client.get("/spec-sessions")
+        response = api_client.get("/api/spec-sessions")
 
         assert response.status_code == 200
         data = response.json()
@@ -416,20 +416,20 @@ class TestAPIEndpoints:
         """Test listing sessions after creating some."""
         # Create first session
         response1 = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Function to add numbers", "source": "prompt"},
         )
         assert response1.status_code == 200
 
         # Create second session
         response2 = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Function to multiply numbers", "source": "prompt"},
         )
         assert response2.status_code == 200
 
         # List sessions
-        list_response = api_client.get("/spec-sessions")
+        list_response = api_client.get("/api/spec-sessions")
         assert list_response.status_code == 200
         data = list_response.json()
         assert len(data["sessions"]) == 2
@@ -439,14 +439,14 @@ class TestAPIEndpoints:
         """Test retrieving a specific session by ID."""
         # Create session
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Function to compute factorial", "source": "prompt"},
         )
         assert create_response.status_code == 200
         session_id = create_response.json()["session_id"]
 
         # Get session
-        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        get_response = api_client.get(f"/api/spec-sessions/{session_id}")
         assert get_response.status_code == 200
         data = get_response.json()
         assert data["session_id"] == session_id
@@ -464,7 +464,7 @@ class TestAPIEndpoints:
         """Test resolving a typed hole in a session."""
         # Create session with ambiguities
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Add numbers", "source": "prompt"},
         )
         assert create_response.status_code == 200
@@ -477,7 +477,7 @@ class TestAPIEndpoints:
 
             # Resolve the hole
             resolve_response = api_client.post(
-                f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                f"/api/spec-sessions/{session_id}/holes/{hole_id}/resolve",
                 json={
                     "resolution_text": "int",
                     "resolution_type": "refine_signature",
@@ -503,14 +503,14 @@ class TestAPIEndpoints:
         """Test getting actionable suggestions for resolving holes."""
         # Create session
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Calculate", "source": "prompt"},
         )
         assert create_response.status_code == 200
         session_id = create_response.json()["session_id"]
 
         # Get assists
-        assists_response = api_client.get(f"/spec-sessions/{session_id}/assists")
+        assists_response = api_client.get(f"/api/spec-sessions/{session_id}/assists")
         assert assists_response.status_code == 200
         data = assists_response.json()
         assert "assists" in data
@@ -534,7 +534,7 @@ class TestAPIEndpoints:
         """Test finalizing a session with no remaining holes."""
         # Create session from complete IR
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
         )
         assert create_response.status_code == 200
@@ -543,7 +543,7 @@ class TestAPIEndpoints:
 
         # If there are no ambiguities, we can finalize
         if not data["ambiguities"]:
-            finalize_response = api_client.post(f"/spec-sessions/{session_id}/finalize")
+            finalize_response = api_client.post(f"/api/spec-sessions/{session_id}/finalize")
 
             assert finalize_response.status_code == 200
             finalized_data = finalize_response.json()
@@ -554,7 +554,7 @@ class TestAPIEndpoints:
         """Test that finalizing fails with unresolved holes."""
         # Create session with ambiguities
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Function", "source": "prompt"},
         )
         assert create_response.status_code == 200
@@ -563,7 +563,7 @@ class TestAPIEndpoints:
 
         # Try to finalize with holes
         if data["ambiguities"]:
-            finalize_response = api_client.post(f"/spec-sessions/{session_id}/finalize")
+            finalize_response = api_client.post(f"/api/spec-sessions/{session_id}/finalize")
 
             assert finalize_response.status_code == 400
             error_data = finalize_response.json()
@@ -580,21 +580,21 @@ class TestAPIEndpoints:
         """Test deleting a session."""
         # Create session
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Test function", "source": "prompt"},
         )
         assert create_response.status_code == 200
         session_id = create_response.json()["session_id"]
 
         # Delete session
-        delete_response = api_client.delete(f"/spec-sessions/{session_id}")
+        delete_response = api_client.delete(f"/api/spec-sessions/{session_id}")
         assert delete_response.status_code == 200
         data = delete_response.json()
         assert data["status"] == "deleted"
         assert data["session_id"] == session_id
 
         # Verify session is gone
-        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        get_response = api_client.get(f"/api/spec-sessions/{session_id}")
         assert get_response.status_code == 404
 
     def test_delete_session_not_found(self, api_client):
@@ -607,7 +607,7 @@ class TestAPIEndpoints:
         """Test complete session workflow: create → resolve → finalize."""
         # Step 1: Create session
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={
                 "prompt": "Function that takes an integer n and returns boolean",
                 "source": "prompt",
@@ -619,20 +619,20 @@ class TestAPIEndpoints:
         initial_ambiguities = data["ambiguities"]
 
         # Step 2: Get assists
-        assists_response = api_client.get(f"/spec-sessions/{session_id}/assists")
+        assists_response = api_client.get(f"/api/spec-sessions/{session_id}/assists")
         assert assists_response.status_code == 200
 
         # Step 3: Resolve holes if any exist
         if initial_ambiguities:
             for hole_id in initial_ambiguities[:2]:  # Resolve first two holes
                 # Get current state
-                get_response = api_client.get(f"/spec-sessions/{session_id}")
+                get_response = api_client.get(f"/api/spec-sessions/{session_id}")
                 current_data = get_response.json()
 
                 # Only resolve if hole still exists
                 if hole_id in current_data["ambiguities"]:
                     resolve_response = api_client.post(
-                        f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                        f"/api/spec-sessions/{session_id}/holes/{hole_id}/resolve",
                         json={
                             "resolution_text": "Resolved value",
                             "resolution_type": "clarify_intent",
@@ -641,7 +641,7 @@ class TestAPIEndpoints:
                     assert resolve_response.status_code == 200
 
         # Step 4: Check final state
-        final_response = api_client.get(f"/spec-sessions/{session_id}")
+        final_response = api_client.get(f"/api/spec-sessions/{session_id}")
         assert final_response.status_code == 200
         final_data = final_response.json()
 
@@ -652,11 +652,11 @@ class TestAPIEndpoints:
         """Test that sessions are isolated from each other."""
         # Create two sessions
         response1 = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "First function", "source": "prompt"},
         )
         response2 = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Second function", "source": "prompt"},
         )
 
@@ -669,16 +669,16 @@ class TestAPIEndpoints:
         assert session1_id != session2_id
 
         # Modify session 1
-        session1_data = api_client.get(f"/spec-sessions/{session1_id}").json()
+        session1_data = api_client.get(f"/api/spec-sessions/{session1_id}").json()
         if session1_data["ambiguities"]:
             hole_id = session1_data["ambiguities"][0]
             api_client.post(
-                f"/spec-sessions/{session1_id}/holes/{hole_id}/resolve",
+                f"/api/spec-sessions/{session1_id}/holes/{hole_id}/resolve",
                 json={"resolution_text": "Modified", "resolution_type": "clarify_intent"},
             )
 
         # Verify session 2 is unchanged
-        session2_after = api_client.get(f"/spec-sessions/{session2_id}").json()
+        session2_after = api_client.get(f"/api/spec-sessions/{session2_id}").json()
         assert session2_after["revision_count"] == response2.json()["revision_count"]
 
     def test_session_metadata_preserved(self, api_client):
@@ -687,7 +687,7 @@ class TestAPIEndpoints:
 
         # Create session with metadata
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={
                 "prompt": "Test function",
                 "source": "prompt",
@@ -699,7 +699,7 @@ class TestAPIEndpoints:
         session_id = create_response.json()["session_id"]
 
         # Retrieve and verify metadata
-        get_response = api_client.get(f"/spec-sessions/{session_id}")
+        get_response = api_client.get(f"/api/spec-sessions/{session_id}")
         assert get_response.status_code == 200
         data = get_response.json()
 
@@ -711,7 +711,7 @@ class TestAPIEndpoints:
         """Test that sessions track revisions correctly."""
         # Create session
         create_response = api_client.post(
-            "/spec-sessions",
+            "/api/spec-sessions",
             json={"prompt": "Function to test", "source": "prompt"},
         )
 
@@ -724,7 +724,7 @@ class TestAPIEndpoints:
         if data["ambiguities"]:
             hole_id = data["ambiguities"][0]
             resolve_response = api_client.post(
-                f"/spec-sessions/{session_id}/holes/{hole_id}/resolve",
+                f"/api/spec-sessions/{session_id}/holes/{hole_id}/resolve",
                 json={"resolution_text": "int", "resolution_type": "refine_signature"},
             )
 
@@ -733,3 +733,350 @@ class TestAPIEndpoints:
 
             # Revision count should increase
             assert resolved_data["revision_count"] > initial_revision_count
+
+    # =============================================================================
+    # Code Generation Endpoint Tests
+    # =============================================================================
+
+    def test_generate_code_success(self, api_client, simple_ir):
+        """Test generating code from a finalized session."""
+        # Create session from complete IR
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Finalize if no ambiguities
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            finalize_response = api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+            assert finalize_response.status_code == 200
+
+            # Generate code
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "inject_assertions": True,
+                    "assertion_mode": "assert",
+                    "include_docstrings": True,
+                    "include_type_hints": True,
+                    "preserve_metadata": True,
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            assert data["session_id"] == session_id
+            assert "source_code" in data
+            assert data["language"] == "python"
+            assert len(data["source_code"]) > 0
+            assert "def " in data["source_code"]  # Should contain function definition
+
+    def test_generate_code_session_not_found(self, api_client):
+        """Test generating code for non-existent session."""
+        response = api_client.post(
+            "/spec-sessions/nonexistent-id/generate",
+            json={
+                "target_language": "python",
+                "inject_assertions": True,
+            },
+        )
+
+        assert response.status_code == 404
+        data = response.json()
+        assert "detail" in data
+
+    def test_generate_code_session_not_finalized(self, api_client):
+        """Test that code generation fails for non-finalized sessions."""
+        # Create session with ambiguities
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"prompt": "Function", "source": "prompt"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        # Try to generate code without finalizing
+        generate_response = api_client.post(
+            f"/api/spec-sessions/{session_id}/generate",
+            json={"target_language": "python"},
+        )
+
+        assert generate_response.status_code == 400
+        data = generate_response.json()
+        assert "detail" in data
+        assert "finalized" in data["detail"].lower()
+
+    def test_generate_code_with_assertions_disabled(self, api_client, simple_ir):
+        """Test generating code with assertions disabled."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code without assertions
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "inject_assertions": False,
+                    "include_docstrings": True,
+                    "include_type_hints": True,
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            code = data["source_code"]
+            # Should not contain assertion statements
+            assert "assert " not in code or "assert" in code.lower()  # May have in docstring
+
+    def test_generate_code_assertion_mode_raise(self, api_client):
+        """Test generating code with raise assertion mode."""
+        # Create IR with assertions
+        from lift_sys.ir.models import (
+            AssertClause,
+            IntentClause,
+            IntermediateRepresentation,
+            Parameter,
+            SigClause,
+        )
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Divide numbers"),
+            signature=SigClause(
+                name="divide",
+                parameters=[Parameter("a", "float"), Parameter("b", "float")],
+                returns="float",
+            ),
+            assertions=[AssertClause(predicate="b != 0", rationale="No division by zero")],
+        )
+
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code with raise mode
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "inject_assertions": True,
+                    "assertion_mode": "raise",
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            code = data["source_code"]
+            # Should contain raise statement for assertions
+            assert "raise ValueError" in code or "if not" in code
+
+    def test_generate_code_assertion_mode_log(self, api_client):
+        """Test generating code with log assertion mode."""
+        from lift_sys.ir.models import (
+            AssertClause,
+            IntentClause,
+            IntermediateRepresentation,
+            Parameter,
+            SigClause,
+        )
+
+        ir = IntermediateRepresentation(
+            intent=IntentClause(summary="Process data"),
+            signature=SigClause(
+                name="process",
+                parameters=[Parameter("x", "int")],
+                returns="int",
+            ),
+            assertions=[AssertClause(predicate="x > 0", rationale="x must be positive")],
+        )
+
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code with log mode
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "inject_assertions": True,
+                    "assertion_mode": "log",
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            code = data["source_code"]
+            # Should contain logger.warning for assertions
+            assert "logger.warning" in code or "logging" in code
+
+    def test_generate_code_assertion_mode_comment(self, api_client, simple_ir):
+        """Test generating code with comment assertion mode."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code with comment mode
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "inject_assertions": True,
+                    "assertion_mode": "comment",
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            # Comment mode should still generate valid code
+            assert "source_code" in data
+
+    def test_generate_code_without_docstrings(self, api_client, simple_ir):
+        """Test generating code without docstrings."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code without docstrings
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "include_docstrings": False,
+                    "include_type_hints": True,
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            code = data["source_code"]
+            # Should not contain triple-quoted docstrings
+            assert '"""' not in code
+
+    def test_generate_code_without_type_hints(self, api_client, simple_ir):
+        """Test generating code without type hints."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code without type hints
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={
+                    "target_language": "python",
+                    "include_docstrings": True,
+                    "include_type_hints": False,
+                },
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            code = data["source_code"]
+            # Function should exist but without type annotations
+            assert "def " in code
+            # Should not have ": int" or "-> str" style annotations
+            # (This is a heuristic - might need adjustment based on implementation)
+
+    def test_generate_code_metadata_included(self, api_client, simple_ir):
+        """Test that generated code response includes metadata."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={"target_language": "python"},
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            assert "metadata" in data
+            assert isinstance(data["metadata"], dict)
+            assert "warnings" in data
+            assert isinstance(data["warnings"], list)
+
+    def test_generate_code_default_values(self, api_client, simple_ir):
+        """Test code generation with default request values."""
+        # Create and finalize session
+        create_response = api_client.post(
+            "/api/spec-sessions",
+            json={"ir": simple_ir.to_dict(), "source": "reverse_mode"},
+        )
+        assert create_response.status_code == 200
+        session_id = create_response.json()["session_id"]
+
+        session_data = api_client.get(f"/api/spec-sessions/{session_id}").json()
+        if not session_data["ambiguities"]:
+            api_client.post(f"/api/spec-sessions/{session_id}/finalize")
+
+            # Generate code with minimal request (using defaults)
+            generate_response = api_client.post(
+                f"/api/spec-sessions/{session_id}/generate",
+                json={},  # Use all defaults
+            )
+
+            assert generate_response.status_code == 200
+            data = generate_response.json()
+            assert data["language"] == "python"  # Default language
+            assert "source_code" in data

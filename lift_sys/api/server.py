@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..auth.oauth_manager import OAuthManager
 from ..auth.provider_configs import build_default_configs
 from ..auth.token_store import TokenStore
+from ..codegen import CodeGenerator, CodeGeneratorConfig
 from ..forward_mode.synthesizer import CodeSynthesizer, SynthesizerConfig
 from ..ir.models import IntermediateRepresentation
 from ..ir.parser import IRParser
@@ -31,6 +32,7 @@ from ..providers import (
     LocalVLLMProvider,
     OpenAIProvider,
 )
+from ..reverse_mode.improvement_detector import ImprovementDetector
 from ..reverse_mode.lifter import LifterConfig, RepositoryHandle, SpecificationLifter
 from ..services.generation_service import GenerationService
 from ..services.github_repository import (
@@ -59,6 +61,9 @@ from .schemas import (
     CreateSessionRequest,
     ForwardRequest,
     ForwardResponse,
+    GenerateCodeRequest,
+    GenerateCodeResponse,
+    ImportReverseIRRequest,
     IRResponse,
     PlannerTelemetry,
     PlanResponse,
@@ -851,6 +856,92 @@ async def create_session(
         raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 
+@app.post("/api/spec-sessions/import-from-reverse", response_model=SessionResponse)
+async def import_reverse_ir(
+    request: ImportReverseIRRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> SessionResponse:
+    """
+    Import a reverse-extracted IR into a forward-mode refinement session.
+
+    This endpoint accepts an IR from reverse mode lifting and optionally
+    runs improvement detection to identify opportunities for enhancement
+    based on security findings, completeness analysis, and quality metrics.
+
+    Args:
+        request: Contains the serialized IR and options
+        user: Authenticated user
+
+    Returns:
+        SessionResponse with detected improvement areas as ambiguities
+    """
+    LOGGER.info(
+        "%s importing reverse IR with improvement detection=%s",
+        user.id,
+        request.detect_improvements,
+    )
+
+    if not STATE.session_manager:
+        STATE.set_config(ConfigRequest(model_endpoint="http://localhost:8001"))
+
+    assert STATE.session_manager
+
+    try:
+        # Deserialize IR
+        reverse_ir = IntermediateRepresentation.from_dict(request.ir)
+
+        # Detect improvement opportunities
+        improvement_holes = []
+        if request.detect_improvements:
+            detector = ImprovementDetector()
+            improvement_holes = detector.detect_improvements(reverse_ir)
+            LOGGER.info("Detected %d improvement opportunities", len(improvement_holes))
+
+        # Build metadata
+        session_metadata = {
+            "user_id": user.id,
+            "import_timestamp": datetime.now(UTC).isoformat() + "Z",
+            "improvement_detection_enabled": request.detect_improvements,
+        }
+        if request.metadata:
+            session_metadata.update(request.metadata)
+
+        # Create session with improvement holes
+        session = STATE.session_manager.create_from_reverse_mode_enhanced(
+            ir=reverse_ir,
+            improvement_holes=improvement_holes,
+            metadata=session_metadata,
+        )
+
+        # Emit session created event
+        await STATE.publish_progress(
+            {
+                "type": "session_imported_from_reverse",
+                "scope": "spec_sessions",
+                "session_id": session.session_id,
+                "status": session.status,
+                "improvements_detected": len(improvement_holes),
+                "ambiguities": len(session.get_unresolved_holes()),
+            }
+        )
+
+        return SessionResponse(
+            session_id=session.session_id,
+            status=session.status,
+            source=session.source,
+            created_at=session.created_at,
+            updated_at=session.updated_at,
+            current_draft=session.current_draft.to_dict() if session.current_draft else None,
+            ambiguities=session.get_unresolved_holes(),
+            revision_count=len(session.revisions),
+            metadata=session.metadata,
+        )
+
+    except Exception as e:
+        LOGGER.error("Failed to import reverse IR: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to import reverse IR: {str(e)}")
+
+
 @app.get("/api/spec-sessions", response_model=SessionListResponse)
 async def list_sessions(
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -880,7 +971,7 @@ async def list_sessions(
     )
 
 
-@app.get("/spec-sessions/{session_id}", response_model=SessionResponse)
+@app.get("/api/spec-sessions/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -907,7 +998,7 @@ async def get_session(
     )
 
 
-@app.post("/spec-sessions/{session_id}/holes/{hole_id}/resolve", response_model=SessionResponse)
+@app.post("/api/spec-sessions/{session_id}/holes/{hole_id}/resolve", response_model=SessionResponse)
 async def resolve_hole(
     session_id: str,
     hole_id: str,
@@ -956,7 +1047,7 @@ async def resolve_hole(
         raise HTTPException(status_code=500, detail=f"Failed to resolve hole: {str(e)}")
 
 
-@app.post("/spec-sessions/{session_id}/finalize", response_model=IRResponse)
+@app.post("/api/spec-sessions/{session_id}/finalize", response_model=IRResponse)
 async def finalize_session(
     session_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -992,7 +1083,7 @@ async def finalize_session(
         raise HTTPException(status_code=500, detail=f"Failed to finalize session: {str(e)}")
 
 
-@app.get("/spec-sessions/{session_id}/assists", response_model=AssistsResponse)
+@app.get("/api/spec-sessions/{session_id}/assists", response_model=AssistsResponse)
 async def get_assists(
     session_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -1014,7 +1105,7 @@ async def get_assists(
     )
 
 
-@app.delete("/spec-sessions/{session_id}")
+@app.delete("/api/spec-sessions/{session_id}")
 async def delete_session(
     session_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
@@ -1040,6 +1131,98 @@ async def delete_session(
     )
 
     return {"status": "deleted", "session_id": session_id}
+
+
+@app.post("/api/spec-sessions/{session_id}/generate", response_model=GenerateCodeResponse)
+async def generate_code_from_session(
+    session_id: str,
+    request: GenerateCodeRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> GenerateCodeResponse:
+    """Generate code from a finalized session's IR.
+
+    Args:
+        session_id: The session ID to generate code from.
+        request: Code generation options.
+        user: Authenticated user.
+
+    Returns:
+        Generated code with metadata and optional validation results.
+
+    Raises:
+        HTTPException: If session not found, not finalized, or generation fails.
+    """
+    LOGGER.info("%s generating code for session %s", user.id, session_id)
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    # Get the session
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    # Check if session is finalized
+    if session.status != "finalized":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Session must be finalized before code generation. Current status: {session.status}",
+        )
+
+    # Get the IR from the session
+    if not session.current_draft or not session.current_draft.ir:
+        raise HTTPException(status_code=400, detail="Session has no IR available")
+
+    ir = session.current_draft.ir
+
+    # Validate target language
+    if request.target_language != "python":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported target language: {request.target_language}. Only 'python' is supported.",
+        )
+
+    # Validate assertion mode
+    valid_modes = ["assert", "raise", "log", "comment"]
+    if request.assertion_mode not in valid_modes:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid assertion_mode. Must be one of: {valid_modes}"
+        )
+
+    try:
+        # Configure the code generator
+        config = CodeGeneratorConfig(
+            inject_assertions=request.inject_assertions,
+            assertion_mode=request.assertion_mode,  # type: ignore
+            include_docstrings=request.include_docstrings,
+            include_type_hints=request.include_type_hints,
+            preserve_metadata=request.preserve_metadata,
+        )
+        generator = CodeGenerator(config=config)
+
+        # Generate code
+        result = generator.generate(ir)
+
+        # Emit generation event
+        await STATE.publish_progress(
+            {
+                "type": "code_generated",
+                "scope": "spec_sessions",
+                "session_id": session_id,
+                "language": result.language,
+            }
+        )
+
+        return GenerateCodeResponse(
+            session_id=session_id,
+            source_code=result.source_code,
+            language=result.language,
+            metadata=result.metadata,
+            warnings=result.warnings,
+        )
+
+    except Exception as e:
+        LOGGER.error("Code generation failed for session %s: %s", session_id, str(e))
+        raise HTTPException(status_code=500, detail=f"Code generation failed: {str(e)}")
 
 
 async def websocket_emitter() -> AsyncIterator[str]:

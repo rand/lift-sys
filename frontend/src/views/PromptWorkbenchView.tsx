@@ -26,6 +26,7 @@ import {
   deleteSession,
 } from "../lib/sessionApi";
 import type { PromptSession, AssistSuggestion } from "../types/sessions";
+import { VersionHistory } from "@/components/VersionHistory";
 
 export function PromptWorkbenchView() {
   const [prompt, setPrompt] = useState("");
@@ -343,6 +344,12 @@ export function PromptWorkbenchView() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Version History */}
+              <VersionHistory
+                sessionId={activeSession.session_id}
+                onVersionChange={() => void refreshActiveSession()}
+              />
 
               {/* Ambiguities & Resolution */}
               {activeSession.ambiguities.length > 0 && (

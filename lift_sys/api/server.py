@@ -73,8 +73,12 @@ from .schemas import (
     RepositoryMetadataModel,
     ResolveHoleRequest,
     ReverseRequest,
+    RollbackRequest,
     SessionListResponse,
     SessionResponse,
+    VersionComparisonResponse,
+    VersionHistoryResponse,
+    VersionInfoResponse,
 )
 from .schemas import (
     RepositorySummary as RepositorySummaryModel,
@@ -1223,6 +1227,268 @@ async def generate_code_from_session(
     except Exception as e:
         LOGGER.error("Code generation failed for session %s: %s", session_id, str(e))
         raise HTTPException(status_code=500, detail=f"Code generation failed: {str(e)}")
+
+
+@app.get("/api/spec-sessions/{session_id}/versions", response_model=VersionHistoryResponse)
+async def get_version_history(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> VersionHistoryResponse:
+    """
+    Get version history for a session.
+
+    Returns a timeline of all IR versions with metadata about each version,
+    including provenance information and change summaries.
+
+    Args:
+        session_id: The session ID
+        user: Authenticated user
+
+    Returns:
+        Version history with metadata for each version
+
+    Raises:
+        HTTPException: If session not found
+    """
+    LOGGER.debug("%s fetching version history for session %s", user.id, session_id)
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    # Build version info for each draft
+    versions = []
+    for draft in session.ir_drafts:
+        # Analyze provenance in this version's IR
+        provenance_summary = _analyze_provenance(draft.ir)
+
+        # Determine author from provenance or metadata
+        author = draft.metadata.get("author")
+        if not author and provenance_summary:
+            # Infer author from dominant provenance source
+            dominant_source = max(provenance_summary.items(), key=lambda x: x[1])[0]
+            author = dominant_source
+
+        # Build change summary
+        change_summary = draft.metadata.get("change_summary")
+        if not change_summary:
+            if draft.version == 1:
+                change_summary = "Initial version"
+            else:
+                change_summary = f"Updated to version {draft.version}"
+
+        versions.append(
+            VersionInfoResponse(
+                version=draft.version,
+                created_at=draft.created_at,
+                author=author,
+                change_summary=change_summary,
+                provenance_summary=provenance_summary,
+                tags=draft.metadata.get("tags", []),
+                has_holes=len(draft.ambiguities) > 0,
+                hole_count=len(draft.ambiguities),
+            )
+        )
+
+    return VersionHistoryResponse(
+        session_id=session_id,
+        current_version=session.current_draft.version if session.current_draft else 0,
+        versions=versions,
+        source=session.source,
+    )
+
+
+@app.get(
+    "/api/spec-sessions/{session_id}/versions/{from_version}/compare/{to_version}",
+    response_model=VersionComparisonResponse,
+)
+async def compare_versions(
+    session_id: str,
+    from_version: int,
+    to_version: int,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> VersionComparisonResponse:
+    """
+    Compare two versions of a session's IR.
+
+    Args:
+        session_id: The session ID
+        from_version: Source version number
+        to_version: Target version number
+        user: Authenticated user
+
+    Returns:
+        Detailed comparison between the two versions
+
+    Raises:
+        HTTPException: If session or versions not found
+    """
+    LOGGER.debug(
+        "%s comparing versions %d and %d for session %s",
+        user.id,
+        from_version,
+        to_version,
+        session_id,
+    )
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    # Find the drafts
+    from_draft = next((d for d in session.ir_drafts if d.version == from_version), None)
+    to_draft = next((d for d in session.ir_drafts if d.version == to_version), None)
+
+    if not from_draft:
+        raise HTTPException(status_code=404, detail=f"Version {from_version} not found")
+    if not to_draft:
+        raise HTTPException(status_code=404, detail=f"Version {to_version} not found")
+
+    # Compare the IRs
+    from ..ir import IRComparer
+
+    comparer = IRComparer()
+    comparison = comparer.compare(from_draft.ir, to_draft.ir)
+
+    return VersionComparisonResponse(
+        session_id=session_id,
+        from_version=from_version,
+        to_version=to_version,
+        comparison=comparison.to_dict(),
+        from_ir=from_draft.ir.to_dict(),
+        to_ir=to_draft.ir.to_dict(),
+    )
+
+
+@app.post(
+    "/api/spec-sessions/{session_id}/versions/{version}/rollback", response_model=SessionResponse
+)
+async def rollback_to_version(
+    session_id: str,
+    version: int,
+    request: RollbackRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> SessionResponse:
+    """
+    Rollback a session to a previous version.
+
+    Args:
+        session_id: The session ID
+        version: Version number to rollback to
+        request: Rollback options
+        user: Authenticated user
+
+    Returns:
+        Updated session response
+
+    Raises:
+        HTTPException: If session or version not found
+    """
+    LOGGER.info(
+        "%s rolling back session %s to version %d",
+        user.id,
+        session_id,
+        version,
+    )
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    # Find the target draft
+    target_draft = next((d for d in session.ir_drafts if d.version == version), None)
+    if not target_draft:
+        raise HTTPException(status_code=404, detail=f"Version {version} not found")
+
+    try:
+        if request.create_new_version:
+            # Create a new version based on the target
+            from ..spec_sessions.models import IRDraft
+
+            new_version = len(session.ir_drafts) + 1
+            new_draft = IRDraft(
+                version=new_version,
+                ir=target_draft.ir,
+                validation_status="pending",
+                ambiguities=target_draft.ambiguities,
+                metadata={
+                    "rollback_from": session.current_draft.version if session.current_draft else 0,
+                    "rollback_to": version,
+                    "author": user.id,
+                    "change_summary": f"Rolled back to version {version}",
+                },
+            )
+            session.add_draft(new_draft)
+        else:
+            # Replace current with target (destructive)
+            session.current_draft = target_draft
+
+        # Update session timestamp
+        session.updated_at = datetime.now(UTC).isoformat() + "Z"
+
+        return SessionResponse(
+            session_id=session.session_id,
+            status=session.status,
+            source=session.source,
+            current_draft=session.current_draft.to_dict() if session.current_draft else None,
+            ambiguities=session.get_unresolved_holes(),
+            revision_count=len(session.revisions),
+            metadata=session.metadata,
+        )
+
+    except Exception as e:
+        LOGGER.error("Rollback failed for session %s: %s", session_id, str(e))
+        raise HTTPException(status_code=500, detail=f"Rollback failed: {str(e)}")
+
+
+def _analyze_provenance(ir: IntermediateRepresentation) -> dict[str, int]:
+    """
+    Analyze provenance sources in an IR and return counts.
+
+    Args:
+        ir: The intermediate representation to analyze
+
+    Returns:
+        Dictionary mapping provenance sources to counts
+    """
+
+    counts: dict[str, int] = {}
+
+    # Check intent
+    if ir.intent.provenance:
+        source = ir.intent.provenance.source.value
+        counts[source] = counts.get(source, 0) + 1
+
+    # Check signature
+    if ir.signature.provenance:
+        source = ir.signature.provenance.source.value
+        counts[source] = counts.get(source, 0) + 1
+
+    # Check parameters
+    for param in ir.signature.parameters:
+        if param.provenance:
+            source = param.provenance.source.value
+            counts[source] = counts.get(source, 0) + 1
+
+    # Check effects
+    for effect in ir.effects:
+        if effect.provenance:
+            source = effect.provenance.source.value
+            counts[source] = counts.get(source, 0) + 1
+
+    # Check assertions
+    for assertion in ir.assertions:
+        if assertion.provenance:
+            source = assertion.provenance.source.value
+            counts[source] = counts.get(source, 0) + 1
+
+    return counts
 
 
 async def websocket_emitter() -> AsyncIterator[str]:

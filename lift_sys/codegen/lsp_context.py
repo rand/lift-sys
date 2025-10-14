@@ -143,10 +143,12 @@ class LSPSemanticContextProvider:
             # Exit the context manager
             if hasattr(self, "_lsp_context") and self._lsp_context:
                 await self._lsp_context.__aexit__(None, None, None)
-            self._started = False
             logger.info("LSP server stopped successfully")
         except Exception as e:
             logger.warning(f"Error stopping LSP server: {e}")
+        finally:
+            # Always mark as stopped, even if cleanup had errors
+            self._started = False
 
     async def get_context_for_intent(
         self,
@@ -530,13 +532,27 @@ class LSPSemanticContextProvider:
             List of relevant file paths, sorted by relevance
         """
         try:
-            # Get all Python files in repository
-            py_files = list(self.config.repository_path.rglob("*.py"))
+            # Get file extension patterns based on language
+            if self.config.language == "python":
+                patterns = ["*.py"]
+            elif self.config.language == "typescript":
+                patterns = ["*.ts", "*.tsx"]
+            elif self.config.language == "rust":
+                patterns = ["*.rs"]
+            elif self.config.language == "go":
+                patterns = ["*.go"]
+            else:
+                patterns = ["*.py"]  # Default to Python
+
+            # Find all matching files
+            all_files = []
+            for pattern in patterns:
+                all_files.extend(self.config.repository_path.rglob(pattern))
 
             # Filter out common non-relevant directories
-            py_files = [
+            filtered_files = [
                 f
-                for f in py_files
+                for f in all_files
                 if not any(
                     excluded in f.parts
                     for excluded in [
@@ -545,16 +561,19 @@ class LSPSemanticContextProvider:
                         "venv",
                         "node_modules",
                         ".git",
+                        "dist",
+                        "build",
+                        "target",
                     ]
                 )
             ]
 
-            if not py_files:
+            if not filtered_files:
                 return []
 
             # Score all files
             scored_files = [
-                (self._score_file_relevance(f, keywords, intent_summary), f) for f in py_files
+                (self._score_file_relevance(f, keywords, intent_summary), f) for f in filtered_files
             ]
 
             # Sort by score (descending) and take top N
@@ -580,59 +599,105 @@ class LSPSemanticContextProvider:
 
     def _get_imports_for_keywords(self, keywords: list[str]) -> list[ImportPattern]:
         """Get import patterns based on keywords."""
-        if self.config.language != "python":
-            return []
-
         patterns = []
 
-        # File/path operations
-        if any(kw in keywords for kw in ["file", "path", "directory", "folder"]):
+        if self.config.language == "python":
+            # File/path operations
+            if any(kw in keywords for kw in ["file", "path", "directory", "folder"]):
+                patterns.append(
+                    ImportPattern(
+                        module="pathlib",
+                        common_imports=["Path"],
+                        usage_context="File system operations",
+                    )
+                )
+
+            # Time/date operations
+            if any(kw in keywords for kw in ["time", "date", "timestamp", "datetime"]):
+                patterns.append(
+                    ImportPattern(
+                        module="datetime",
+                        common_imports=["datetime", "timedelta"],
+                        usage_context="Date and time operations",
+                    )
+                )
+
+            # Pattern matching
+            if any(kw in keywords for kw in ["pattern", "regex", "match", "validate", "email"]):
+                patterns.append(
+                    ImportPattern(
+                        module="re",
+                        common_imports=["match", "search", "compile"],
+                        usage_context="Pattern matching and validation",
+                    )
+                )
+
+            # Decimal operations
+            if any(kw in keywords for kw in ["decimal", "money", "price", "currency"]):
+                patterns.append(
+                    ImportPattern(
+                        module="decimal",
+                        common_imports=["Decimal"],
+                        usage_context="Precise decimal arithmetic",
+                    )
+                )
+
+            # Always include typing for Python
             patterns.append(
                 ImportPattern(
-                    module="pathlib",
-                    common_imports=["Path"],
-                    usage_context="File system operations",
+                    module="typing",
+                    common_imports=["Any", "Optional", "Union", "List", "Dict"],
+                    usage_context="Type annotations",
                 )
             )
 
-        # Time/date operations
-        if any(kw in keywords for kw in ["time", "date", "timestamp", "datetime"]):
-            patterns.append(
-                ImportPattern(
-                    module="datetime",
-                    common_imports=["datetime", "timedelta"],
-                    usage_context="Date and time operations",
+        elif self.config.language == "typescript":
+            # File/path operations
+            if any(kw in keywords for kw in ["file", "path", "directory", "folder"]):
+                patterns.append(
+                    ImportPattern(
+                        module="fs",
+                        common_imports=["promises as fs"],
+                        usage_context="File system operations",
+                    )
                 )
-            )
-
-        # Pattern matching
-        if any(kw in keywords for kw in ["pattern", "regex", "match", "validate", "email"]):
-            patterns.append(
-                ImportPattern(
-                    module="re",
-                    common_imports=["match", "search", "compile"],
-                    usage_context="Pattern matching and validation",
+                patterns.append(
+                    ImportPattern(
+                        module="path",
+                        common_imports=["join", "resolve", "dirname"],
+                        usage_context="Path manipulation",
+                    )
                 )
-            )
 
-        # Decimal operations
-        if any(kw in keywords for kw in ["decimal", "money", "price", "currency"]):
-            patterns.append(
-                ImportPattern(
-                    module="decimal",
-                    common_imports=["Decimal"],
-                    usage_context="Precise decimal arithmetic",
+            # Time/date operations
+            if any(kw in keywords for kw in ["time", "date", "timestamp", "datetime"]):
+                patterns.append(
+                    ImportPattern(
+                        module="date-fns",
+                        common_imports=["format", "parseISO", "addDays"],
+                        usage_context="Date and time operations",
+                    )
                 )
-            )
 
-        # Always include typing
-        patterns.append(
-            ImportPattern(
-                module="typing",
-                common_imports=["Any", "Optional", "Union", "List", "Dict"],
-                usage_context="Type annotations",
-            )
-        )
+            # HTTP/API operations
+            if any(kw in keywords for kw in ["http", "api", "fetch", "request", "endpoint"]):
+                patterns.append(
+                    ImportPattern(
+                        module="axios",
+                        common_imports=["axios"],
+                        usage_context="HTTP requests",
+                    )
+                )
+
+            # Async operations
+            if any(kw in keywords for kw in ["async", "promise", "await"]):
+                patterns.append(
+                    ImportPattern(
+                        module="",  # Built-in
+                        common_imports=["Promise"],
+                        usage_context="Asynchronous operations",
+                    )
+                )
 
         return patterns
 
@@ -644,6 +709,15 @@ class LSPSemanticContextProvider:
                 "type_hints": "Always include type hints for function parameters and returns",
                 "docstrings": "Use Google-style docstrings with Args and Returns sections",
                 "imports": "Group imports: standard library, third-party, local",
+            }
+        elif self.config.language == "typescript":
+            return {
+                "error_handling": "Use try/catch blocks, prefer explicit error types",
+                "type_annotations": "Always include type annotations for function parameters and returns",
+                "docstrings": "Use TSDoc format with @param, @returns, and @example tags",
+                "imports": "Use ES6 import/export syntax, group imports logically",
+                "async": "Use async/await for asynchronous operations, return Promise types",
+                "null_safety": "Use optional chaining (?.) and nullish coalescing (??)",
             }
         return {}
 

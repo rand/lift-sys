@@ -33,7 +33,7 @@ class SpecSessionManager:
         self.planner = planner
         self.verifier = verifier or SMTChecker()
 
-    def create_from_prompt(
+    async def create_from_prompt(
         self,
         prompt: str,
         metadata: dict | None = None,
@@ -49,7 +49,7 @@ class SpecSessionManager:
             PromptSession with initial IR draft and detected ambiguities
         """
         # Translate prompt to IR
-        draft = self.translator.translate(prompt, metadata=metadata)
+        draft = await self.translator.translate(prompt, metadata=metadata)
 
         # Create revision record
         revision = PromptRevision.from_dict(

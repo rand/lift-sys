@@ -47,13 +47,61 @@ uv init project && cd project && uv add package-name && uv run script.py
 
 **Cloudflare** → Workers (TypeScript), KV/R2/D1 bindings, `wrangler dev`
 
-**Modal** → `@app.function(gpu="T4")`, volumes for persistence, Modal secrets
+**Modal** → `@app.function(gpu="L40S")`, volumes for persistence, Modal secrets, `uv_pip_install()` for packages
+  - **See**: `docs/MODAL_REFERENCE.md` for comprehensive guide
+  - **Examples**: https://github.com/modal-labs/modal-examples (check 01-14 learning tracks)
+  - **Recommended GPU**: L40S for best cost/performance
+  - **Image building**: Use `uv_pip_install()`, pin versions, optimize caching
 
 **Cloud Run** → Listen on PORT, multi-stage Dockerfile, Secret Manager, set concurrency
 
 **WorkOS** → SSO (SAML/OAuth), Directory Sync, server-side API keys only
 
 **Resend** → React Email templates, domain verification, batch sending
+
+### Cost Management & Resource Cleanup
+
+**Always spin down resources when not in use**, especially for development and testing:
+
+**Modal**
+- Use `modal app stop` to stop running apps
+- Delete unused volumes: `modal volume list` → `modal volume delete [name]`
+- Check running apps: `modal app list`
+- Use `--timeout` parameter for auto-shutdown on functions
+
+**AWS**
+- Stop EC2 instances when not needed (not terminate, just stop)
+- Delete unused EBS volumes and snapshots
+- Use Lambda for dev/test (pay per invocation, no idle costs)
+- Set CloudWatch alarms for unexpected usage
+
+**Cloud Run**
+- Scales to zero automatically (no manual cleanup needed)
+- Set `max-instances` to prevent runaway costs: `gcloud run services update SERVICE --max-instances=10`
+- Review Cloud Run logs for unexpected invocations
+
+**Cloudflare Workers**
+- Free tier scales to zero automatically
+- Paid plans: review analytics for unexpected traffic
+
+**General practices:**
+- Tag resources with `environment: dev/test/prod` for easy identification
+- Use infrastructure-as-code (Terraform, Pulumi) to tear down entire stacks: `terraform destroy`
+- Set budget alerts in cloud provider consoles
+- Schedule automatic shutdown for dev/test: cron jobs, AWS Instance Scheduler, Cloud Run jobs
+- Delete after testing: databases, caches, load balancers (high idle costs)
+
+**Development workflow:**
+```bash
+# Start work
+modal app deploy                    # or equivalent
+
+# End work session
+modal app stop [app-name]          # Stop Modal apps
+terraform destroy -target=module.dev  # or tear down dev environment
+```
+
+**Anti-pattern:** Leaving GPU instances, databases, or load balancers running overnight/weekends in dev/test environments.
 
 ## 5. Design Aesthetics
 
@@ -114,12 +162,14 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 ❌ Leave TODOs, mocks, or stubs
 ❌ Accept vague requirements without pushback
 ❌ Agree reflexively without critical analysis
+❌ Leave cloud resources running when not in use (dev/test)
 
 ## 9. Quick Reference
 
 **Languages:** Python (uv), Zig, Rust (cargo), Go, C/C++ (CMake), TS (strict), Lean 4
 
 **Cloud:** Workers/Modal (serverless), Cloud Run (containers), WorkOS (auth), Resend (email)
+  - Modal details: `docs/MODAL_REFERENCE.md`
 
 **UI:** shadcn blocks → shadcn components → custom (permission only), theme colors from https://ui.shadcn.com/themes
 

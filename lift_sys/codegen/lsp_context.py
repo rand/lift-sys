@@ -204,9 +204,13 @@ class LSPSemanticContextProvider:
                     available_types.extend(types)
                     available_functions.extend(functions)
 
+        # Rank symbols by relevance before limiting to top N
+        ranked_types = self._rank_symbols(available_types, keywords, intent_summary)
+        ranked_functions = self._rank_symbols(available_functions, keywords, intent_summary)
+
         return SemanticContext(
-            available_types=available_types[:5],  # Limit to top 5
-            available_functions=available_functions[:5],  # Limit to top 5
+            available_types=ranked_types[:5],  # Top 5 most relevant types
+            available_functions=ranked_functions[:5],  # Top 5 most relevant functions
             import_patterns=import_patterns,
             codebase_conventions=conventions,
         )
@@ -353,6 +357,44 @@ class LSPSemanticContextProvider:
                 )
 
         return types, functions
+
+    def _rank_symbols(
+        self,
+        symbols: list,
+        keywords: list[str],
+        intent_summary: str,
+    ) -> list:
+        """Rank symbols by relevance to intent using compute_relevance.
+
+        Args:
+            symbols: List of TypeInfo or FunctionInfo objects
+            keywords: Extracted keywords from intent
+            intent_summary: Full intent description
+
+        Returns:
+            Symbols sorted by relevance score (highest first)
+        """
+        from .semantic_context import TypeInfo, compute_relevance
+
+        if not symbols:
+            return []
+
+        # Score each symbol
+        scored_symbols = []
+        for symbol in symbols:
+            symbol_type = "type" if isinstance(symbol, TypeInfo) else "function"
+            score = compute_relevance(
+                symbol.name,
+                symbol_type,
+                keywords,
+                intent_summary,
+            )
+            scored_symbols.append((score.total, symbol))
+
+        # Sort by score descending
+        scored_symbols.sort(key=lambda x: x[0], reverse=True)
+
+        return [symbol for _, symbol in scored_symbols]
 
     def _score_file_relevance(
         self, file_path: Path, keywords: list[str], intent_summary: str

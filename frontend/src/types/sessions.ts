@@ -64,3 +64,24 @@ export interface ProgressEvent {
   ambiguities?: number;
   [key: string]: unknown;
 }
+
+export interface IRSuggestion {
+  category: string;
+  severity: string;
+  title: string;
+  description: string;
+  location: string;
+  current_value: string | null;
+  suggested_value: string | null;
+  rationale: string | null;
+  examples: string[];
+  references: string[];
+}
+
+export interface AnalysisReport {
+  session_id: string;
+  ir_summary: Record<string, unknown>;
+  suggestions: IRSuggestion[];
+  summary_stats: Record<string, number>;
+  overall_quality_score: number;
+}

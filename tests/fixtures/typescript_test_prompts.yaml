@@ -1,0 +1,611 @@
+# Comprehensive TypeScript Test Prompts
+# Phase 4 (Days 11-12): Testing & Validation for Week 7-8
+
+# Categories:
+# - Basic operations
+# - Array/Collection operations
+# - Async/Promise operations
+# - Object/Type operations
+# - Error handling
+# - String manipulation
+# - Mathematical operations
+# - Data validation
+# - File/IO operations (conceptual)
+# - API/HTTP operations (conceptual)
+
+test_prompts:
+  # ============================================================================
+  # BASIC OPERATIONS (5 prompts)
+  # ============================================================================
+
+  - id: "basic_001"
+    category: "basic"
+    intent: "Add two numbers"
+    rationale: "Perform basic arithmetic addition"
+    signature:
+      name: "add"
+      parameters:
+        - name: "a"
+          type: "int"
+        - name: "b"
+          type: "int"
+      returns: "int"
+    assertions:
+      - predicate: "result == a + b"
+        rationale: "Sum must equal the addition of both numbers"
+    expected_features:
+      - "TSDoc comment"
+      - "Type annotations"
+      - "Return statement"
+
+  - id: "basic_002"
+    category: "basic"
+    intent: "Check if a number is even"
+    rationale: "Determine if a number is divisible by 2"
+    signature:
+      name: "isEven"
+      parameters:
+        - name: "n"
+          type: "int"
+      returns: "bool"
+    assertions:
+      - predicate: "result == (n % 2 == 0)"
+        rationale: "Returns true if n is divisible by 2"
+    expected_features:
+      - "Modulo operator"
+      - "Boolean return"
+
+  - id: "basic_003"
+    category: "basic"
+    intent: "Find maximum of two numbers"
+    rationale: "Return the larger of two numbers"
+    signature:
+      name: "max"
+      parameters:
+        - name: "a"
+          type: "int"
+        - name: "b"
+          type: "int"
+      returns: "int"
+    assertions:
+      - predicate: "result >= a and result >= b"
+        rationale: "Result must be at least as large as both inputs"
+    expected_features:
+      - "Conditional logic"
+      - "Comparison operators"
+
+  - id: "basic_004"
+    category: "basic"
+    intent: "Calculate absolute value of a number"
+    rationale: "Return the absolute value (distance from zero)"
+    signature:
+      name: "abs"
+      parameters:
+        - name: "n"
+          type: "int"
+      returns: "int"
+    assertions:
+      - predicate: "result >= 0"
+        rationale: "Absolute value is always non-negative"
+    expected_features:
+      - "Conditional logic"
+      - "Negation operator"
+
+  - id: "basic_005"
+    category: "basic"
+    intent: "Clamp a number between min and max"
+    rationale: "Ensure a number falls within a range"
+    signature:
+      name: "clamp"
+      parameters:
+        - name: "value"
+          type: "int"
+        - name: "min"
+          type: "int"
+        - name: "max"
+          type: "int"
+      returns: "int"
+    assertions:
+      - predicate: "result >= min and result <= max"
+        rationale: "Result must be within the specified range"
+    expected_features:
+      - "Multiple conditionals"
+      - "Range checking"
+
+  # ============================================================================
+  # ARRAY/COLLECTION OPERATIONS (6 prompts)
+  # ============================================================================
+
+  - id: "array_001"
+    category: "array"
+    intent: "Sum all numbers in an array"
+    rationale: "Calculate the total sum of array elements"
+    signature:
+      name: "sum"
+      parameters:
+        - name: "numbers"
+          type: "list[int]"
+      returns: "int"
+    assertions:
+      - predicate: "result >= 0 for positive inputs"
+        rationale: "Sum of positive numbers is positive"
+    expected_features:
+      - "Array iteration"
+      - "Accumulator pattern"
+      - "Array<number> type"
+
+  - id: "array_002"
+    category: "array"
+    intent: "Find the maximum value in an array"
+    rationale: "Return the largest element"
+    signature:
+      name: "findMax"
+      parameters:
+        - name: "numbers"
+          type: "list[int]"
+      returns: "int"
+    assertions:
+      - predicate: "result is in numbers"
+        rationale: "Max must be an element of the array"
+    expected_features:
+      - "Array traversal"
+      - "Comparison logic"
+
+  - id: "array_003"
+    category: "array"
+    intent: "Filter even numbers from an array"
+    rationale: "Return only the even numbers"
+    signature:
+      name: "filterEven"
+      parameters:
+        - name: "numbers"
+          type: "list[int]"
+      returns: "list[int]"
+    assertions:
+      - predicate: "all elements in result are even"
+        rationale: "All returned numbers must be divisible by 2"
+    expected_features:
+      - "Array.filter method"
+      - "Arrow function"
+      - "Modulo operator"
+
+  - id: "array_004"
+    category: "array"
+    intent: "Double each number in an array"
+    rationale: "Map each element to twice its value"
+    signature:
+      name: "doubleNumbers"
+      parameters:
+        - name: "numbers"
+          type: "list[int]"
+      returns: "list[int]"
+    assertions:
+      - predicate: "result[i] == numbers[i] * 2"
+        rationale: "Each element should be doubled"
+    expected_features:
+      - "Array.map method"
+      - "Arrow function"
+
+  - id: "array_005"
+    category: "array"
+    intent: "Check if array contains a value"
+    rationale: "Determine if a specific value exists in the array"
+    signature:
+      name: "contains"
+      parameters:
+        - name: "arr"
+          type: "list[int]"
+        - name: "target"
+          type: "int"
+      returns: "bool"
+    assertions:
+      - predicate: "result == (target in arr)"
+        rationale: "Returns true if target is in array"
+    expected_features:
+      - "Array.includes or iteration"
+      - "Boolean return"
+
+  - id: "array_006"
+    category: "array"
+    intent: "Reverse an array"
+    rationale: "Return a new array with elements in reverse order"
+    signature:
+      name: "reverse"
+      parameters:
+        - name: "arr"
+          type: "list[str]"
+      returns: "list[str]"
+    assertions:
+      - predicate: "result[0] == arr[arr.length - 1]"
+        rationale: "First element of result is last element of input"
+    expected_features:
+      - "Array reversal"
+      - "Array<string> type"
+
+  # ============================================================================
+  # ASYNC/PROMISE OPERATIONS (4 prompts)
+  # ============================================================================
+
+  - id: "async_001"
+    category: "async"
+    intent: "Wait for a specified delay"
+    rationale: "Create an async delay function"
+    signature:
+      name: "delay"
+      parameters:
+        - name: "ms"
+          type: "int"
+      returns: "Promise[None]"
+    assertions:
+      - predicate: "resolves after ms milliseconds"
+        rationale: "Promise resolves after the specified time"
+    expected_features:
+      - "Promise<void> type"
+      - "setTimeout usage"
+      - "async/await"
+
+  - id: "async_002"
+    category: "async"
+    intent: "Fetch data from a URL"
+    rationale: "Make an async HTTP request"
+    signature:
+      name: "fetchData"
+      parameters:
+        - name: "url"
+          type: "str"
+      returns: "Promise[dict]"
+    assertions:
+      - predicate: "returns JSON data"
+        rationale: "Promise resolves with parsed JSON"
+    expected_features:
+      - "Promise<Record<string, any>>"
+      - "fetch API"
+      - "async function"
+
+  - id: "async_003"
+    category: "async"
+    intent: "Retry an operation with exponential backoff"
+    rationale: "Retry a failing operation with increasing delays"
+    signature:
+      name: "retryWithBackoff"
+      parameters:
+        - name: "operation"
+          type: "str"  # Function reference
+        - name: "maxRetries"
+          type: "int"
+      returns: "Promise[any]"
+    assertions:
+      - predicate: "retries up to maxRetries times"
+        rationale: "Attempts operation multiple times before failing"
+    expected_features:
+      - "Promise handling"
+      - "Loop with async/await"
+      - "Error handling"
+
+  - id: "async_004"
+    category: "async"
+    intent: "Run multiple promises in parallel"
+    rationale: "Execute multiple async operations concurrently"
+    signature:
+      name: "runParallel"
+      parameters:
+        - name: "promises"
+          type: "list[Promise[any]]"
+      returns: "Promise[list[any]]"
+    assertions:
+      - predicate: "all promises execute concurrently"
+        rationale: "Operations run in parallel, not sequentially"
+    expected_features:
+      - "Promise.all"
+      - "Array of promises"
+
+  # ============================================================================
+  # OBJECT/TYPE OPERATIONS (4 prompts)
+  # ============================================================================
+
+  - id: "object_001"
+    category: "object"
+    intent: "Merge two objects"
+    rationale: "Combine properties from two objects"
+    signature:
+      name: "mergeObjects"
+      parameters:
+        - name: "obj1"
+          type: "dict"
+        - name: "obj2"
+          type: "dict"
+      returns: "dict"
+    assertions:
+      - predicate: "result contains all keys from both objects"
+        rationale: "Merged object has all properties"
+    expected_features:
+      - "Object spread operator"
+      - "Record<string, any>"
+
+  - id: "object_002"
+    category: "object"
+    intent: "Extract specific keys from an object"
+    rationale: "Create a new object with only specified keys"
+    signature:
+      name: "pick"
+      parameters:
+        - name: "obj"
+          type: "dict"
+        - name: "keys"
+          type: "list[str]"
+      returns: "dict"
+    assertions:
+      - predicate: "result only contains specified keys"
+        rationale: "Picked object has subset of original keys"
+    expected_features:
+      - "Object property access"
+      - "Array iteration"
+      - "Object construction"
+
+  - id: "object_003"
+    category: "object"
+    intent: "Check if an object has a property"
+    rationale: "Determine if a property exists on an object"
+    signature:
+      name: "hasProperty"
+      parameters:
+        - name: "obj"
+          type: "dict"
+        - name: "key"
+          type: "str"
+      returns: "bool"
+    assertions:
+      - predicate: "returns true if property exists"
+        rationale: "Checks for property existence"
+    expected_features:
+      - "in operator or hasOwnProperty"
+      - "Boolean return"
+
+  - id: "object_004"
+    category: "object"
+    intent: "Get all keys from an object"
+    rationale: "Return an array of object property names"
+    signature:
+      name: "getKeys"
+      parameters:
+        - name: "obj"
+          type: "dict"
+      returns: "list[str]"
+    assertions:
+      - predicate: "result contains all property names"
+        rationale: "Array includes every object key"
+    expected_features:
+      - "Object.keys"
+      - "Array<string> return"
+
+  # ============================================================================
+  # STRING MANIPULATION (5 prompts)
+  # ============================================================================
+
+  - id: "string_001"
+    category: "string"
+    intent: "Capitalize the first letter of a string"
+    rationale: "Convert first character to uppercase"
+    signature:
+      name: "capitalize"
+      parameters:
+        - name: "str"
+          type: "str"
+      returns: "str"
+    assertions:
+      - predicate: "result[0] is uppercase"
+        rationale: "First character must be capitalized"
+    expected_features:
+      - "String slicing"
+      - "toUpperCase method"
+
+  - id: "string_002"
+    category: "string"
+    intent: "Count occurrences of a character in a string"
+    rationale: "Count how many times a character appears"
+    signature:
+      name: "countChar"
+      parameters:
+        - name: "str"
+          type: "str"
+        - name: "char"
+          type: "str"
+      returns: "int"
+    assertions:
+      - predicate: "result >= 0"
+        rationale: "Count is non-negative"
+    expected_features:
+      - "String iteration"
+      - "Counter accumulation"
+
+  - id: "string_003"
+    category: "string"
+    intent: "Reverse a string"
+    rationale: "Return string with characters in reverse order"
+    signature:
+      name: "reverseString"
+      parameters:
+        - name: "str"
+          type: "str"
+      returns: "str"
+    assertions:
+      - predicate: "result.length == str.length"
+        rationale: "Reversed string has same length"
+    expected_features:
+      - "Array conversion"
+      - "reverse() method"
+      - "join() method"
+
+  - id: "string_004"
+    category: "string"
+    intent: "Check if a string is a palindrome"
+    rationale: "Determine if string reads the same forwards and backwards"
+    signature:
+      name: "isPalindrome"
+      parameters:
+        - name: "str"
+          type: "str"
+      returns: "bool"
+    assertions:
+      - predicate: "result == (str == reverse(str))"
+        rationale: "Palindrome is equal to its reverse"
+    expected_features:
+      - "String comparison"
+      - "String reversal"
+
+  - id: "string_005"
+    category: "string"
+    intent: "Convert string to title case"
+    rationale: "Capitalize first letter of each word"
+    signature:
+      name: "toTitleCase"
+      parameters:
+        - name: "str"
+          type: "str"
+      returns: "str"
+    assertions:
+      - predicate: "each word starts with capital letter"
+        rationale: "All words are capitalized"
+    expected_features:
+      - "String splitting"
+      - "Array mapping"
+      - "String joining"
+
+  # ============================================================================
+  # MATHEMATICAL OPERATIONS (3 prompts)
+  # ============================================================================
+
+  - id: "math_001"
+    category: "math"
+    intent: "Calculate factorial of a number"
+    rationale: "Compute n! = n * (n-1) * ... * 1"
+    signature:
+      name: "factorial"
+      parameters:
+        - name: "n"
+          type: "int"
+      returns: "int"
+    assertions:
+      - predicate: "factorial(0) == 1"
+        rationale: "Base case: 0! = 1"
+      - predicate: "factorial(n) > n for n > 1"
+        rationale: "Factorial grows rapidly"
+    expected_features:
+      - "Loop or recursion"
+      - "Multiplication"
+
+  - id: "math_002"
+    category: "math"
+    intent: "Check if a number is prime"
+    rationale: "Determine if number has no divisors except 1 and itself"
+    signature:
+      name: "isPrime"
+      parameters:
+        - name: "n"
+          type: "int"
+      returns: "bool"
+    assertions:
+      - predicate: "isPrime(2) == true"
+        rationale: "2 is prime"
+      - predicate: "isPrime(4) == false"
+        rationale: "4 is not prime"
+    expected_features:
+      - "Loop with early exit"
+      - "Division and modulo"
+
+  - id: "math_003"
+    category: "math"
+    intent: "Calculate the average of an array of numbers"
+    rationale: "Compute the mean value"
+    signature:
+      name: "average"
+      parameters:
+        - name: "numbers"
+          type: "list[float]"
+      returns: "float"
+    assertions:
+      - predicate: "result is sum(numbers) / length"
+        rationale: "Average is sum divided by count"
+    expected_features:
+      - "Array reduce"
+      - "Division"
+      - "number type"
+
+  # ============================================================================
+  # DATA VALIDATION (3 prompts)
+  # ============================================================================
+
+  - id: "validation_001"
+    category: "validation"
+    intent: "Validate email format"
+    rationale: "Check if string matches email pattern"
+    signature:
+      name: "isValidEmail"
+      parameters:
+        - name: "email"
+          type: "str"
+      returns: "bool"
+    assertions:
+      - predicate: "contains @ and domain"
+        rationale: "Valid email has @ and domain"
+    expected_features:
+      - "Regex or string methods"
+      - "Boolean return"
+
+  - id: "validation_002"
+    category: "validation"
+    intent: "Check if number is within range"
+    rationale: "Validate that value is between min and max (inclusive)"
+    signature:
+      name: "isInRange"
+      parameters:
+        - name: "value"
+          type: "int"
+        - name: "min"
+          type: "int"
+        - name: "max"
+          type: "int"
+      returns: "bool"
+    assertions:
+      - predicate: "result == (min <= value <= max)"
+        rationale: "Value must be within bounds"
+    expected_features:
+      - "Comparison operators"
+      - "Logical AND"
+
+  - id: "validation_003"
+    category: "validation"
+    intent: "Validate password strength"
+    rationale: "Check if password meets complexity requirements"
+    signature:
+      name: "isStrongPassword"
+      parameters:
+        - name: "password"
+          type: "str"
+      returns: "bool"
+    assertions:
+      - predicate: "checks length, uppercase, lowercase, numbers"
+        rationale: "Strong password has multiple character types"
+    expected_features:
+      - "String length check"
+      - "Regex or character checks"
+      - "Multiple conditions"
+
+metadata:
+  total_prompts: 30
+  categories:
+    - basic: 5
+    - array: 6
+    - async: 4
+    - object: 4
+    - string: 5
+    - math: 3
+    - validation: 3
+  coverage_goals:
+    - "All basic TypeScript types"
+    - "Array methods (map, filter, reduce)"
+    - "Promise and async/await patterns"
+    - "Object manipulation"
+    - "String operations"
+    - "Mathematical computations"
+    - "Data validation patterns"

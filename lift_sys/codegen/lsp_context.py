@@ -183,74 +183,26 @@ class LSPSemanticContextProvider:
         # Get conventions (language-specific)
         conventions = self._get_conventions()
 
-        # Try to get types and functions from LSP
+        # Try to get types and functions from LSP using parallel queries
         available_types = []
         available_functions = []
 
-        # Find relevant files (multiple for richer context)
+        # Find multiple relevant files for richer context
         if target_file is None:
-            relevant_files = self._find_relevant_files(keywords, intent_summary, limit=1)
-            target_file = relevant_files[0] if relevant_files else None
+            relevant_files = self._find_relevant_files(keywords, intent_summary, limit=3)
+        else:
+            relevant_files = [target_file] if target_file.exists() else []
 
-        if target_file and target_file.exists():
-            try:
-                # Get symbols from the file using LSP (with caching)
-                symbols = await asyncio.wait_for(
-                    self._get_document_symbols(target_file),
-                    timeout=self.config.timeout,
-                )
+        if relevant_files:
+            # Query all files in parallel
+            symbol_results = await self._get_symbols_from_files(relevant_files)
 
-                # Extract types and functions from symbols
-                # Flatten the symbol list (multilspy returns list of lists)
-                flat_symbols = []
-                for item in symbols:
-                    if isinstance(item, list):
-                        flat_symbols.extend(item)
-                    elif item is not None:
-                        flat_symbols.append(item)
-
-                for symbol in flat_symbols:
-                    if not isinstance(symbol, dict):
-                        continue
-
-                    symbol_kind = symbol.get("kind")
-                    symbol_name = symbol.get("name", "")
-
-                    # Class/Interface = types (kind 5 = Class, 11 = Interface)
-                    if symbol_kind in [5, 11]:
-                        from .semantic_context import TypeInfo
-
-                        available_types.append(
-                            TypeInfo(
-                                name=symbol_name,
-                                module=str(target_file.relative_to(self.config.repository_path)),
-                                description=f"Type from {target_file.name}",
-                                example_usage=None,
-                            )
-                        )
-
-                    # Function/Method (kind 6 = Method, 12 = Function)
-                    elif symbol_kind in [6, 12]:
-                        from .semantic_context import FunctionInfo
-
-                        # Try to get signature from detail field
-                        detail = symbol.get("detail", "")
-                        signature = f"{symbol_name}(...)"
-                        if detail:
-                            signature = detail
-
-                        available_functions.append(
-                            FunctionInfo(
-                                name=symbol_name,
-                                module=str(target_file.relative_to(self.config.repository_path)),
-                                signature=signature,
-                                description=f"Function from {target_file.name}",
-                            )
-                        )
-
-            except Exception as e:
-                logger.debug(f"Failed to get LSP symbols: {e}")
-                # Continue with just import patterns and conventions
+            # Merge and extract symbols from all files
+            for file_path, symbols in symbol_results:
+                if symbols:
+                    types, functions = self._extract_symbols_from_response(symbols, file_path)
+                    available_types.extend(types)
+                    available_functions.extend(functions)
 
         return SemanticContext(
             available_types=available_types[:5],  # Limit to top 5
@@ -296,6 +248,111 @@ class LSPSemanticContextProvider:
         except Exception as e:
             logger.debug(f"Error getting document symbols: {e}")
             return []
+
+    async def _get_symbols_from_files(
+        self, file_paths: list[Path]
+    ) -> list[tuple[Path, list[dict]]]:
+        """Get symbols from multiple files in parallel.
+
+        Args:
+            file_paths: List of file paths to query
+
+        Returns:
+            List of (file_path, symbols) tuples
+        """
+        if not file_paths:
+            return []
+
+        # Create tasks for parallel queries with timeout
+        async def query_with_timeout(file_path: Path) -> tuple[Path, list[dict]]:
+            try:
+                symbols = await asyncio.wait_for(
+                    self._get_document_symbols(file_path),
+                    timeout=self.config.timeout,
+                )
+                return (file_path, symbols)
+            except TimeoutError:
+                logger.debug(f"Timeout querying {file_path.name}")
+                return (file_path, [])
+            except Exception as e:
+                logger.debug(f"Error querying {file_path.name}: {e}")
+                return (file_path, [])
+
+        # Execute queries in parallel
+        tasks = [query_with_timeout(fp) for fp in file_paths]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Filter out exceptions and return valid results
+        valid_results = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug(f"Query failed: {result}")
+            else:
+                valid_results.append(result)
+
+        return valid_results
+
+    def _extract_symbols_from_response(
+        self, symbols: list[dict], file_path: Path
+    ) -> tuple[list, list]:
+        """Extract types and functions from LSP symbol response.
+
+        Args:
+            symbols: LSP document symbols response
+            file_path: Path to the file these symbols came from
+
+        Returns:
+            Tuple of (types, functions) lists
+        """
+        from .semantic_context import FunctionInfo, TypeInfo
+
+        types = []
+        functions = []
+
+        # Flatten the symbol list (multilspy returns list of lists)
+        flat_symbols = []
+        for item in symbols:
+            if isinstance(item, list):
+                flat_symbols.extend(item)
+            elif item is not None:
+                flat_symbols.append(item)
+
+        for symbol in flat_symbols:
+            if not isinstance(symbol, dict):
+                continue
+
+            symbol_kind = symbol.get("kind")
+            symbol_name = symbol.get("name", "")
+
+            # Class/Interface = types (kind 5 = Class, 11 = Interface)
+            if symbol_kind in [5, 11]:
+                types.append(
+                    TypeInfo(
+                        name=symbol_name,
+                        module=str(file_path.relative_to(self.config.repository_path)),
+                        description=f"Type from {file_path.name}",
+                        example_usage=None,
+                    )
+                )
+
+            # Function/Method (kind 6 = Method, 12 = Function)
+            elif symbol_kind in [6, 12]:
+                # Try to get signature from detail field
+                detail = symbol.get("detail", "")
+                signature = f"{symbol_name}(...)"
+                if detail:
+                    signature = detail
+
+                functions.append(
+                    FunctionInfo(
+                        name=symbol_name,
+                        module=str(file_path.relative_to(self.config.repository_path)),
+                        signature=signature,
+                        description=f"Function from {file_path.name}",
+                    )
+                )
+
+        return types, functions
 
     def _score_file_relevance(
         self, file_path: Path, keywords: list[str], intent_summary: str

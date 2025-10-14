@@ -17,6 +17,7 @@ from multilspy import LanguageServer
 from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
 
+from .lsp_cache import LSPCache
 from .semantic_context import (
     ImportPattern,
     SemanticContext,
@@ -51,6 +52,9 @@ class LSPConfig:
     fallback_to_knowledge_base: bool = True
     """Whether to fall back to knowledge base on errors."""
 
+    cache_enabled: bool = True
+    """Whether to enable LSP response caching."""
+
 
 class LSPSemanticContextProvider:
     """Provides semantic context using LSP servers.
@@ -68,7 +72,9 @@ class LSPSemanticContextProvider:
         self.config = config
         self._lsp: LanguageServer | None = None
         self._lsp_context = None
-        self._cache: dict[str, Any] = {}
+        self._lsp_cache = (
+            LSPCache(ttl=config.cache_ttl, max_size=1000) if config.cache_enabled else None
+        )
         self._knowledge_base_fallback = SemanticContextProvider(language=config.language)
         self._started = False
 
@@ -253,9 +259,23 @@ class LSPSemanticContextProvider:
         )
 
     async def _get_document_symbols(self, file_path: Path) -> list[dict]:
-        """Get document symbols from LSP server."""
+        """Get document symbols from LSP server with caching.
+
+        Args:
+            file_path: Absolute path to the file
+
+        Returns:
+            List of document symbols (may be empty)
+        """
         if not self._lsp or not self._started:
             return []
+
+        # Check cache first
+        if self._lsp_cache:
+            cached_symbols = await self._lsp_cache.get(file_path, "document_symbols")
+            if cached_symbols is not None:
+                logger.debug(f"Cache hit for {file_path.name}")
+                return cached_symbols
 
         try:
             # Get relative path from repository root
@@ -265,7 +285,13 @@ class LSPSemanticContextProvider:
             with self._lsp.open_file(relative_path):
                 # Request document symbols
                 symbols = await self._lsp.request_document_symbols(relative_path)
-                return symbols if symbols else []
+                result = symbols if symbols else []
+
+                # Store in cache
+                if self._lsp_cache and result:
+                    await self._lsp_cache.put(file_path, "document_symbols", result)
+
+                return result
         except Exception as e:
             logger.debug(f"Error getting document symbols: {e}")
             return []
@@ -386,6 +412,16 @@ class LSPSemanticContextProvider:
                 "imports": "Group imports: standard library, third-party, local",
             }
         return {}
+
+    def cache_stats(self) -> dict[str, Any]:
+        """Get cache statistics.
+
+        Returns:
+            Cache statistics dict, or empty dict if caching disabled
+        """
+        if self._lsp_cache:
+            return self._lsp_cache.stats()
+        return {"enabled": False}
 
 
 __all__ = ["LSPSemanticContextProvider", "LSPConfig"]

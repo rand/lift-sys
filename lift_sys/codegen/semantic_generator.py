@@ -7,9 +7,12 @@ systems like ChatLSP would provide.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
 from .generator import CodeGeneratorConfig, GeneratedCode
+from .lsp_context import LSPConfig, LSPSemanticContextProvider
 from .semantic_context import SemanticContextProvider
 from .xgrammar_generator import XGrammarCodeGenerator
 
@@ -20,6 +23,9 @@ class SemanticCodeGenerator(XGrammarCodeGenerator):
 
     Extends XGrammarCodeGenerator to include codebase context (types,
     imports, conventions) in the generation prompt, improving quality.
+
+    Can use either knowledge-based context (SemanticContextProvider) or
+    LSP-based real-time context (LSPSemanticContextProvider).
     """
 
     def __init__(
@@ -27,6 +33,7 @@ class SemanticCodeGenerator(XGrammarCodeGenerator):
         provider: BaseProvider,
         config: CodeGeneratorConfig | None = None,
         language: str = "python",
+        repository_path: Path | None = None,
     ):
         """
         Initialize with provider, config, and language.
@@ -35,10 +42,37 @@ class SemanticCodeGenerator(XGrammarCodeGenerator):
             provider: LLM provider for generation
             config: Code generation configuration
             language: Target language (python, typescript, rust, go)
+            repository_path: Optional path to repository for LSP-based context
         """
         super().__init__(provider, config)
         self.language = language
-        self.context_provider = SemanticContextProvider(language=language)
+        self.repository_path = repository_path
+
+        # Choose context provider based on repository availability
+        if repository_path and repository_path.exists():
+            # Use LSP-based context for real codebases
+            lsp_config = LSPConfig(
+                repository_path=repository_path,
+                language=language,
+                fallback_to_knowledge_base=True,
+            )
+            self.context_provider = LSPSemanticContextProvider(lsp_config)
+            self._use_lsp = True
+        else:
+            # Fall back to knowledge base
+            self.context_provider = SemanticContextProvider(language=language)
+            self._use_lsp = False
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        if self._use_lsp:
+            await self.context_provider.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        if self._use_lsp:
+            await self.context_provider.stop()
 
     async def generate(
         self,
@@ -59,7 +93,11 @@ class SemanticCodeGenerator(XGrammarCodeGenerator):
             GeneratedCode with semantically-enhanced implementation
         """
         # Get semantic context based on intent
-        semantic_context = self.context_provider.get_context_for_intent(ir.intent.summary)
+        # Handle both sync (knowledge base) and async (LSP) context providers
+        if self._use_lsp:
+            semantic_context = await self.context_provider.get_context_for_intent(ir.intent.summary)
+        else:
+            semantic_context = self.context_provider.get_context_for_intent(ir.intent.summary)
 
         # Store context for use in _generate_implementation
         self._current_semantic_context = semantic_context
@@ -69,6 +107,7 @@ class SemanticCodeGenerator(XGrammarCodeGenerator):
 
         # Add semantic context to metadata
         result.metadata["semantic_context_used"] = True
+        result.metadata["use_lsp"] = self._use_lsp
         result.metadata["available_types"] = len(semantic_context.available_types)
         result.metadata["available_functions"] = len(semantic_context.available_functions)
 

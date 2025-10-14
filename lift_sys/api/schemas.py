@@ -163,6 +163,14 @@ class CreateSessionRequest(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+class ImportReverseIRRequest(BaseModel):
+    ir: dict = Field(..., description="Serialized IntermediateRepresentation from reverse mode")
+    detect_improvements: bool = Field(
+        default=True, description="Whether to run improvement detection on the IR"
+    )
+    metadata: dict = Field(default_factory=dict)
+
+
 class SessionResponse(BaseModel):
     session_id: str
     status: str
@@ -199,6 +207,34 @@ class AssistsResponse(BaseModel):
     assists: list[AssistResponse]
 
 
+class GenerateCodeRequest(BaseModel):
+    target_language: str = Field(
+        default="python", description="Target language for code generation"
+    )
+    inject_assertions: bool = Field(
+        default=True, description="Whether to inject runtime assertions"
+    )
+    assertion_mode: str = Field(
+        default="assert", description="Assertion mode: assert, raise, log, or comment"
+    )
+    include_docstrings: bool = Field(default=True, description="Whether to include docstrings")
+    include_type_hints: bool = Field(default=True, description="Whether to include type hints")
+    preserve_metadata: bool = Field(
+        default=True, description="Whether to include IR metadata as comments"
+    )
+
+
+class GenerateCodeResponse(BaseModel):
+    session_id: str
+    source_code: str
+    language: str
+    metadata: dict = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    validation: dict | None = Field(
+        default=None, description="Round-trip validation results if performed"
+    )
+
+
 __all__ = [
     "UserIdentity",
     "SessionInfo",
@@ -221,4 +257,6 @@ __all__ = [
     "ResolveHoleRequest",
     "AssistResponse",
     "AssistsResponse",
+    "GenerateCodeRequest",
+    "GenerateCodeResponse",
 ]

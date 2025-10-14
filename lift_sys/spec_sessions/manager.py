@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from ..ir.models import IntermediateRepresentation
+from ..ir.models import (
+    AssertClause,
+    EffectClause,
+    HoleKind,
+    IntentClause,
+    IntermediateRepresentation,
+    SigClause,
+    TypedHole,
+)
 from ..planner.planner import Planner
 from ..verifier.smt_checker import SMTChecker
 from .models import HoleResolution, IRDraft, PromptRevision, PromptSession
@@ -112,6 +120,175 @@ class SpecSessionManager:
         self.planner.current_session = session
 
         return session
+
+    def create_from_reverse_mode_enhanced(
+        self,
+        ir: IntermediateRepresentation,
+        improvement_holes: list[TypedHole],
+        metadata: dict | None = None,
+    ) -> PromptSession:
+        """
+        Create session from reverse IR with improvement detection.
+
+        This enhanced version accepts pre-detected improvement opportunities
+        from the ImprovementDetector and injects them as typed holes into
+        the appropriate IR sections.
+
+        Args:
+            ir: Reverse-extracted IR with evidence
+            improvement_holes: Pre-detected improvement opportunities
+            metadata: Additional metadata
+
+        Returns:
+            PromptSession ready for refinement with improvement holes
+        """
+        # Inject improvement holes into IR
+        ir_with_holes = self._inject_improvement_holes(ir, improvement_holes)
+
+        # Build comprehensive metadata
+        draft_metadata = {
+            "reverse_analysis": {
+                "source_file": ir.metadata.source_path if ir.metadata else "unknown",
+                "language": ir.metadata.language if ir.metadata else "unknown",
+                "evidence_count": len(ir.metadata.evidence) if ir.metadata else 0,
+            },
+            "improvements_detected": {
+                "total": len(improvement_holes),
+                "by_priority": self._count_by_priority(improvement_holes),
+                "by_kind": self._count_by_kind(improvement_holes),
+            },
+        }
+        if metadata:
+            draft_metadata.update(metadata)
+
+        # Preserve original evidence
+        if ir.metadata and ir.metadata.evidence:
+            draft_metadata["original_evidence"] = ir.metadata.evidence
+
+        # Create draft
+        draft = IRDraft(
+            version=1,
+            ir=ir_with_holes,
+            validation_status="incomplete" if improvement_holes else "pending",
+            ambiguities=[h.identifier for h in improvement_holes],
+            metadata=draft_metadata,
+        )
+
+        # Create session
+        session = PromptSession.create_new(
+            source="reverse_mode",
+            initial_draft=draft,
+            metadata=metadata or {},
+        )
+
+        # Store and load into planner
+        self.store.create(session)
+        self.planner.load_ir(draft.ir)
+        self.planner.current_session = session
+
+        return session
+
+    def _inject_improvement_holes(
+        self,
+        ir: IntermediateRepresentation,
+        holes: list[TypedHole],
+    ) -> IntermediateRepresentation:
+        """
+        Inject typed holes into appropriate IR sections.
+
+        Groups holes by kind and injects them into the corresponding
+        IR clause (intent, signature, effects, assertions).
+        """
+        # Group holes by kind
+        intent_holes = [h for h in holes if h.kind == HoleKind.INTENT]
+        signature_holes = [h for h in holes if h.kind == HoleKind.SIGNATURE]
+        assertion_holes = [h for h in holes if h.kind == HoleKind.ASSERTION]
+        effect_holes = [h for h in holes if h.kind == HoleKind.EFFECT]
+
+        # Create new clauses with holes injected
+        new_intent = IntentClause(
+            summary=ir.intent.summary,
+            rationale=ir.intent.rationale,
+            holes=ir.intent.holes + intent_holes,
+        )
+
+        new_signature = SigClause(
+            name=ir.signature.name,
+            parameters=ir.signature.parameters,
+            returns=ir.signature.returns,
+            holes=ir.signature.holes + signature_holes,
+        )
+
+        # For effects and assertions, we need to append holes to existing clauses
+        # or create new clauses if none exist
+        new_effects = list(ir.effects)  # Copy list
+        new_assertions = list(ir.assertions)  # Copy list
+
+        # If there are effect holes, add them to the first effect clause
+        # or create a new effect clause with the holes
+        if effect_holes:
+            if new_effects:
+                # Add holes to first effect
+                first_effect = new_effects[0]
+                new_effects[0] = EffectClause(
+                    description=first_effect.description,
+                    holes=first_effect.holes + effect_holes,
+                )
+            else:
+                # Create new effect clause with holes
+                new_effects.append(
+                    EffectClause(
+                        description="[Improvement areas detected]",
+                        holes=effect_holes,
+                    )
+                )
+
+        # If there are assertion holes, add them to the first assertion clause
+        # or create a new assertion clause with the holes
+        if assertion_holes:
+            if new_assertions:
+                # Add holes to first assertion
+                first_assertion = new_assertions[0]
+                new_assertions[0] = AssertClause(
+                    predicate=first_assertion.predicate,
+                    rationale=first_assertion.rationale,
+                    holes=first_assertion.holes + assertion_holes,
+                )
+            else:
+                # Create new assertion clause with holes
+                new_assertions.append(
+                    AssertClause(
+                        predicate="[Improvement areas detected]",
+                        holes=assertion_holes,
+                    )
+                )
+
+        # Reconstruct IR with injected holes
+        return IntermediateRepresentation(
+            intent=new_intent,
+            signature=new_signature,
+            effects=new_effects,
+            assertions=new_assertions,
+            metadata=ir.metadata,
+        )
+
+    def _count_by_priority(self, holes: list[TypedHole]) -> dict[str, int]:
+        """Count holes by priority level."""
+        priority_map = {}
+        for hole in holes:
+            priority = (
+                hole.constraints.get("priority", "unknown") if hole.constraints else "unknown"
+            )
+            priority_map[priority] = priority_map.get(priority, 0) + 1
+        return priority_map
+
+    def _count_by_kind(self, holes: list[TypedHole]) -> dict[str, int]:
+        """Count holes by kind."""
+        kind_map = {}
+        for hole in holes:
+            kind = hole.kind.value if hole.kind else "unknown"
+            kind_map[kind] = kind_map.get(kind, 0) + 1
+        return kind_map
 
     def get_session(self, session_id: str) -> PromptSession | None:
         """Retrieve a session by ID."""

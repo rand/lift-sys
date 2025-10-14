@@ -344,6 +344,160 @@ Loom generates verification conditions:
 
 ---
 
+## Technology 4: Calligrapher (User's Project)
+
+**Repository**: https://github.com/rand/calligrapher (User's own project)
+**Category**: Contract-Based Code Generation and Analysis
+**Status**: To be assessed based on current state
+
+### Overview
+
+Calligrapher is a contract-based code generation tool created by the user (Rand). According to preliminary research, it focuses on:
+- Contract-based specifications
+- Type-directed generation
+- **Verification condition extraction** ← Relevant for reverse mode
+- **Round-trip translation (code ↔ contract)** ← Relevant for reverse mode
+
+**Key Question**: Does Calligrapher have capabilities relevant for lift-sys reverse mode (Code → IR)?
+
+### Potential Relevance for Reverse Mode
+
+#### Verification Condition Extraction
+
+If Calligrapher can extract verification conditions from code, this could help populate:
+- **AssertClause**: Extracted preconditions/postconditions
+- **SigClause**: Type contracts → parameter/return types
+- **IntentClause**: Contract descriptions → intent summaries
+
+#### Round-Trip Translation
+
+If Calligrapher can translate code ↔ contracts, this is essentially **reverse mode**:
+- Code → Contract = Code → IR (specification)
+- Contract → Code = IR → Code (synthesis)
+
+**This is exactly what lift-sys needs!**
+
+### Comparison with Loom Approach
+
+| Aspect | Loom | Calligrapher | Verdict |
+|--------|------|--------------|---------|
+| Specification Extraction | Yes (Lean 4) | TBD (likely Python?) | Calligrapher may be more practical |
+| Multi-Language | No (Lean 4 only) | TBD | Depends on implementation |
+| Type System | Lean 4 types | TBD | Need to assess |
+| SMT Integration | Yes (cvc5) | TBD (scored 4/5) | Both likely have SMT |
+| Production Readiness | Research prototype | Early (2/5) | Both experimental |
+| Integration Effort | High (6-12 months) | Moderate (4/5) | Calligrapher easier |
+| User Familiarity | Learning required | **User's own code** | **Huge advantage** |
+
+### Critical Advantage: User's Own Project
+
+**Calligrapher has a unique advantage**: The user (Rand) created it!
+
+This means:
+- ✅ **Deep familiarity** with codebase and architecture
+- ✅ **Control** over design and evolution
+- ✅ **Merge possibility** - Can integrate Calligrapher into lift-sys
+- ✅ **Reuse** - Existing algorithms and code
+- ✅ **No licensing issues** - User owns both projects
+
+### Assessment Pending
+
+**To properly evaluate Calligrapher for static analysis/reverse mode, we need:**
+
+1. **Review Current State**
+   - What reverse mode capabilities does Calligrapher have?
+   - Can it extract specifications from code?
+   - What languages does it support?
+
+2. **Compare IR Formats**
+   - Calligrapher IR vs. lift-sys IR
+   - Feature matrix: What does each have that the other lacks?
+   - Can they be unified?
+
+3. **Evaluate Verification Condition Extraction**
+   - Does Calligrapher extract preconditions/postconditions?
+   - How does it handle assertions?
+   - Is the approach language-agnostic?
+
+4. **Determine Integration Strategy**
+   - **Option A**: Merge Calligrapher into lift-sys
+     - Calligrapher becomes lift-sys's reverse mode engine
+     - Unified IR format
+     - Single codebase
+
+   - **Option B**: Extract specific components
+     - Take verification condition extraction algorithms
+     - Reimplement in lift-sys
+     - Keep projects separate
+
+   - **Option C**: Keep separate with integration
+     - Calligrapher as library/service
+     - lift-sys calls Calligrapher APIs
+     - Maintain independence
+
+### Questions for User
+
+Before completing this assessment, please provide:
+
+1. **Repository Access**: Is https://github.com/rand/calligrapher publicly accessible for review?
+
+2. **Reverse Mode Capabilities**: Does Calligrapher currently support code → contract extraction?
+   - If YES: What languages? What can it extract?
+   - If NO: Is it on the roadmap?
+
+3. **IR Format Comparison**: How does Calligrapher's IR compare to lift-sys's?
+   - IntentClause equivalent?
+   - SigClause equivalent?
+   - AssertClause equivalent?
+   - TypedHole equivalent?
+
+4. **Integration Intent**: What would you prefer?
+   - Merge Calligrapher into lift-sys?
+   - Extract specific features?
+   - Keep separate?
+
+5. **Production Readiness**: What parts of Calligrapher are production-ready?
+   - Verification condition extraction?
+   - Type inference?
+   - Contract checking?
+
+### Preliminary Scoring (Based on Research Plan)
+
+From the research plan, Calligrapher scored **31/45 (68.9%)** for synthesis:
+- IR Schema: 4/5
+- Type Constraints: 5/5
+- SMT Integration: 4/5
+- Multi-Language: 3/5
+- Integration Effort: 4/5
+
+**For reverse mode (code understanding), estimated scoring:**
+- **Relevance**: 4/5 (verification condition extraction is perfect fit)
+- **Multi-Language**: 3/5 (depends on implementation)
+- **Maturity**: 2/5 (early stage)
+- **Integration Effort**: 5/5 (**user's own code = easiest integration**)
+- **Impact**: 4-5/5 (could be transformative if capabilities match)
+
+### Recommendation (Conditional)
+
+**ASSESS CALLIGRAPHER IMMEDIATELY** before committing to Loom-inspired implementation:
+
+**If Calligrapher has reverse mode capabilities:**
+- ✅ **ADOPT** Calligrapher for reverse mode
+- Consider merging into lift-sys
+- Leverage existing code and user familiarity
+- Estimated effort: 4-6 weeks (vs. 6-10 weeks for Loom-inspired)
+
+**If Calligrapher lacks reverse mode:**
+- ⚠️ Evaluate feasibility of adding reverse mode to Calligrapher
+- Compare effort vs. Loom-inspired approach
+- Consider: Is it easier to add reverse to Calligrapher, or build Loom-inspired?
+
+**Either way**: Calligrapher should be assessed before finalizing reverse mode architecture.
+
+**Priority**: **P1 (Assessment Required)** - Block Loom-inspired implementation until Calligrapher is evaluated.
+
+---
+
 ## Comparative Analysis
 
 ### Static Analysis Tools for Reverse Mode
@@ -355,6 +509,7 @@ Loom generates verification conditions:
 | **stack-graphs** | ✅ | ⚠️  | ❌ | ✅✅ | ❌ | ⚠️  | **REJECT** (archived) |
 | **Nuanced** | ✅✅ | ✅ | ⚠️  | ❌ | ⚠️  | ✅ | **DEFER** (Python only) |
 | **Loom (approach)** | ✅ | ✅ | ✅✅ | ⚠️  | ✅ | ⚠️  | **ADOPT APPROACH** |
+| **Calligrapher** | ✅ (TBD) | ✅✅ (TBD) | ✅✅ (TBD) | ⚠️  (TBD) | ⚠️  | ✅✅ | **ASSESS FIRST** |
 | **Daikon** (existing) | ❌ | ❌ | ✅✅ | ✅ | ✅✅ | ✅ | **KEEP** |
 
 ### Key Insights
@@ -367,14 +522,21 @@ Loom generates verification conditions:
 2. **Assertion Extraction is the Gap**
    - Daikon provides dynamic invariants (existing, working)
    - Loom-inspired static analysis can add formal specifications
-   - **Opportunity**: Combine static (Loom) + dynamic (Daikon) for comprehensive assertions
+   - **Calligrapher may provide contract/assertion extraction** (needs assessment)
+   - **Opportunity**: Combine static (Loom/Calligrapher) + dynamic (Daikon) for comprehensive assertions
 
 3. **Multi-Language is Critical**
    - stack-graphs: ✅ Multi-language, ❌ Archived
    - Nuanced: ❌ Python only
    - Loom: ⚠️  Lean 4, but algorithms are language-agnostic
+   - Calligrapher: ⚠️  TBD (needs assessment)
    - ChatLSP: ✅✅ Language-agnostic LSP
    - **Winner**: ChatLSP + language-specific algorithm implementations
+
+4. **Calligrapher Assessment is Critical**
+   - **User's own project** = easiest integration
+   - If Calligrapher has reverse mode, it could replace Loom-inspired approach
+   - **Must assess before committing to Loom-inspired implementation**
 
 ---
 
@@ -438,15 +600,24 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 ### P1: High Value (New from Phase 4)
 
-2. **Loom-Inspired Specification Extraction**: Assertion inference
+**CRITICAL: Assess Calligrapher First Before Proceeding**
+
+2a. **Calligrapher Assessment** (BLOCKING)
+   - Provides: TBD (potentially all reverse mode capabilities)
+   - Effort: 1 week assessment + 4-6 weeks integration (if suitable)
+   - **Status**: **REQUIRED BEFORE OTHER P1 WORK**
+   - **Blocker for**: Loom-inspired implementation
+
+2b. **Loom-Inspired Specification Extraction** (CONDITIONAL)
    - Provides: Static AssertClause population
    - Effort: 6-10 weeks
-   - **Status**: Recommended for Phase 4 follow-up
+   - **Status**: **BLOCKED by Calligrapher assessment**
+   - **Only proceed if**: Calligrapher lacks reverse mode capabilities
 
 3. **Enhanced Daikon Integration**: Dynamic invariants
    - Provides: Dynamic AssertClause population
    - Effort: 2-3 weeks (improve existing integration)
-   - **Status**: Already integrated, enhance
+   - **Status**: Already integrated, can proceed independently
 
 ### P2: Nice to Have
 
@@ -466,31 +637,73 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 ## Open Questions
 
-1. **Loom Algorithm Complexity**: How difficult to implement weakest precondition for Python/TypeScript?
-2. **Static vs Dynamic Balance**: What % of assertions can be extracted statically vs dynamically?
-3. **Multi-Language Algorithms**: Can same specification extraction work across all target languages?
-4. **Integration with Daikon**: How to merge static and dynamic assertions without conflicts?
-5. **Production Readiness**: Are Loom-inspired algorithms production-ready or experimental?
+**CRITICAL (Calligrapher):**
+1. **Calligrapher Capabilities**: Does it support Code → Contract extraction?
+2. **Calligrapher IR**: How does it compare to lift-sys IR?
+3. **Calligrapher Multi-Language**: What languages does it support?
+4. **Integration Strategy**: Merge, extract, or integrate separately?
+
+**Loom-Inspired (if Calligrapher not suitable):**
+5. **Loom Algorithm Complexity**: How difficult to implement weakest precondition for Python/TypeScript?
+6. **Multi-Language Algorithms**: Can same specification extraction work across all target languages?
+
+**General:**
+7. **Static vs Dynamic Balance**: What % of assertions can be extracted statically vs dynamically?
+8. **Integration with Daikon**: How to merge static and dynamic assertions without conflicts?
+9. **Production Readiness**: Are static assertion extraction algorithms production-ready or experimental?
 
 ---
 
 ## Next Steps
 
-1. **Complete Phase 2 Integration**: ChatLSP + language servers (4-5 weeks) ← PRIORITY
-2. **Research Loom Algorithms**: Study weakest precondition generation (1 week)
-3. **POC: Static Assertion Extraction**: Implement for Python (3 weeks)
-4. **Evaluate Results**: Compare static vs dynamic assertions
-5. **Multi-Language Extension**: Adapt to TypeScript, Rust, Go (1-2 weeks each)
+**IMMEDIATE (Week 0):**
+1. **Assess Calligrapher**: Review repository, capabilities, IR format (1 week) ← **BLOCKING**
+2. **Decide Integration Strategy**: Merge/Extract/Integrate/Build-Loom (1 week)
+
+**Phase A (Weeks 1-10): Forward Mode**
+3. **Complete Phase 2 Integration**: xgrammar + ChatLSP (10 weeks) ← PRIORITY
+
+**Phase B (Week 11+): Reverse Mode - Depends on Calligrapher Assessment**
+
+**If Calligrapher has reverse mode:**
+4. **Integrate Calligrapher**: Merge or extract components (4-6 weeks)
+5. **Test on Real Codebases**: Validate reverse mode quality
+6. **Enhance Daikon Integration**: Combine static + dynamic (2-3 weeks)
+
+**If Calligrapher lacks reverse mode:**
+4. **Research Loom Algorithms**: Study weakest precondition generation (1 week)
+5. **POC: Static Assertion Extraction**: Implement for Python (3 weeks)
+6. **Multi-Language Extension**: Adapt to TypeScript, Rust, Go (1-2 weeks each)
+7. **Enhance Daikon Integration**: Combine static + dynamic (2-3 weeks)
 
 ---
 
 ## Conclusion
 
-**Phase 4 Key Finding**: lift-sys's reverse mode needs are largely addressed by **ChatLSP (Phase 2)** for signatures/types. The remaining gap is **assertion extraction**, which can be addressed by:
-- **Static**: Loom-inspired algorithms (new, 6-10 weeks)
-- **Dynamic**: Enhanced Daikon (existing, 2-3 weeks)
+**Phase 4 Key Findings**:
 
-**Recommendation**: Focus on Phase 2 integration (xgrammar + ChatLSP) first, then add Loom-inspired static analysis as Phase 4 follow-up.
+1. **ChatLSP (Phase 2) addresses most needs**: Signatures and type extraction via language servers
+2. **Assertion extraction is the remaining gap**: Need static specification extraction
+3. **Calligrapher assessment is CRITICAL**: Could provide ready-made reverse mode capabilities
+4. **Loom provides reference architecture**: Weakest precondition generation approach
+
+**Recommendations**:
+
+1. **IMMEDIATE**: Assess Calligrapher for reverse mode capabilities (Week 0)
+   - User's own project = easiest integration
+   - Could replace Loom-inspired approach entirely
+   - **BLOCKING** for reverse mode architecture decisions
+
+2. **Phase A (Weeks 1-10)**: Focus on forward mode (xgrammar + ChatLSP)
+   - Do NOT start reverse mode work until Calligrapher assessed
+
+3. **Phase B (Week 11+)**: Reverse mode implementation
+   - **If Calligrapher suitable**: Integrate (4-6 weeks)
+   - **If Calligrapher not suitable**: Build Loom-inspired (6-10 weeks)
+
+**Critical Path**:
+- Calligrapher assessment must happen **before** committing to Loom-inspired implementation
+- This could save 2-4 weeks and provide better integration
 
 ---
 

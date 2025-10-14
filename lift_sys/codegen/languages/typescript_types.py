@@ -47,11 +47,11 @@ class TypeScriptTypeResolver:
         "None": "null",
         "Any": "any",
         "object": "any",
-        # Python collections
-        "list": "Array",
-        "dict": "Record",
-        "set": "Set",
-        "tuple": "readonly",
+        # Python collections - with proper generic defaults
+        "list": "Array<any>",
+        "dict": "Record<string, any>",
+        "set": "Set<any>",
+        "tuple": "readonly any[]",
         # Common Python types
         "bytes": "Uint8Array",
         "bytearray": "Uint8Array",

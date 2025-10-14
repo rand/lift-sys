@@ -6,6 +6,11 @@ like ChatLSP would provide.
 
 For PoC 2, this uses a knowledge base approach. In production, this would
 integrate with actual LSP servers (pyright, typescript-language-server, etc.)
+
+The relevance ranking system scores symbols based on:
+- Keyword matching (60% weight)
+- Semantic similarity (30% weight)
+- Usage frequency (10% weight, placeholder for future)
 """
 
 from __future__ import annotations
@@ -41,6 +46,178 @@ class ImportPattern:
     module: str
     common_imports: list[str]
     usage_context: str
+
+
+@dataclass
+class RelevanceScore:
+    """Relevance score with breakdown for a symbol.
+
+    Attributes:
+        total: Combined weighted score (0.0-1.0)
+        keyword_match: Keyword matching score (0.0-1.0)
+        semantic_similarity: Semantic pattern similarity (0.0-1.0)
+        usage_frequency: Usage frequency score (0.0-1.0, placeholder)
+    """
+
+    total: float
+    keyword_match: float
+    semantic_similarity: float
+    usage_frequency: float
+
+
+def _split_camel_case(name: str) -> list[str]:
+    """Split camelCase or PascalCase name into parts.
+
+    Args:
+        name: Name to split (e.g., "UserValidator")
+
+    Returns:
+        List of lowercase parts (e.g., ["user", "validator"])
+    """
+    import re
+
+    # Insert space before uppercase letters, then split
+    parts = re.sub(r"([A-Z])", r" \1", name).split()
+    return [p.lower() for p in parts if p]
+
+
+def compute_relevance(
+    symbol_name: str,
+    symbol_type: str,
+    keywords: list[str],
+    intent_summary: str,
+) -> RelevanceScore:
+    """Compute relevance score for a symbol based on intent.
+
+    Scores symbols using multiple factors:
+    - Keyword matching: Exact/partial matches in symbol name
+    - Semantic similarity: Pattern-based matching (validation, calculation, etc.)
+    - Usage frequency: Placeholder for future usage tracking
+
+    Args:
+        symbol_name: Name of type or function (e.g., "validate_email")
+        symbol_type: "type" or "function"
+        keywords: Extracted keywords from intent
+        intent_summary: Full intent description
+
+    Returns:
+        RelevanceScore with total weighted score and breakdown
+    """
+    keyword_match = 0.0
+    semantic_similarity = 0.0
+    usage_frequency = 0.0  # Placeholder for future enhancement
+
+    name_lower = symbol_name.lower()
+    # Split camelCase before lowercasing to preserve word boundaries
+    camel_parts = _split_camel_case(symbol_name)
+    keywords_matched = 0  # Track number of keywords that match
+
+    # Keyword matching (0.0-1.0)
+    for keyword in keywords:
+        keyword_lower = keyword.lower()
+        matched_this_keyword = False
+
+        if keyword_lower == name_lower:
+            # Exact match: highest score
+            keyword_match = 1.0
+            matched_this_keyword = True
+            keywords_matched += 1
+            break
+        elif keyword_lower in name_lower:
+            # Substring match: high score
+            keyword_match = max(keyword_match, 0.7)
+            matched_this_keyword = True
+        elif name_lower in keyword_lower:
+            # Reverse substring match: moderate score
+            keyword_match = max(keyword_match, 0.5)
+            matched_this_keyword = True
+        else:
+            # Check for partial word matches with stem-like matching
+            name_parts = name_lower.split("_")
+            for part in name_parts:
+                # Direct substring match in word part
+                if keyword_lower in part or part in keyword_lower:
+                    keyword_match = max(keyword_match, 0.4)
+                    matched_this_keyword = True
+                    break
+                # Stem-like matching: check common prefixes for word variations
+                # e.g., "validate" matches "validation", "validator"
+                min_len = min(len(keyword_lower), len(part))
+                if min_len >= 5:  # Only for words of reasonable length
+                    # Check if first 5+ chars match (handles validate/validation/validator)
+                    common_prefix = 0
+                    for i in range(min_len):
+                        if keyword_lower[i] == part[i]:
+                            common_prefix += 1
+                        else:
+                            break
+                    if common_prefix >= 5:
+                        keyword_match = max(keyword_match, 0.4)
+                        matched_this_keyword = True
+                        break
+
+        if matched_this_keyword:
+            keywords_matched += 1
+
+    # Add bonus for matching multiple keywords (up to +0.2)
+    multi_keyword_bonus = min((keywords_matched - 1) * 0.1, 0.2) if keywords_matched > 1 else 0.0
+    keyword_match = min(keyword_match + multi_keyword_bonus, 1.0)
+
+    # Semantic similarity heuristics (0.0-1.0)
+    # Match common patterns in programming
+    intent_lower = intent_summary.lower()
+    patterns = {
+        "validation": ["validate", "check", "verify", "is_valid", "ensure"],
+        "calculation": ["calculate", "compute", "get", "find", "determine"],
+        "creation": ["create", "make", "build", "generate", "new"],
+        "conversion": ["convert", "transform", "to_", "from_", "as_"],
+        "retrieval": ["get", "fetch", "retrieve", "find", "load"],
+        "storage": ["save", "store", "write", "persist", "set"],
+        "parsing": ["parse", "decode", "read", "extract"],
+        "formatting": ["format", "stringify", "encode", "serialize"],
+    }
+
+    for pattern_type, pattern_names in patterns.items():
+        # Check if intent mentions this pattern
+        if pattern_type in intent_lower or any(p in intent_lower for p in pattern_names):
+            # Check if symbol name contains pattern indicators (with stem matching)
+            for pattern_name in pattern_names:
+                if pattern_name in name_lower:
+                    semantic_similarity = 0.8
+                    break
+                # Check word parts for stem matching
+                name_parts = name_lower.split("_") + camel_parts
+                for part in name_parts:
+                    if pattern_name in part or part in pattern_name:
+                        semantic_similarity = 0.8
+                        break
+                    # Stem matching: common prefix for word variations
+                    min_len = min(len(pattern_name), len(part))
+                    if min_len >= 5:
+                        common_prefix = 0
+                        for i in range(min_len):
+                            if pattern_name[i] == part[i]:
+                                common_prefix += 1
+                            else:
+                                break
+                        if common_prefix >= 5:
+                            semantic_similarity = 0.8
+                            break
+                if semantic_similarity > 0:
+                    break
+            if semantic_similarity > 0:
+                break
+
+    # Combine scores with weights
+    # Keyword match: 60%, Semantic similarity: 30%, Usage frequency: 10%
+    total = (keyword_match * 0.6) + (semantic_similarity * 0.3) + (usage_frequency * 0.1)
+
+    return RelevanceScore(
+        total=total,
+        keyword_match=keyword_match,
+        semantic_similarity=semantic_similarity,
+        usage_frequency=usage_frequency,
+    )
 
 
 @dataclass
@@ -250,4 +427,6 @@ __all__ = [
     "TypeInfo",
     "FunctionInfo",
     "ImportPattern",
+    "RelevanceScore",
+    "compute_relevance",
 ]

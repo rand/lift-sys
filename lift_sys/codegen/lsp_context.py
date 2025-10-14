@@ -7,6 +7,7 @@ knowledge base approach from PoC 2.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import Any
 
 from multilspy import LanguageServer
 from multilspy.multilspy_config import MultilspyConfig
+from multilspy.multilspy_logger import MultilspyLogger
 
 from .semantic_context import (
     ImportPattern,
@@ -96,9 +98,12 @@ class LSPSemanticContextProvider:
                 }
             )
 
+            # Create multilspy logger
+            multilspy_logger = MultilspyLogger()
+
             self._lsp = LanguageServer.create(
                 multilspy_config,
-                None,  # logger
+                multilspy_logger,
                 str(self.config.repository_path),
             )
 
@@ -166,21 +171,143 @@ class LSPSemanticContextProvider:
         # Extract keywords from intent for querying
         keywords = self._extract_keywords(intent_summary)
 
-        # For now, we'll use a simplified approach:
-        # Get import patterns based on keywords (doesn't require LSP)
+        # Get import patterns based on keywords
         import_patterns = self._get_imports_for_keywords(keywords)
 
-        # Get conventions (language-specific, doesn't require LSP)
+        # Get conventions (language-specific)
         conventions = self._get_conventions()
 
-        # TODO: Implement actual LSP queries for types and functions
-        # For now, return context with imports and conventions
+        # Try to get types and functions from LSP if we have a valid file
+        available_types = []
+        available_functions = []
+
+        if target_file is None:
+            # Find a relevant Python file in the repository
+            target_file = self._find_relevant_file(keywords)
+
+        if target_file and target_file.exists():
+            try:
+                # Get symbols from the file using LSP
+                symbols = await asyncio.wait_for(
+                    self._get_document_symbols(target_file),
+                    timeout=self.config.timeout,
+                )
+
+                # Extract types and functions from symbols
+                # Flatten the symbol list (multilspy returns list of lists)
+                flat_symbols = []
+                for item in symbols:
+                    if isinstance(item, list):
+                        flat_symbols.extend(item)
+                    elif item is not None:
+                        flat_symbols.append(item)
+
+                for symbol in flat_symbols:
+                    if not isinstance(symbol, dict):
+                        continue
+
+                    symbol_kind = symbol.get("kind")
+                    symbol_name = symbol.get("name", "")
+
+                    # Class/Interface = types (kind 5 = Class, 11 = Interface)
+                    if symbol_kind in [5, 11]:
+                        from .semantic_context import TypeInfo
+
+                        available_types.append(
+                            TypeInfo(
+                                name=symbol_name,
+                                module=str(target_file.relative_to(self.config.repository_path)),
+                                description=f"Type from {target_file.name}",
+                                example_usage=None,
+                            )
+                        )
+
+                    # Function/Method (kind 6 = Method, 12 = Function)
+                    elif symbol_kind in [6, 12]:
+                        from .semantic_context import FunctionInfo
+
+                        # Try to get signature from detail field
+                        detail = symbol.get("detail", "")
+                        signature = f"{symbol_name}(...)"
+                        if detail:
+                            signature = detail
+
+                        available_functions.append(
+                            FunctionInfo(
+                                name=symbol_name,
+                                module=str(target_file.relative_to(self.config.repository_path)),
+                                signature=signature,
+                                description=f"Function from {target_file.name}",
+                            )
+                        )
+
+            except Exception as e:
+                logger.debug(f"Failed to get LSP symbols: {e}")
+                # Continue with just import patterns and conventions
+
         return SemanticContext(
-            available_types=[],
-            available_functions=[],
+            available_types=available_types[:5],  # Limit to top 5
+            available_functions=available_functions[:5],  # Limit to top 5
             import_patterns=import_patterns,
             codebase_conventions=conventions,
         )
+
+    async def _get_document_symbols(self, file_path: Path) -> list[dict]:
+        """Get document symbols from LSP server."""
+        if not self._lsp or not self._started:
+            return []
+
+        try:
+            # Get relative path from repository root
+            relative_path = str(file_path.relative_to(self.config.repository_path))
+
+            # Open the file context (regular context manager, not async)
+            with self._lsp.open_file(relative_path):
+                # Request document symbols
+                symbols = await self._lsp.request_document_symbols(relative_path)
+                return symbols if symbols else []
+        except Exception as e:
+            logger.debug(f"Error getting document symbols: {e}")
+            return []
+
+    def _find_relevant_file(self, keywords: list[str]) -> Path | None:
+        """Find most relevant Python file based on keywords."""
+        try:
+            # Get all Python files in repository
+            py_files = list(self.config.repository_path.rglob("*.py"))
+
+            # Filter out common non-relevant directories
+            py_files = [
+                f
+                for f in py_files
+                if not any(
+                    excluded in f.parts
+                    for excluded in [
+                        "__pycache__",
+                        ".venv",
+                        "venv",
+                        "node_modules",
+                        ".git",
+                        "tests",
+                    ]
+                )
+            ]
+
+            if not py_files:
+                return None
+
+            # Simple heuristic: prefer files with keyword in name
+            for keyword in keywords:
+                for py_file in py_files:
+                    if keyword in py_file.stem.lower():
+                        return py_file
+
+            # Fall back to first available file
+            return py_files[0] if py_files else None
+
+        except Exception as e:
+            logger.debug(f"Error finding relevant file: {e}")
+            return None
 
     def _extract_keywords(self, intent_summary: str) -> list[str]:
         """Extract keywords from intent for querying."""

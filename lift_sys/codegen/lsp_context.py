@@ -65,6 +65,7 @@ class LSPSemanticContextProvider:
         """
         self.config = config
         self._lsp: LanguageServer | None = None
+        self._lsp_context = None
         self._cache: dict[str, Any] = {}
         self._knowledge_base_fallback = SemanticContextProvider(language=config.language)
         self._started = False
@@ -101,7 +102,9 @@ class LSPSemanticContextProvider:
                 str(self.config.repository_path),
             )
 
-            await self._lsp.start_server()
+            # start_server() returns a context manager, enter it
+            self._lsp_context = self._lsp.start_server()
+            await self._lsp_context.__aenter__()
             self._started = True
             logger.info("LSP server started successfully")
 
@@ -118,7 +121,9 @@ class LSPSemanticContextProvider:
 
         try:
             logger.info("Stopping LSP server")
-            await self._lsp.stop()
+            # Exit the context manager
+            if hasattr(self, "_lsp_context") and self._lsp_context:
+                await self._lsp_context.__aexit__(None, None, None)
             self._started = False
             logger.info("LSP server stopped successfully")
         except Exception as e:

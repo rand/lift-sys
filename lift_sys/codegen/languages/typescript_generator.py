@@ -360,8 +360,9 @@ Use TypeScript syntax:
 
             try:
                 # Run tsc --noEmit to check syntax only
+                # Include ES2015 lib for Promise support
                 result = subprocess.run(
-                    ["tsc", "--noEmit", temp_path],
+                    ["tsc", "--noEmit", "--lib", "ES2015,DOM", temp_path],
                     capture_output=True,
                     text=True,
                     timeout=5,

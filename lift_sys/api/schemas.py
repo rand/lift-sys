@@ -235,6 +235,51 @@ class GenerateCodeResponse(BaseModel):
     )
 
 
+class VersionInfoResponse(BaseModel):
+    """Information about a single IR version in a session."""
+
+    version: int
+    created_at: str
+    author: str | None = None
+    change_summary: str | None = None
+    provenance_summary: dict = Field(
+        default_factory=dict,
+        description="Summary of provenance sources in this version (human/agent/reverse counts)",
+    )
+    tags: list[str] = Field(default_factory=list)
+    has_holes: bool = False
+    hole_count: int = 0
+
+
+class VersionHistoryResponse(BaseModel):
+    """Complete version history for a session."""
+
+    session_id: str
+    current_version: int
+    versions: list[VersionInfoResponse]
+    source: str = Field(description="Session source: prompt or reverse_mode")
+
+
+class VersionComparisonResponse(BaseModel):
+    """Comparison between two versions."""
+
+    session_id: str
+    from_version: int
+    to_version: int
+    comparison: dict = Field(description="ComparisonResult from IRComparer")
+    from_ir: dict = Field(description="Full IR from version")
+    to_ir: dict = Field(description="Full IR to version")
+
+
+class RollbackRequest(BaseModel):
+    """Request to rollback to a previous version."""
+
+    target_version: int = Field(description="Version number to rollback to")
+    create_new_version: bool = Field(
+        default=True, description="Whether to create a new version or replace current"
+    )
+
+
 __all__ = [
     "UserIdentity",
     "SessionInfo",
@@ -252,6 +297,7 @@ __all__ = [
     "PlannerTelemetry",
     "ForwardResponse",
     "CreateSessionRequest",
+    "ImportReverseIRRequest",
     "SessionResponse",
     "SessionListResponse",
     "ResolveHoleRequest",
@@ -259,4 +305,8 @@ __all__ = [
     "AssistsResponse",
     "GenerateCodeRequest",
     "GenerateCodeResponse",
+    "VersionInfoResponse",
+    "VersionHistoryResponse",
+    "VersionComparisonResponse",
+    "RollbackRequest",
 ]

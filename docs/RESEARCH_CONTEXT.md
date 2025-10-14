@@ -84,6 +84,7 @@ Code → IR → Refine → Code → Validate → Iterate
 3. **Provenance Tracking**: Full audit trail of every IR element's origin
 4. **Bidirectional**: Unlike Copilot (code only) or Cursor (edit only)
 5. **Verification-First**: SMT checking, not just syntax validation
+6. **Multi-Language by Design**: Language-agnostic IR with extensible code generation and analysis
 
 ---
 
@@ -209,6 +210,12 @@ Code → IR → Refine → Code → Validate → Iterate
 - OpenAI GPT-4
 - Google Gemini
 - vLLM (local)
+
+**Target Languages (multi-language support required):**
+- **Phase 1 (current)**: Python
+- **Phase 2 (near-term)**: TypeScript/JavaScript
+- **Phase 3 (medium-term)**: Rust, Go
+- **Extensible**: Plugin architecture for adding new languages
 
 ---
 

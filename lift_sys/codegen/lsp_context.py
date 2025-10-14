@@ -183,17 +183,18 @@ class LSPSemanticContextProvider:
         # Get conventions (language-specific)
         conventions = self._get_conventions()
 
-        # Try to get types and functions from LSP if we have a valid file
+        # Try to get types and functions from LSP
         available_types = []
         available_functions = []
 
+        # Find relevant files (multiple for richer context)
         if target_file is None:
-            # Find a relevant Python file in the repository
-            target_file = self._find_relevant_file(keywords)
+            relevant_files = self._find_relevant_files(keywords, intent_summary, limit=1)
+            target_file = relevant_files[0] if relevant_files else None
 
         if target_file and target_file.exists():
             try:
-                # Get symbols from the file using LSP
+                # Get symbols from the file using LSP (with caching)
                 symbols = await asyncio.wait_for(
                     self._get_document_symbols(target_file),
                     timeout=self.config.timeout,
@@ -296,8 +297,83 @@ class LSPSemanticContextProvider:
             logger.debug(f"Error getting document symbols: {e}")
             return []
 
-    def _find_relevant_file(self, keywords: list[str]) -> Path | None:
-        """Find most relevant Python file based on keywords."""
+    def _score_file_relevance(
+        self, file_path: Path, keywords: list[str], intent_summary: str
+    ) -> float:
+        """Score file relevance to intent.
+
+        Args:
+            file_path: Path to file
+            keywords: Extracted keywords from intent
+            intent_summary: Full intent description
+
+        Returns:
+            Relevance score (0.0-1.0)
+        """
+        score = 0.0
+        file_name = file_path.stem.lower()
+        file_parts = [p.lower() for p in file_path.parts]
+        intent_lower = intent_summary.lower()
+
+        # Exact keyword match in filename: +0.5
+        for keyword in keywords:
+            if keyword == file_name:
+                score += 0.5
+                break
+            elif keyword in file_name:
+                score += 0.3
+                break
+
+        # Partial keyword match in path: +0.2
+        for keyword in keywords:
+            if any(keyword in part for part in file_parts):
+                score += 0.2
+                break
+
+        # Intent domain heuristics
+        domain_matches = {
+            "api": ["api", "server", "routes", "endpoints"],
+            "test": ["test", "tests", "testing"],
+            "model": ["model", "models", "schema"],
+            "service": ["service", "services"],
+            "util": ["util", "utils", "helper", "helpers"],
+        }
+
+        for domain, indicators in domain_matches.items():
+            if domain in intent_lower:
+                if any(ind in file_parts for ind in indicators):
+                    score += 0.2
+                    break
+
+        # Prefer certain directories
+        preferred_dirs = ["core", "lib", "src", "main"]
+        if any(pref in file_parts for pref in preferred_dirs):
+            score += 0.1
+
+        # Penalize test/example files unless intent mentions testing
+        if "test" not in intent_lower:
+            if any(test_dir in file_parts for test_dir in ["test", "tests", "testing"]):
+                score *= 0.3
+
+        # Penalize __init__.py unless explicitly looking for package structure
+        if file_path.name == "__init__.py":
+            score *= 0.5
+
+        return min(score, 1.0)
+
+    def _find_relevant_files(
+        self, keywords: list[str], intent_summary: str, limit: int = 3
+    ) -> list[Path]:
+        """Find multiple relevant files based on keywords and intent.
+
+        Args:
+            keywords: Extracted keywords from intent
+            intent_summary: Full intent description
+            limit: Maximum number of files to return
+
+        Returns:
+            List of relevant file paths, sorted by relevance
+        """
         try:
             # Get all Python files in repository
             py_files = list(self.config.repository_path.rglob("*.py"))
@@ -314,26 +390,29 @@ class LSPSemanticContextProvider:
                         "venv",
                         "node_modules",
                         ".git",
-                        "tests",
                     ]
                 )
             ]
 
             if not py_files:
-                return None
+                return []
 
-            # Simple heuristic: prefer files with keyword in name
-            for keyword in keywords:
-                for py_file in py_files:
-                    if keyword in py_file.stem.lower():
-                        return py_file
+            # Score all files
+            scored_files = [
+                (self._score_file_relevance(f, keywords, intent_summary), f) for f in py_files
+            ]
 
-            # Fall back to first available file
-            return py_files[0] if py_files else None
+            # Sort by score (descending) and take top N
+            scored_files.sort(key=lambda x: x[0], reverse=True)
+
+            # Filter out files with score 0 and return top results
+            relevant_files = [f for score, f in scored_files[: limit * 2] if score > 0.0]
+
+            return relevant_files[:limit]
 
         except Exception as e:
-            logger.debug(f"Error finding relevant file: {e}")
-            return None
+            logger.debug(f"Error finding relevant files: {e}")
+            return []
 
     def _extract_keywords(self, intent_summary: str) -> list[str]:
         """Extract keywords from intent for querying."""

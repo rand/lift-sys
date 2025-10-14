@@ -344,21 +344,31 @@ Loom generates verification conditions:
 
 ---
 
-## Technology 4: Calligrapher (User's Project)
+## Technology 4: Calligrapher (User's Project) ✅ ASSESSED
 
 **Repository**: https://github.com/rand/calligrapher (User's own project)
-**Category**: Contract-Based Code Generation and Analysis
-**Status**: To be assessed based on current state
+**Category**: Static Analysis and Call Graph Extraction
+**Status**: **Assessment Complete - DO NOT INTEGRATE**
 
 ### Overview
 
-Calligrapher is a contract-based code generation tool created by the user (Rand). According to preliminary research, it focuses on:
-- Contract-based specifications
-- Type-directed generation
-- **Verification condition extraction** ← Relevant for reverse mode
-- **Round-trip translation (code ↔ contract)** ← Relevant for reverse mode
+Calligrapher is a **static analysis tool** for Python call graph extraction and code comprehension, written in Zig. Despite initial assumptions about contract-based programming, comprehensive analysis reveals it is **fundamentally incompatible** with lift-sys's specification-driven development goals.
 
-**Key Question**: Does Calligrapher have capabilities relevant for lift-sys reverse mode (Code → IR)?
+**Actual Capabilities**:
+- Static code analysis (AST → call graph)
+- Complexity metrics and visualization
+- Multi-file project analysis
+- Export to JSON/DOT/Mermaid
+
+**Does NOT Provide**:
+- ❌ Contract-based specifications
+- ❌ Code generation
+- ❌ Formal verification
+- ❌ Intent tracking
+- ❌ Reverse mode (in lift-sys sense)
+- ❌ Typed holes or ambiguity tracking
+
+**Key Finding**: Calligrapher analyzes **what code does syntactically**, while lift-sys specifies **what code should do semantically**. These are complementary tools, not overlapping capabilities.
 
 ### Potential Relevance for Reverse Mode
 
@@ -477,24 +487,36 @@ From the research plan, Calligrapher scored **31/45 (68.9%)** for synthesis:
 - **Integration Effort**: 5/5 (**user's own code = easiest integration**)
 - **Impact**: 4-5/5 (could be transformative if capabilities match)
 
-### Recommendation (Conditional)
+### Assessment Results ✅
 
-**ASSESS CALLIGRAPHER IMMEDIATELY** before committing to Loom-inspired implementation:
+**Comprehensive assessment completed** (see `CALLIGRAPHER_ASSESSMENT.md` for full details).
 
-**If Calligrapher has reverse mode capabilities:**
-- ✅ **ADOPT** Calligrapher for reverse mode
-- Consider merging into lift-sys
-- Leverage existing code and user familiarity
-- Estimated effort: 4-6 weeks (vs. 6-10 weeks for Loom-inspired)
+**Key Findings**:
+1. **Functional Overlap**: Only ~15% (basic signature extraction)
+2. **Purpose Mismatch**: Code comprehension vs. specification-driven development
+3. **No Contract Capabilities**: No intent, assertions, effects, or provenance tracking
+4. **Language Barrier**: Zig implementation requires FFI complexity
+5. **Roadmap Divergence**: Focus on analysis/visualization, not contracts/synthesis
 
-**If Calligrapher lacks reverse mode:**
-- ⚠️ Evaluate feasibility of adding reverse mode to Calligrapher
-- Compare effort vs. Loom-inspired approach
-- Consider: Is it easier to add reverse to Calligrapher, or build Loom-inspired?
+### Recommendation ✅
 
-**Either way**: Calligrapher should be assessed before finalizing reverse mode architecture.
+**DO NOT INTEGRATE Calligrapher into lift-sys** ❌
 
-**Priority**: **P1 (Assessment Required)** - Block Loom-inspired implementation until Calligrapher is evaluated.
+**Rationale**:
+- Minimal functional overlap (~15%)
+- Better alternatives available (Python AST, ChatLSP, Loom-inspired)
+- Integration overhead too high (Zig FFI, data transformation)
+- Purpose mismatch (analysis vs. specification)
+- Would require rebuilding lift-sys reverse mode on top of Calligrapher
+
+**Alternative**: Keep projects complementary
+- Users can run Calligrapher separately for visualization
+- lift-sys focuses on specification-driven development
+- Cross-reference but maintain architectural separation
+
+**Decision**: **PROCEED with Loom-inspired implementation** ✅
+
+**Priority**: **P1 (Unblocked)** - Loom-inspired implementation can proceed as originally planned (6-10 weeks).
 
 ---
 
@@ -508,8 +530,8 @@ From the research plan, Calligrapher scored **31/45 (68.9%)** for synthesis:
 | **Pyright** (via ChatLSP) | ✅✅ | ✅✅ | ❌ | Python only | ✅✅ | ✅ | **ADOPTED** |
 | **stack-graphs** | ✅ | ⚠️  | ❌ | ✅✅ | ❌ | ⚠️  | **REJECT** (archived) |
 | **Nuanced** | ✅✅ | ✅ | ⚠️  | ❌ | ⚠️  | ✅ | **DEFER** (Python only) |
-| **Loom (approach)** | ✅ | ✅ | ✅✅ | ⚠️  | ✅ | ⚠️  | **ADOPT APPROACH** |
-| **Calligrapher** | ✅ (TBD) | ✅✅ (TBD) | ✅✅ (TBD) | ⚠️  (TBD) | ⚠️  | ✅✅ | **ASSESS FIRST** |
+| **Loom (approach)** | ✅ | ✅ | ✅✅ | ⚠️  | ✅ | ⚠️  | **ADOPT APPROACH** ✅ |
+| **Calligrapher** | ⚠️ (15%) | ⚠️ (15%) | ❌ (0%) | ⚠️  (Zig) | ⚠️  | ❌ | **REJECT** ❌ |
 | **Daikon** (existing) | ❌ | ❌ | ✅✅ | ✅ | ✅✅ | ✅ | **KEEP** |
 
 ### Key Insights
@@ -533,10 +555,11 @@ From the research plan, Calligrapher scored **31/45 (68.9%)** for synthesis:
    - ChatLSP: ✅✅ Language-agnostic LSP
    - **Winner**: ChatLSP + language-specific algorithm implementations
 
-4. **Calligrapher Assessment is Critical**
-   - **User's own project** = easiest integration
-   - If Calligrapher has reverse mode, it could replace Loom-inspired approach
-   - **Must assess before committing to Loom-inspired implementation**
+4. **Calligrapher Assessment Complete** ✅
+   - **User's own project** but fundamentally incompatible
+   - Calligrapher is code analysis tool, not specification tool
+   - Only ~15% functional overlap with lift-sys needs
+   - **Decision: Do not integrate** - Proceed with Loom-inspired approach
 
 ---
 
@@ -600,19 +623,11 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 ### P1: High Value (New from Phase 4)
 
-**CRITICAL: Assess Calligrapher First Before Proceeding**
-
-2a. **Calligrapher Assessment** (BLOCKING)
-   - Provides: TBD (potentially all reverse mode capabilities)
-   - Effort: 1 week assessment + 4-6 weeks integration (if suitable)
-   - **Status**: **REQUIRED BEFORE OTHER P1 WORK**
-   - **Blocker for**: Loom-inspired implementation
-
-2b. **Loom-Inspired Specification Extraction** (CONDITIONAL)
+2. **Loom-Inspired Specification Extraction** ✅ UNBLOCKED
    - Provides: Static AssertClause population
    - Effort: 6-10 weeks
-   - **Status**: **BLOCKED by Calligrapher assessment**
-   - **Only proceed if**: Calligrapher lacks reverse mode capabilities
+   - **Status**: **Calligrapher assessment complete - PROCEED**
+   - **Decision**: Build Loom-inspired algorithms (better fit than Calligrapher)
 
 3. **Enhanced Daikon Integration**: Dynamic invariants
    - Provides: Dynamic AssertClause population
@@ -637,13 +652,13 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 ## Open Questions
 
-**CRITICAL (Calligrapher):**
-1. **Calligrapher Capabilities**: Does it support Code → Contract extraction?
-2. **Calligrapher IR**: How does it compare to lift-sys IR?
-3. **Calligrapher Multi-Language**: What languages does it support?
-4. **Integration Strategy**: Merge, extract, or integrate separately?
+**~~CRITICAL (Calligrapher)~~:** ✅ RESOLVED
+1. ~~Calligrapher Capabilities~~ → **ANSWERED**: No contract extraction, code analysis only
+2. ~~Calligrapher IR~~ → **ANSWERED**: Call graphs, not specifications (~15% overlap)
+3. ~~Calligrapher Multi-Language~~ → **ANSWERED**: Zig-based, Python target (FFI complexity)
+4. ~~Integration Strategy~~ → **ANSWERED**: Do not integrate, keep complementary
 
-**Loom-Inspired (if Calligrapher not suitable):**
+**Loom-Inspired (PROCEEDING):**
 5. **Loom Algorithm Complexity**: How difficult to implement weakest precondition for Python/TypeScript?
 6. **Multi-Language Algorithms**: Can same specification extraction work across all target languages?
 
@@ -656,25 +671,24 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 ## Next Steps
 
-**IMMEDIATE (Week 0):**
-1. **Assess Calligrapher**: Review repository, capabilities, IR format (1 week) ← **BLOCKING**
-2. **Decide Integration Strategy**: Merge/Extract/Integrate/Build-Loom (1 week)
+**~~IMMEDIATE (Week 0)~~:** ✅ COMPLETE
+1. ~~Assess Calligrapher~~ ✅ **DONE** - See `CALLIGRAPHER_ASSESSMENT.md`
+2. ~~Decide Integration Strategy~~ ✅ **DONE** - Do not integrate, proceed with Loom-inspired
 
-**Phase A (Weeks 1-10): Forward Mode**
-3. **Complete Phase 2 Integration**: xgrammar + ChatLSP (10 weeks) ← PRIORITY
+**Phase A (Weeks 1-10): Forward Mode** ← CURRENT PRIORITY
+3. **Complete Phase 2 Integration**: xgrammar + ChatLSP (10 weeks)
+   - Week 1-2: xgrammar IR generation (IN PROGRESS: lift-sys-48)
+   - Week 3-4: xgrammar code generation
+   - Week 5-6: ChatLSP integration
+   - Week 7-8: TypeScript support
+   - Week 9-10: Production deployment
 
-**Phase B (Week 11+): Reverse Mode - Depends on Calligrapher Assessment**
-
-**If Calligrapher has reverse mode:**
-4. **Integrate Calligrapher**: Merge or extract components (4-6 weeks)
-5. **Test on Real Codebases**: Validate reverse mode quality
-6. **Enhance Daikon Integration**: Combine static + dynamic (2-3 weeks)
-
-**If Calligrapher lacks reverse mode:**
-4. **Research Loom Algorithms**: Study weakest precondition generation (1 week)
+**Phase C (Weeks 15-24): Reverse Mode - Loom-Inspired Approach** ← UNBLOCKED
+4. **Research Loom Algorithms**: Study weakest precondition generation (2 weeks)
 5. **POC: Static Assertion Extraction**: Implement for Python (3 weeks)
 6. **Multi-Language Extension**: Adapt to TypeScript, Rust, Go (1-2 weeks each)
 7. **Enhance Daikon Integration**: Combine static + dynamic (2-3 weeks)
+8. **Test on Real Codebases**: Validate reverse mode quality (2 weeks)
 
 ---
 
@@ -682,28 +696,33 @@ Complete IR (IntentClause + SigClause + AssertClause)
 
 **Phase 4 Key Findings**:
 
-1. **ChatLSP (Phase 2) addresses most needs**: Signatures and type extraction via language servers
-2. **Assertion extraction is the remaining gap**: Need static specification extraction
-3. **Calligrapher assessment is CRITICAL**: Could provide ready-made reverse mode capabilities
-4. **Loom provides reference architecture**: Weakest precondition generation approach
+1. **ChatLSP (Phase 2) addresses most needs**: Signatures and type extraction via language servers ✅
+2. **Assertion extraction is the remaining gap**: Need static specification extraction ✅
+3. **Calligrapher assessed and rejected**: Only ~15% overlap, fundamentally different purpose ✅
+4. **Loom provides reference architecture**: Weakest precondition generation approach ✅
 
-**Recommendations**:
+**Final Recommendations**:
 
-1. **IMMEDIATE**: Assess Calligrapher for reverse mode capabilities (Week 0)
-   - User's own project = easiest integration
-   - Could replace Loom-inspired approach entirely
-   - **BLOCKING** for reverse mode architecture decisions
+1. **~~IMMEDIATE~~**: ~~Assess Calligrapher~~ ✅ **COMPLETE**
+   - Assessment: `CALLIGRAPHER_ASSESSMENT.md`
+   - Decision: Do not integrate (minimal overlap, purpose mismatch)
+   - Loom-inspired approach is superior for lift-sys needs
 
-2. **Phase A (Weeks 1-10)**: Focus on forward mode (xgrammar + ChatLSP)
-   - Do NOT start reverse mode work until Calligrapher assessed
+2. **Phase A (Weeks 1-10)**: Focus on forward mode (xgrammar + ChatLSP) ← **CURRENT**
+   - Week 1-2: xgrammar IR generation (IN PROGRESS)
+   - Week 3-10: Complete forward mode integration
 
-3. **Phase B (Week 11+)**: Reverse mode implementation
-   - **If Calligrapher suitable**: Integrate (4-6 weeks)
-   - **If Calligrapher not suitable**: Build Loom-inspired (6-10 weeks)
+3. **Phase C (Weeks 15-24)**: Reverse mode with Loom-inspired algorithms ✅ **UNBLOCKED**
+   - Research Loom weakest precondition generation (2 weeks)
+   - Implement for Python (3 weeks)
+   - Extend to TypeScript, Rust, Go (4-6 weeks)
+   - Integrate with Daikon for comprehensive assertions (2-3 weeks)
 
-**Critical Path**:
-- Calligrapher assessment must happen **before** committing to Loom-inspired implementation
-- This could save 2-4 weeks and provide better integration
+**Critical Path Updated**:
+- ✅ Calligrapher assessment complete
+- ✅ Decision made: Proceed with Loom-inspired implementation
+- ✅ No blockers for reverse mode architecture
+- Focus on Phase A (forward mode) first, then Phase C (reverse mode)
 
 ---
 
@@ -712,5 +731,10 @@ Complete IR (IntentClause + SigClause + AssertClause)
 - stack-graphs: https://github.com/github/stack-graphs (archived)
 - Nuanced: https://github.com/nuanced-dev/nuanced
 - Loom: https://github.com/verse-lab/loom
+- Calligrapher: https://github.com/rand/calligrapher (assessed - do not integrate, see CALLIGRAPHER_ASSESSMENT.md)
 - Daikon: http://plse.cs.washington.edu/daikon/
 - ChatLSP Paper: https://arxiv.org/abs/2409.00921
+
+## Related Documents
+
+- **CALLIGRAPHER_ASSESSMENT.md**: Comprehensive assessment of Calligrapher for lift-sys integration (conclusion: do not integrate)

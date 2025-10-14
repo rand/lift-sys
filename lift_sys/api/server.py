@@ -55,6 +55,7 @@ from .routes import generate as generate_routes
 from .routes import health as health_routes
 from .routes import providers as provider_routes
 from .schemas import (
+    AnalysisResponse,
     AssistResponse,
     AssistsResponse,
     ConfigRequest,
@@ -76,6 +77,7 @@ from .schemas import (
     RollbackRequest,
     SessionListResponse,
     SessionResponse,
+    SuggestionResponse,
     VersionComparisonResponse,
     VersionHistoryResponse,
     VersionInfoResponse,
@@ -1489,6 +1491,75 @@ def _analyze_provenance(ir: IntermediateRepresentation) -> dict[str, int]:
             counts[source] = counts.get(source, 0) + 1
 
     return counts
+
+
+@app.post("/api/spec-sessions/{session_id}/analyze", response_model=AnalysisResponse)
+async def analyze_session_ir(
+    session_id: str,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> AnalysisResponse:
+    """
+    Analyze a session's IR and provide improvement suggestions.
+
+    Performs proactive analysis using the AgentAdvisor to detect anti-patterns,
+    missing documentation, security concerns, and other quality issues.
+
+    Args:
+        session_id: The session ID to analyze
+        user: Authenticated user
+
+    Returns:
+        Analysis report with suggestions and quality score
+
+    Raises:
+        HTTPException: If session not found or has no IR
+    """
+    LOGGER.info("%s analyzing IR for session %s", user.id, session_id)
+
+    if not STATE.session_manager:
+        raise HTTPException(status_code=404, detail="Session manager not initialized")
+
+    session = STATE.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    if not session.current_draft or not session.current_draft.ir:
+        raise HTTPException(status_code=400, detail="Session has no IR available for analysis")
+
+    try:
+        from ..analysis import AgentAdvisor
+
+        advisor = AgentAdvisor()
+        report = advisor.analyze(session.current_draft.ir)
+
+        # Convert suggestions to response format
+        suggestions = [
+            SuggestionResponse(
+                category=s.category.value,
+                severity=s.severity.value,
+                title=s.title,
+                description=s.description,
+                location=s.location,
+                current_value=s.current_value,
+                suggested_value=s.suggested_value,
+                rationale=s.rationale,
+                examples=s.examples,
+                references=s.references,
+            )
+            for s in report.suggestions
+        ]
+
+        return AnalysisResponse(
+            session_id=session_id,
+            ir_summary=report.ir_summary,
+            suggestions=suggestions,
+            summary_stats=report.summary_stats,
+            overall_quality_score=report.overall_quality_score,
+        )
+
+    except Exception as e:
+        LOGGER.error("Analysis failed for session %s: %s", session_id, str(e))
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
 async def websocket_emitter() -> AsyncIterator[str]:

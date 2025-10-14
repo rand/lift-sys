@@ -280,6 +280,33 @@ class RollbackRequest(BaseModel):
     )
 
 
+class SuggestionResponse(BaseModel):
+    """A single improvement suggestion."""
+
+    category: str
+    severity: str
+    title: str
+    description: str
+    location: str
+    current_value: str | None = None
+    suggested_value: str | None = None
+    rationale: str | None = None
+    examples: list[str] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
+
+
+class AnalysisResponse(BaseModel):
+    """Complete IR analysis response."""
+
+    session_id: str
+    ir_summary: dict
+    suggestions: list[SuggestionResponse]
+    summary_stats: dict
+    overall_quality_score: float = Field(
+        description="Quality score from 0.0 to 1.0, where 1.0 is perfect"
+    )
+
+
 __all__ = [
     "UserIdentity",
     "SessionInfo",
@@ -309,4 +336,6 @@ __all__ = [
     "VersionHistoryResponse",
     "VersionComparisonResponse",
     "RollbackRequest",
+    "SuggestionResponse",
+    "AnalysisResponse",
 ]

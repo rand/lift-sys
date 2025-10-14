@@ -27,6 +27,7 @@ import {
 } from "../lib/sessionApi";
 import type { PromptSession, AssistSuggestion } from "../types/sessions";
 import { VersionHistory } from "@/components/VersionHistory";
+import { IRAnalysis } from "@/components/IRAnalysis";
 
 export function PromptWorkbenchView() {
   const [prompt, setPrompt] = useState("");
@@ -350,6 +351,9 @@ export function PromptWorkbenchView() {
                 sessionId={activeSession.session_id}
                 onVersionChange={() => void refreshActiveSession()}
               />
+
+              {/* IR Analysis */}
+              <IRAnalysis sessionId={activeSession.session_id} />
 
               {/* Ambiguities & Resolution */}
               {activeSession.ambiguities.length > 0 && (

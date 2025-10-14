@@ -18,6 +18,7 @@ from multilspy.multilspy_config import MultilspyConfig
 from multilspy.multilspy_logger import MultilspyLogger
 
 from .lsp_cache import LSPCache
+from .lsp_metrics import LSPMetricsCollector
 from .semantic_context import (
     ImportPattern,
     SemanticContext,
@@ -55,6 +56,12 @@ class LSPConfig:
     cache_enabled: bool = True
     """Whether to enable LSP response caching."""
 
+    metrics_enabled: bool = True
+    """Whether to collect LSP metrics."""
+
+    metrics_log_interval: float = 60.0
+    """Interval in seconds to log metrics (default 60s)."""
+
 
 class LSPSemanticContextProvider:
     """Provides semantic context using LSP servers.
@@ -75,6 +82,7 @@ class LSPSemanticContextProvider:
         self._lsp_cache = (
             LSPCache(ttl=config.cache_ttl, max_size=1000) if config.cache_enabled else None
         )
+        self._metrics = LSPMetricsCollector() if config.metrics_enabled else None
         self._knowledge_base_fallback = SemanticContextProvider(language=config.language)
         self._started = False
 
@@ -224,17 +232,38 @@ class LSPSemanticContextProvider:
         Returns:
             List of document symbols (may be empty)
         """
+        import time
+
+        start_time = time.time()
+        cached = False
+        success = True
+        error_type = None
+        symbols_count = 0
+
         if not self._lsp or not self._started:
             return []
 
-        # Check cache first
-        if self._lsp_cache:
-            cached_symbols = await self._lsp_cache.get(file_path, "document_symbols")
-            if cached_symbols is not None:
-                logger.debug(f"Cache hit for {file_path.name}")
-                return cached_symbols
-
         try:
+            # Check cache first
+            if self._lsp_cache:
+                cached_symbols = await self._lsp_cache.get(file_path, "document_symbols")
+                if cached_symbols is not None:
+                    logger.debug(f"Cache hit for {file_path.name}")
+                    cached = True
+                    symbols_count = len(cached_symbols) if cached_symbols else 0
+
+                    # Record metrics
+                    if self._metrics:
+                        latency = time.time() - start_time
+                        self._metrics.record_query(
+                            success=True,
+                            cached=True,
+                            latency=latency,
+                            symbols_count=symbols_count,
+                        )
+
+                    return cached_symbols
+
             # Get relative path from repository root
             relative_path = str(file_path.relative_to(self.config.repository_path))
 
@@ -243,15 +272,42 @@ class LSPSemanticContextProvider:
                 # Request document symbols
                 symbols = await self._lsp.request_document_symbols(relative_path)
                 result = symbols if symbols else []
+                symbols_count = len(result) if result else 0
 
                 # Store in cache
                 if self._lsp_cache and result:
                     await self._lsp_cache.put(file_path, "document_symbols", result)
 
                 return result
+
         except Exception as e:
             logger.debug(f"Error getting document symbols: {e}")
+            success = False
+            error_type = type(e).__name__
             return []
+
+        finally:
+            # Record metrics (only if not already recorded for cache hit)
+            if self._metrics and not cached:
+                latency = time.time() - start_time
+                self._metrics.record_query(
+                    success=success,
+                    cached=False,
+                    latency=latency,
+                    symbols_count=symbols_count,
+                    error_type=error_type,
+                )
+
+                # Log metrics periodically
+                if self._metrics.should_log_metrics(self.config.metrics_log_interval):
+                    metrics = self._metrics.get_metrics()
+                    logger.info(
+                        f"LSP Metrics: {metrics.queries_total} queries, "
+                        f"{metrics.query_success_rate:.1f}% success, "
+                        f"{metrics.cache_hit_rate:.1f}% cache hit, "
+                        f"{metrics.avg_latency_ms:.1f}ms avg latency"
+                    )
+                    self._metrics.mark_logged()
 
     async def _get_symbols_from_files(
         self, file_paths: list[Path]
@@ -590,6 +646,21 @@ class LSPSemanticContextProvider:
                 "imports": "Group imports: standard library, third-party, local",
             }
         return {}
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Get LSP performance metrics.
+
+        Returns:
+            Metrics dictionary with query counts, latency, cache stats, etc.
+        """
+        if self._metrics:
+            metrics = self._metrics.get_metrics()
+            result = metrics.to_dict()
+            # Add cache stats if available
+            if self._lsp_cache:
+                result["cache"] = self._lsp_cache.stats()
+            return result
+        return {"enabled": False}
 
     def cache_stats(self) -> dict[str, Any]:
         """Get cache statistics.

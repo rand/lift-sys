@@ -57,6 +57,7 @@ class XGrammarCodeGenerator:
         max_retries: int = 3,
         use_multishot: bool = False,
         test_cases: list | None = None,
+        temperature: float = 0.3,
     ) -> GeneratedCode:
         """
         Generate complete code from IR with actual implementation.
@@ -71,6 +72,7 @@ class XGrammarCodeGenerator:
             max_retries: Number of retries if generation fails (rarely needed with XGrammar)
             use_multishot: If True, use Phase 3 multishot generation with test validation
             test_cases: Test cases for multishot validation [(inputs, expected), ...]
+            temperature: Sampling temperature for generation (0.0 = deterministic, higher = more creative)
 
         Returns:
             GeneratedCode with complete implementation
@@ -81,10 +83,20 @@ class XGrammarCodeGenerator:
         # Clear any unresolved holes (e.g., from IR deserialization)
         holes = ir.typed_holes()
         if holes:
-            # Clear hole lists (similar to performance_benchmark.py:214-227)
-            ir.holes.clear()
-            ir.untyped_holes.clear()
-            ir.effects_holes.clear()
+            # Clear hole lists from all locations (matching performance_benchmark.py:214-227)
+            ir.intent.holes = []
+            ir.signature.holes = []
+            for effect in ir.effects:
+                effect.holes = []
+            for assertion in ir.assertions:
+                assertion.holes = []
+
+            # Filter out TypedHole instances from parameters
+            from lift_sys.ir.models import TypedHole
+
+            ir.signature.parameters = [
+                p for p in ir.signature.parameters if not isinstance(p, TypedHole)
+            ]
 
             # Validate all holes were cleared
             remaining_holes = ir.typed_holes()
@@ -120,7 +132,7 @@ class XGrammarCodeGenerator:
         # Generate implementation using constrained generation (XGrammar) or fallback
         for attempt in range(max_retries):
             try:
-                impl_json = await self._generate_implementation(ir, structure, attempt)
+                impl_json = await self._generate_implementation(ir, structure, attempt, temperature)
 
                 # Validate implementation JSON
                 self._validate_implementation(impl_json)
@@ -191,6 +203,7 @@ class XGrammarCodeGenerator:
         ir: IntermediateRepresentation,
         structure: dict[str, Any],
         attempt: int,
+        temperature: float = 0.3,
     ) -> dict[str, Any]:
         """
         Generate implementation JSON using constrained generation with XGrammar.
@@ -199,6 +212,7 @@ class XGrammarCodeGenerator:
             ir: IR to implement
             structure: Structural elements (signature, docstring, assertions)
             attempt: Current attempt number (for retry feedback)
+            temperature: Sampling temperature (0.0 = deterministic, higher = more creative)
 
         Returns:
             Implementation as JSON dictionary (guaranteed to match schema)
@@ -244,7 +258,7 @@ class XGrammarCodeGenerator:
                 prompt=prompt,
                 schema=CODE_GENERATION_SCHEMA,
                 max_tokens=2000,
-                temperature=0.3,  # Lower temperature for more deterministic code
+                temperature=temperature,
             )
             return impl_json
 

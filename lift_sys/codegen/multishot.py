@@ -58,11 +58,10 @@ class MultishotGenerator:
         # Generate multiple candidates with varying temperatures
         temperatures = self._generate_temperatures()
 
-        for _i, _temp in enumerate(temperatures):
+        for _i, temp in enumerate(temperatures):
             try:
-                # Generate with specific temperature (temperature variation not yet implemented)
-                # TODO: Pass temperature to generator when API supports it
-                code_result = await generator.generate(ir, max_retries=1)
+                # Generate with specific temperature for diversity
+                code_result = await generator.generate(ir, max_retries=1, temperature=temp)
 
                 # Test if test cases provided
                 if test_cases:

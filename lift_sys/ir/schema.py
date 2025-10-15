@@ -226,6 +226,33 @@ Important guidelines:
 - Extract any constraints or requirements as assertions
 - Be specific and complete
 
+**CRITICAL: Effects must be EXPLICIT about implementation details:**
+
+1. **Explicit Return Statements**:
+   - Effects MUST specify ALL return paths, including error/not-found cases
+   - Example: "After loop completes without finding value, explicitly return -1"
+   - Never allow implicit None returns - always specify the return value
+
+2. **Literal Values**:
+   - When user says "return exactly 'X'", effects must emphasize literal return
+   - Example: "In else clause, return the literal string 'other'" (not computed)
+   - Be explicit: "return 'other'" not "return type name"
+
+3. **Edge Cases**:
+   - Effects must handle empty inputs: "If list is empty, return [value]"
+   - Effects must handle all branches: "If condition, return X, else return Y"
+   - Be explicit about what happens at boundaries
+
+4. **Loop Patterns**:
+   - Specify exact iteration method: "Use enumerate(lst) starting from 0"
+   - Specify when to return: "Return immediately when condition met (inside loop)"
+   - Specify fallback: "After loop ends, if not found, return [value]"
+
+5. **Control Flow**:
+   - Be explicit about if/elif/else structure
+   - Specify exact order of checks
+   - Specify exact return values for each branch
+
 User's request:
 {user_prompt}
 

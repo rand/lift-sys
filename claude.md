@@ -131,7 +131,131 @@ Building [PROJECT]:
 Confirmed?
 ```
 
-## 7. UI Development
+## 7. Version Control & Git Workflow
+
+**Keep GitHub synchronized:** Push changes regularly to keep remote up to date
+
+### Branch Strategy
+
+**Use branches for all work:**
+- `main` - Production-ready code only
+- `feature/*` - New features (e.g., `feature/modal-inference`, `feature/ir-versioning`)
+- `fix/*` - Bug fixes (e.g., `fix/session-validation`)
+- `refactor/*` - Code improvements (e.g., `refactor/provider-interface`)
+- `docs/*` - Documentation updates (e.g., `docs/modal-guide`)
+
+**Branch workflow:**
+```bash
+# Start new feature
+git checkout -b feature/my-feature
+
+# Work and commit frequently
+git add . && git commit -m "Clear, descriptive message"
+
+# Push branch to remote
+git push -u origin feature/my-feature
+
+# Create PR when ready
+gh pr create --title "Add my feature" --body "Description..."
+
+# After PR approved and merged
+git checkout main && git pull
+git branch -d feature/my-feature
+```
+
+### Commit Hygiene
+
+**Good commits:**
+- Atomic: One logical change per commit
+- Descriptive: Clear what and why (not just what)
+- Tested: Code works before committing
+- Formatted: Pass pre-commit hooks (or use `--no-verify` with justification)
+
+**Commit message format:**
+```
+Brief summary (50 chars or less)
+
+Optional detailed explanation of what changed and why.
+Include motivation, implementation notes, and impact.
+
+- Bullet points for multiple changes
+- Reference issues/beads: Fixes lift-sys-42
+```
+
+### Pull Request Process
+
+**Before creating PR:**
+1. Ensure branch is up to date: `git pull origin main` (or rebase)
+2. All tests passing
+3. Documentation updated
+4. Beads updated with status
+5. Self-review the diff
+
+**PR Description:**
+```markdown
+## Summary
+Brief overview of changes
+
+## Changes
+- List of specific changes
+- Organized by category if needed
+
+## Testing
+- How changes were tested
+- Test results
+
+## Related
+- Beads: lift-sys-XX
+- Docs: Link to relevant documentation
+```
+
+**Reviewing PRs:**
+- Read entire diff carefully
+- Check for logic errors, edge cases, security issues
+- Verify tests cover new functionality
+- Ensure documentation is updated
+- Test locally if substantial changes
+- Ask questions if anything unclear
+- Approve only when confident
+
+**Merging PRs:**
+- Squash small PRs (< 5 commits of iteration)
+- Merge commit for feature branches (preserves history)
+- Never force-push to `main`
+- Delete branch after merge
+
+### Daily Workflow
+
+**Start of day:**
+```bash
+go install github.com/steveyegge/beads/cmd/bd@latest  # Update beads
+git checkout main && git pull origin main              # Sync with remote
+```
+
+**End of session:**
+```bash
+git status                                             # Check for uncommitted work
+git add -A && git commit -m "WIP: Description"        # Save progress if needed
+git push origin <branch-name>                          # Push to remote
+```
+
+**Keep main updated:**
+- Push to `main` directly only for: documentation fixes, minor typos, config updates
+- Use branches + PRs for: features, refactors, bug fixes, breaking changes
+- When in doubt, use a branch
+
+### Anti-Patterns
+
+❌ Force push to `main`
+❌ Commit directly to `main` for features
+❌ Large commits mixing multiple concerns
+❌ Vague commit messages ("fix stuff", "updates")
+❌ Merging PRs without review/testing
+❌ Leaving branches un-pushed (risk of data loss)
+❌ Forgetting to sync before starting work
+❌ Not deleting merged branches
+
+## 8. UI Development
 
 **Always follow this sequence:**
 
@@ -157,7 +281,7 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 **DO:** Change colors, text, spacing
 **DON'T:** Restructure, change composition, rewrite
 
-## 8. Anti-Patterns
+## 9. Anti-Patterns
 ❌ Assume tech stack
 ❌ Skip shadcn blocks exploration
 ❌ Restructure shadcn components
@@ -168,8 +292,11 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 ❌ Accept vague requirements without pushback
 ❌ Agree reflexively without critical analysis
 ❌ Leave cloud resources running when not in use (dev/test)
+❌ Commit directly to `main` for features (use branches)
+❌ Force push to `main` or shared branches
+❌ Merge PRs without careful review
 
-## 9. Quick Reference
+## 10. Quick Reference
 
 **Languages:** Python (uv), Zig, Rust (cargo), Go, C/C++ (CMake), TS (strict), Lean 4
 
@@ -177,6 +304,8 @@ Plan loading states (skeleton) and error states (alerts) from the start.
   - Modal details: `docs/MODAL_REFERENCE.md`
 
 **UI:** shadcn blocks → shadcn components → custom (permission only), theme colors from https://ui.shadcn.com/themes
+
+**Git:** Branches for features, PRs for review, keep `main` clean, sync daily
 
 **Workflow:** Requirements → Confirm → Map flows → shadcn blocks → Implement
 

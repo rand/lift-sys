@@ -1,0 +1,45 @@
+{
+  "summary": {
+    "total_runs": 1,
+    "successful_runs": 0,
+    "failed_runs": 1,
+    "nlp_to_ir_mean": 0,
+    "nlp_to_ir_median": 0,
+    "nlp_to_ir_std": 0,
+    "ir_to_code_mean": 0,
+    "ir_to_code_median": 0,
+    "ir_to_code_std": 0,
+    "e2e_mean": 0,
+    "e2e_median": 0,
+    "e2e_std": 0,
+    "total_cost_usd": 0.00010000254165691635,
+    "cost_per_request_mean": 0.00010000254165691635,
+    "memory_mean": 0.00130462646484375,
+    "memory_peak": 0.00130462646484375
+  },
+  "results": [
+    {
+      "test_name": "factorial",
+      "prompt": "Create a function to calculate the factorial of a number",
+      "timestamp": "2025-10-15T08:46:54.525973",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.015249941498041153,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.015249941498041153,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.00010000254165691635,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    }
+  ]
+}

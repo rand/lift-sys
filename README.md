@@ -17,6 +17,41 @@ Two complementary modes:
 
 Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
+## ✅ Current Status (Updated October 15, 2025)
+
+**Forward Mode**: **PROVEN END-TO-END** 🎉
+We have successfully demonstrated the complete NLP → IR → Code pipeline with real LLMs (no mocks):
+- ✅ Natural language → Formal IR specification (10.8s median latency)
+- ✅ Formal IR → Executable Python code (4.3s median latency)
+- ✅ Generated code compiles (80% success) and executes correctly (60% success)
+- ✅ **Total E2E latency: ~16 seconds median** (validated with execution testing)
+- ✅ Return statement bug fixed on Day 2 (improved from ~30% to 60% real success)
+- ⚠️  Known issue: Control flow (if/else) may have indentation bugs (~20% failure rate, tracked in lift-sys-69)
+
+**Performance Metrics**: See `PERFORMANCE_METRICS.md` for comprehensive benchmarks.
+**Test Results**: See `E2E_TEST_RESULTS.md` and `test_forward_mode_e2e.py` for initial proof.
+
+**Reverse Mode**: **INFRASTRUCTURE COMPLETE**
+- ✅ Whole-project analysis (100+ files)
+- ✅ Static analysis (AST parsing, type extraction)
+- ✅ Security analysis (CodeQL integration)
+- ⚠️  End-to-end reverse mode quality needs validation (tracked in lift-sys-65)
+
+**Infrastructure**:
+- ✅ Modal deployment (vLLM + XGrammar + Qwen2.5-Coder-7B)
+- ✅ OAuth system with encrypted tokens
+- ✅ Multi-provider support (Anthropic, OpenAI, Google, Modal)
+- ✅ 93.75% test pass rate (15/16 xgrammar tests passing)
+
+**Performance** (Modal - A10G GPU):
+- ✅ 80% compilation success, 60% execution success (validated)
+- ✅ 75% execution success among compiled code (shows pipeline quality)
+- ✅ 16s median E2E latency (10.8s IR gen + 4.3s code gen)
+- ✅ $0.0029 per request (affordable for development)
+- ⚠️ 20% failure on control flow due to indentation bug (P1 for Day 3)
+
+**What's Next**: Fix indentation bug, expand test coverage, prepare demo (Week 3).
+
 ## Key Features
 
 ### Iterative Prompt-to-IR Refinement

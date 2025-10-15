@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-10-15T09:26:51.760446",
+  "summary": {
+    "total_tests": 5,
+    "compilation_success": 4,
+    "compilation_rate": 0.8,
+    "execution_success": 3,
+    "execution_rate": 0.6,
+    "both_success": 3,
+    "both_rate": 0.6
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "add_two_numbers_test_1",
+          "passed": true,
+          "expected": "5",
+          "actual": "5",
+          "error": null
+        },
+        {
+          "test_name": "add_two_numbers_test_2",
+          "passed": true,
+          "expected": "30",
+          "actual": "30",
+          "error": null
+        },
+        {
+          "test_name": "add_two_numbers_test_3",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 16086.879667825997,
+      "estimated_cost_usd": 0.0027811466113043326
+    },
+    {
+      "test_name": "multiply",
+      "prompt": "Create a function that multiplies two numbers",
+      "compilation_success": true,
+      "execution_success": false,
+      "execution_tests": [
+        {
+          "test_name": "multiply_missing",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Function 'multiply' not found in generated code"
+        }
+      ],
+      "total_latency_ms": 16002.549583092332,
+      "estimated_cost_usd": 0.002767091597182055
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "get_string_length_test_1",
+          "passed": true,
+          "expected": "5",
+          "actual": "5",
+          "error": null
+        },
+        {
+          "test_name": "get_string_length_test_2",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 15142.56991702132,
+      "estimated_cost_usd": 0.002623761652836886
+    },
+    {
+      "test_name": "max_of_two",
+      "prompt": "Create a function that returns the maximum of two numbers",
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_tests": [],
+      "total_latency_ms": 29365.44729117304,
+      "estimated_cost_usd": 0.004994241215195507
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "is_even_test_1",
+          "passed": true,
+          "expected": "True",
+          "actual": "True",
+          "error": null
+        },
+        {
+          "test_name": "is_even_test_2",
+          "passed": true,
+          "expected": "False",
+          "actual": "False",
+          "error": null
+        },
+        {
+          "test_name": "is_even_test_3",
+          "passed": true,
+          "expected": "True",
+          "actual": "True",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 17876.27191701904,
+      "estimated_cost_usd": 0.0030793786528365064
+    }
+  ]
+}

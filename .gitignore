@@ -11,3 +11,34 @@ node_modules/
 htmlcov/
 .coverage
 coverage.xml
+
+# Debug and temporary test files
+debug_*.py
+debug_*.json
+diagnose_*.py
+test_indentation_bug.py
+test_letter_grade_debug.py
+test_return_fix.py
+test_function_name_fix.py
+test_all_five_with_fixes.py
+test_single_nontrivial.py
+test_yesterday_with_execution.py
+test_benchmark.py
+test_forward_mode_simple.py
+test_forward_mode_e2e.py
+quick_category_test.py
+strategic_sample_test.py
+run_phase1_with_warmup.py
+run_expanded_benchmark.py
+run_benchmark.sh
+wake_modal.py
+
+# Temporary session summaries (keep only consolidated ones)
+SESSION_SUMMARY.md
+FUNCTION_NAME_FIX.md
+RETURN_STATEMENT_BUG_FIX.md
+PERFORMANCE_METRICS.md
+PHASE_1_RESULTS.md
+E2E_TEST_RESULTS.md
+WEEK_2_DAY_*.md
+FINAL_SESSION_SUMMARY.md

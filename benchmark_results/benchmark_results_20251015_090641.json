@@ -1,0 +1,453 @@
+{
+  "summary": {
+    "total_runs": 3,
+    "successful_runs": 3,
+    "failed_runs": 0,
+    "nlp_to_ir_mean": 10556.803860934451,
+    "nlp_to_ir_median": 10313.193083973601,
+    "nlp_to_ir_std": 729.3402225159813,
+    "ir_to_code_mean": 5057.661667000502,
+    "ir_to_code_median": 4193.8329169061035,
+    "ir_to_code_std": 1507.8722144467815,
+    "e2e_mean": 15614.465527934954,
+    "e2e_median": 15557.136249961331,
+    "e2e_std": 1137.1884895138785,
+    "total_cost_usd": 0.008107232763967477,
+    "cost_per_request_mean": 0.002702410921322492,
+    "memory_mean": 0.7264601389567057,
+    "memory_peak": 1.0878381729125977
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "timestamp": "2025-10-15T09:05:54.229248",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 11376.769332913682,
+        "memory_mb": 0.8112859725952148,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that adds two numbers",
+              "rationale": "This function will take two integers as input and return their sum.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "add_two_numbers",
+              "parameters": [
+                {
+                  "name": "num1",
+                  "type_hint": "int",
+                  "description": "The first number to be added.",
+                  "provenance": null
+                },
+                {
+                  "name": "num2",
+                  "type_hint": "int",
+                  "description": "The second number to be added.",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": "python",
+              "origin": "user",
+              "evidence": [
+                {
+                  "type": "requirement",
+                  "text": "Follow the JSON schema exactly"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Include all required fields"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Function names should be snake_case"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Be specific and complete"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4180.36691704765,
+        "memory_mb": 0.2765522003173828,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def add_two_numbers(num1: int, num2: int) -> int:\n    \"\"\"Create a function that adds two numbers.\n    \n    This function will take two integers as input and return their sum.\n    \n    Args:\n        num1: The first number to be added.\n        num2: The second number to be added.\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The function takes two integers as input and returns their sum.\n\n    # Return the sum of num1 and num2\n    num1 + num2",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": "user",
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 15557.136249961331,
+      "total_memory_mb": 1.0878381729125977,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0026928560416602217,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that adds two numbers",
+          "rationale": "This function will take two integers as input and return their sum.",
+          "holes": []
+        },
+        "signature": {
+          "name": "add_two_numbers",
+          "parameters": [
+            {
+              "name": "num1",
+              "type_hint": "int",
+              "description": "The first number to be added."
+            },
+            {
+              "name": "num2",
+              "type_hint": "int",
+              "description": "The second number to be added."
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": "python",
+          "origin": "user",
+          "evidence": [
+            {
+              "type": "requirement",
+              "text": "Follow the JSON schema exactly"
+            },
+            {
+              "type": "requirement",
+              "text": "Include all required fields"
+            },
+            {
+              "type": "requirement",
+              "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+            },
+            {
+              "type": "requirement",
+              "text": "Function names should be snake_case"
+            },
+            {
+              "type": "requirement",
+              "text": "Be specific and complete"
+            }
+          ]
+        }
+      },
+      "code_output": "<5 chars>"
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "timestamp": "2025-10-15T09:06:09.788064",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 10313.193083973601,
+        "memory_mb": 0.2707977294921875,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns the length of a string",
+              "rationale": "The function will take a string as input and return an integer representing the length of the string.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "get_string_length",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": "The string for which the length is to be calculated.",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": "python",
+              "origin": "user",
+              "evidence": [
+                {
+                  "type": "requirement",
+                  "text": "Follow the JSON schema exactly"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Include all required fields"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Function names should be snake_case"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Be specific and complete"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4193.8329169061035,
+        "memory_mb": 0.27594470977783203,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def get_string_length(input_string: str) -> int:\n    \"\"\"Create a function that returns the length of a string.\n    \n    The function will take a string as input and return an integer representing the length of the string.\n    \n    Args:\n        input_string: The string for which the length is to be calculated.\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: Return the length of the input string using the built-in len() function\n\n    # Return the length of the input string\n    len(input_string)",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": "user",
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 14507.026000879705,
+      "total_memory_mb": 0.5467424392700195,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002517837666813284,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns the length of a string",
+          "rationale": "The function will take a string as input and return an integer representing the length of the string.",
+          "holes": []
+        },
+        "signature": {
+          "name": "get_string_length",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": "The string for which the length is to be calculated."
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": "python",
+          "origin": "user",
+          "evidence": [
+            {
+              "type": "requirement",
+              "text": "Follow the JSON schema exactly"
+            },
+            {
+              "type": "requirement",
+              "text": "Include all required fields"
+            },
+            {
+              "type": "requirement",
+              "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+            },
+            {
+              "type": "requirement",
+              "text": "Function names should be snake_case"
+            },
+            {
+              "type": "requirement",
+              "text": "Be specific and complete"
+            }
+          ]
+        }
+      },
+      "code_output": "<5 chars>"
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "timestamp": "2025-10-15T09:06:24.295640",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9980.44916591607,
+        "memory_mb": 0.2704658508300781,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that checks if a number is even",
+              "rationale": "This function will be useful for determining the parity of numbers in various applications.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "is_even",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": "The number to check for evenness.",
+                  "provenance": null
+                }
+              ],
+              "returns": "bool",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": "python",
+              "origin": "user",
+              "evidence": [
+                {
+                  "type": "requirement",
+                  "text": "Follow the JSON schema exactly"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Include all required fields"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Function names should be snake_case"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Be specific and complete"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 6798.785167047754,
+        "memory_mb": 0.2743339538574219,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def is_even(number: int) -> bool:\n    \"\"\"Create a function that checks if a number is even.\n    \n    This function will be useful for determining the parity of numbers in various applications.\n    \n    Args:\n        number: The number to check for evenness.\n    \n    Returns:\n        bool\n    \"\"\"\n    # Algorithm: The function checks if a number is even by using the modulo operator. If the remainder of the number divided by 2 is 0, the number is even, and the function returns True. Otherwise, it returns False.\n\n    # Check if the number is even by using the modulo operator\n    result = number % 2 == 0\n    # Return the result of the even check\n    return result",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": "user",
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 16779.234332963824,
+      "total_memory_mb": 0.5447998046875,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0028965390554939706,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that checks if a number is even",
+          "rationale": "This function will be useful for determining the parity of numbers in various applications.",
+          "holes": []
+        },
+        "signature": {
+          "name": "is_even",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": "The number to check for evenness."
+            }
+          ],
+          "returns": "bool",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": "python",
+          "origin": "user",
+          "evidence": [
+            {
+              "type": "requirement",
+              "text": "Follow the JSON schema exactly"
+            },
+            {
+              "type": "requirement",
+              "text": "Include all required fields"
+            },
+            {
+              "type": "requirement",
+              "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+            },
+            {
+              "type": "requirement",
+              "text": "Function names should be snake_case"
+            },
+            {
+              "type": "requirement",
+              "text": "Be specific and complete"
+            }
+          ]
+        }
+      },
+      "code_output": "<5 chars>"
+    }
+  ]
+}

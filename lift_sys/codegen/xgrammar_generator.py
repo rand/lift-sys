@@ -150,11 +150,16 @@ class XGrammarCodeGenerator:
                 constraint_text += f" ({assertion.rationale})"
             constraints.append(constraint_text)
 
-        # Get generation prompt
+        # Extract effects as ordered implementation steps
+        # Effects describe the operational semantics - the "how" not just the "what"
+        effects = [effect.description for effect in ir.effects]
+
+        # Get generation prompt with effects to constrain the implementation
         prompt = get_prompt_for_code_generation(
             ir_summary=ir.intent.summary,
             signature=structure["signature"],
             constraints=constraints,
+            effects=effects if effects else None,
         )
 
         # Add attempt-specific feedback

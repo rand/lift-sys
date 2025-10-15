@@ -155,7 +155,9 @@ def get_code_generation_schema() -> dict[str, Any]:
     return CODE_GENERATION_SCHEMA
 
 
-def get_prompt_for_code_generation(ir_summary: str, signature: str, constraints: list[str]) -> str:
+def get_prompt_for_code_generation(
+    ir_summary: str, signature: str, constraints: list[str], effects: list[str] | None = None
+) -> str:
     """
     Generate a system prompt for code generation from IR.
 
@@ -163,11 +165,26 @@ def get_prompt_for_code_generation(ir_summary: str, signature: str, constraints:
         ir_summary: Summary of what the function should do
         signature: Function signature
         constraints: List of constraints (assertions, preconditions)
+        effects: Ordered list of operational steps/effects the function should perform
 
     Returns:
         Formatted prompt for LLM code generation
     """
     constraints_text = "\n".join(f"  - {c}" for c in constraints) if constraints else "  - None"
+
+    # Include effects as implementation steps if provided
+    effects_section = ""
+    if effects:
+        effects_text = "\n".join(f"  {i + 1}. {effect}" for i, effect in enumerate(effects))
+        effects_section = f"""
+Implementation Steps (MUST FOLLOW IN ORDER):
+---------------------------------------------
+{effects_text}
+
+IMPORTANT: Your implementation MUST follow these steps in the exact order specified.
+Each step corresponds to an operation the function should perform. Do not skip steps
+or reorder them. The effects describe the operational semantics that must be preserved.
+"""
 
     return f"""You are an expert Python programmer. Generate a complete, correct implementation for the following function.
 
@@ -179,16 +196,17 @@ Signature: {signature}
 
 Constraints:
 {constraints_text}
-
+{effects_section}
 Requirements:
 -------------
 1. Generate ONLY the function body (not the signature or docstring)
 2. The implementation must be complete and correct
 3. Honor all constraints and assertions
-4. Use clear, idiomatic Python code
-5. Include appropriate error handling
-6. Use efficient algorithms where possible
-7. Add inline comments for complex logic
+4. STRICTLY follow the implementation steps if provided (they are NOT optional)
+5. Use clear, idiomatic Python code
+6. Include appropriate error handling
+7. Use efficient algorithms where possible
+8. Add inline comments for complex logic
 
 Output Format:
 --------------

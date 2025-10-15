@@ -78,6 +78,21 @@ class XGrammarCodeGenerator:
         Raises:
             ValueError: If generation fails after max_retries
         """
+        # Clear any unresolved holes (e.g., from IR deserialization)
+        holes = ir.typed_holes()
+        if holes:
+            # Clear hole lists (similar to performance_benchmark.py:214-227)
+            ir.holes.clear()
+            ir.untyped_holes.clear()
+            ir.effects_holes.clear()
+
+            # Validate all holes were cleared
+            remaining_holes = ir.typed_holes()
+            if remaining_holes:
+                raise ValueError(
+                    f"IR contains unresolved holes that could not be cleared: {', '.join(h.identifier for h in remaining_holes)}"
+                )
+
         # Phase 3: Multi-shot generation with empirical testing
         if use_multishot and test_cases:
             candidate = await self.multishot.generate_and_test(self, ir, test_cases)

@@ -8,7 +8,7 @@ from typing import Any
 
 from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
-from .code_schema import get_prompt_for_code_generation
+from .code_schema import CODE_GENERATION_SCHEMA, get_prompt_for_code_generation
 from .generator import CodeGenerator, CodeGeneratorConfig, GeneratedCode
 
 
@@ -45,9 +45,14 @@ class XGrammarCodeGenerator:
         """
         Generate complete code from IR with actual implementation.
 
+        Uses constrained generation with XGrammar when available (Modal provider) for:
+        - Guaranteed schema-valid output (no JSON parsing failures)
+        - Speculative parallel decoding (faster generation)
+        - Higher quality, more consistent code generation
+
         Args:
             ir: Intermediate representation to translate
-            max_retries: Number of retries if generation fails
+            max_retries: Number of retries if generation fails (rarely needed with XGrammar)
 
         Returns:
             GeneratedCode with complete implementation
@@ -61,7 +66,7 @@ class XGrammarCodeGenerator:
         # Extract structural elements (signature, docstring, assertions)
         structure = self._parse_structural_code(structural_code.source_code)
 
-        # Generate implementation using xgrammar
+        # Generate implementation using constrained generation (XGrammar) or fallback
         for attempt in range(max_retries):
             try:
                 impl_json = await self._generate_implementation(ir, structure, attempt)
@@ -81,13 +86,22 @@ class XGrammarCodeGenerator:
                     # Retry with error feedback
                     continue
 
+                # Determine which generator was used
+                used_constrained = (
+                    hasattr(self.provider, "generate_structured")
+                    and self.provider.capabilities.structured_output
+                )
+
                 return GeneratedCode(
                     source_code=complete_code,
                     language="python",
                     metadata={
                         "ir_origin": ir.metadata.origin,
-                        "generator": "xgrammar",
+                        "generator": "xgrammar_constrained"
+                        if used_constrained
+                        else "xgrammar_text",
                         "attempts": attempt + 1,
+                        "constrained_generation": used_constrained,
                     },
                     warnings=structural_code.warnings,
                 )
@@ -109,7 +123,7 @@ class XGrammarCodeGenerator:
         attempt: int,
     ) -> dict[str, Any]:
         """
-        Generate implementation JSON using LLM.
+        Generate implementation JSON using constrained generation with XGrammar.
 
         Args:
             ir: IR to implement
@@ -117,7 +131,7 @@ class XGrammarCodeGenerator:
             attempt: Current attempt number (for retry feedback)
 
         Returns:
-            Implementation as JSON dictionary
+            Implementation as JSON dictionary (guaranteed to match schema)
         """
         # Build constraints from assertions
         constraints = []
@@ -136,13 +150,29 @@ class XGrammarCodeGenerator:
 
         # Add attempt-specific feedback
         if attempt > 0:
-            prompt += f"\n\nPrevious attempt {attempt} failed. Please ensure valid JSON output with all required fields."
+            prompt += (
+                f"\n\nPrevious attempt {attempt} failed. Please ensure correct implementation."
+            )
 
-        # Generate using LLM
+        # Check if provider supports constrained generation (Modal with XGrammar)
+        if (
+            hasattr(self.provider, "generate_structured")
+            and self.provider.capabilities.structured_output
+        ):
+            # Use constrained generation - guaranteed to match schema
+            impl_json = await self.provider.generate_structured(
+                prompt=prompt,
+                schema=CODE_GENERATION_SCHEMA,
+                max_tokens=2000,
+                temperature=0.3,  # Lower temperature for more deterministic code
+            )
+            return impl_json
+
+        # Fallback to text generation for providers without structured output
         response = await self.provider.generate_text(
             prompt=prompt,
             max_tokens=2000,
-            temperature=0.3,  # Lower temperature for more deterministic code
+            temperature=0.3,
         )
 
         # Extract JSON from response

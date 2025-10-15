@@ -2,8 +2,28 @@
 
 **Design Document for lift-sys-24**
 **Created**: October 13, 2025
-**Status**: Partially Implemented (Week 3-4 complete)
+**Updated**: October 14, 2025
+**Status**: Partially Implemented (Week 3-4 complete, Constrained Generation Added)
 **Owner**: Code Generation Team
+
+---
+
+## 🚨 CRITICAL REQUIREMENT: Constrained Generation for IR → Code
+
+**IR → Code generation MUST use constrained generation with XGrammar**, just like Prompt → IR:
+
+- **Schema**: `CODE_GENERATION_SCHEMA` enforces valid implementation structure
+- **Benefit 1**: Speculative parallel decoding (vLLM optimization when using XGrammar)
+- **Benefit 2**: Guaranteed schema-valid output (no JSON parsing failures)
+- **Benefit 3**: Higher quality, more consistent code generation
+- **Implementation**: `XGrammarCodeGenerator.generate()` now checks `provider.capabilities.structured_output` and uses `generate_structured()` when available
+
+**Files Updated** (October 14, 2025):
+- `lift_sys/codegen/xgrammar_generator.py` - Added constrained generation path
+- `lift_sys/providers/modal_provider.py` - Implemented abstract methods for structured output
+- `lift_sys/inference/modal_app.py` - Updated to support both IR and Code schemas
+
+**Next Step**: Deploy updated Modal app to enable end-to-end constrained generation for both Prompt → IR and IR → Code.
 
 ---
 

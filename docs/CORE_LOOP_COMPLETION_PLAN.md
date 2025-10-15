@@ -45,16 +45,27 @@ def _provider_stream(self, payload: dict[str, object]) -> Iterator[str]:
 ---
 
 #### Forward Mode - Code Generation
-**File**: `lift_sys/codegen/generator.py`
+**File**: `lift_sys/codegen/generator.py`, `lift_sys/codegen/xgrammar_generator.py`
 
-**Status**: Generates non-functional stubs only
+**Status**: Partially implemented with constrained generation support
 ```python
-# Line 349: Implementation is literally:
-lines.append(f'{indent}raise NotImplementedError("TODO: Implement {ir.signature.name}")')
+# XGrammarCodeGenerator now supports constrained generation:
+# - Uses CODE_GENERATION_SCHEMA for schema enforcement
+# - Enables speculative parallel decoding (vLLM + XGrammar optimization)
+# - Guarantees schema-valid output, no JSON parsing failures
 ```
 
-**What works**: Docstring generation, assertion injection (as comments), type hints
-**What doesn't work**: No actual function bodies, code doesn't run
+**What works**:
+- Docstring generation, assertion injection, type hints
+- XGrammarCodeGenerator with constrained generation path
+- Modal endpoint configured for dual schema support (IR + Code)
+
+**What doesn't work**:
+- Modal app not yet deployed with updated schema support
+- End-to-end testing with real LLM not verified
+- Fallback text generation path still uses retries
+
+**CRITICAL REQUIREMENT**: IR → Code generation MUST use constrained generation with CODE_GENERATION_SCHEMA to enable speculative parallel decoding
 
 ---
 

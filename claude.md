@@ -5,6 +5,11 @@
 
 Use for all agentic work and sub-agents. Break tasks into discrete beads with clear I/O. Chain beads for workflows, maintain state between beads.
 
+**Session Start:** Update beads CLI at the start of each session:
+```bash
+go install github.com/steveyegge/beads/cmd/bd@latest
+```
+
 **No incomplete work:** Never leave `TODO`, mocks, or stubbed implementations. Either fully implement NOW or create explicit Beads plan to revisit when unblocked.
 
 ## 2. Critical Thinking

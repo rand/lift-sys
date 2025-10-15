@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 from dataclasses import dataclass
 
@@ -85,19 +86,9 @@ class CodeValidator:
                 )
             )
 
-        # Check for return inside loop
-        if "for" in code and "return" not in code.split("for", 1)[1].split("\n")[1]:
-            # Check if there's a return in the loop body
-            loop_body = self._extract_loop_body(code)
-            if loop_body and "return" not in loop_body:
-                issues.append(
-                    ValidationIssue(
-                        severity="warning",
-                        category="logic_error",
-                        message="Find loop should return immediately when item found",
-                        suggestion="Add 'return index' inside the loop when condition matches",
-                    )
-                )
+        # AST-based validation: Check for return placement in loops
+        loop_issues = self._validate_loop_return_placement(code)
+        issues.extend(loop_issues)
 
         return issues
 
@@ -194,6 +185,63 @@ class CodeValidator:
         if match:
             return match.group(1)
         return None
+
+    def _validate_loop_return_placement(self, code: str) -> list[ValidationIssue]:
+        """
+        AST-based validation to detect return statements at wrong indentation in loops.
+
+        This catches bugs like:
+            for i in range(n):
+                if condition:
+                    return value
+                return fallback  # ❌ Wrong! This is inside the loop!
+
+        Should be:
+            for i in range(n):
+                if condition:
+                    return value
+            return fallback  # ✅ Correct! After the loop
+        """
+        issues = []
+
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return issues  # Can't parse, let other validation handle it
+
+        # Find all for loops
+        for node in ast.walk(tree):
+            if isinstance(node, ast.For):
+                # Check for return statements that are direct children of the for loop body
+                # (not inside if/while/etc)
+                for stmt in node.body:
+                    if isinstance(stmt, ast.Return):
+                        # Found a return statement directly in loop body (not nested in if/etc)
+                        issues.append(
+                            ValidationIssue(
+                                severity="error",
+                                category="control_flow_error",
+                                message="Return statement directly in loop body (wrong indentation level)",
+                                suggestion="Move the fallback return statement AFTER the loop, not inside it. The return should only execute after the loop completes without finding a match.",
+                            )
+                        )
+                    elif isinstance(stmt, ast.If):
+                        # Check if there's a return after the if (common pattern error)
+                        stmt_index = node.body.index(stmt)
+                        if stmt_index + 1 < len(node.body):
+                            next_stmt = node.body[stmt_index + 1]
+                            if isinstance(next_stmt, ast.Return):
+                                # Return immediately after if - likely wrong placement
+                                issues.append(
+                                    ValidationIssue(
+                                        severity="error",
+                                        category="control_flow_error",
+                                        message="Return statement at same level as if statement inside loop (likely wrong indentation)",
+                                        suggestion="The fallback return should be AFTER the entire loop, not inside it at the same level as the if statement.",
+                                    )
+                                )
+
+        return issues
 
     def format_issues_for_retry(self, issues: list[ValidationIssue]) -> str:
         """Format validation issues as feedback for retry attempt."""

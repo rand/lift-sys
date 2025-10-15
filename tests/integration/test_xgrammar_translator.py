@@ -5,14 +5,21 @@ import json
 import pytest
 
 from lift_sys.forward_mode.xgrammar_translator import XGrammarIRTranslator
-from lift_sys.providers.base import BaseProvider
+from lift_sys.providers.base import BaseProvider, ProviderCapabilities
 
 
 class MockProvider(BaseProvider):
     """Mock provider for testing."""
 
     def __init__(self, response: str):
-        super().__init__(name="mock", capabilities=None)
+        super().__init__(
+            name="mock",
+            capabilities=ProviderCapabilities(
+                streaming=False,
+                structured_output=False,
+                reasoning=False,
+            ),
+        )
         self.response = response
         self.calls = []
 

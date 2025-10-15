@@ -1,0 +1,121 @@
+{
+  "timestamp": "2025-10-15T09:24:46.340408",
+  "summary": {
+    "total_tests": 3,
+    "compilation_success": 3,
+    "compilation_rate": 1.0,
+    "execution_success": 3,
+    "execution_rate": 1.0,
+    "both_success": 3,
+    "both_rate": 1.0
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "add_two_numbers_test_1",
+          "passed": true,
+          "expected": "5",
+          "actual": "5",
+          "error": null
+        },
+        {
+          "test_name": "add_two_numbers_test_2",
+          "passed": true,
+          "expected": "30",
+          "actual": "30",
+          "error": null
+        },
+        {
+          "test_name": "add_two_numbers_test_3",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        },
+        {
+          "test_name": "add_two_numbers_test_4",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 16472.307166084647,
+      "estimated_cost_usd": 0.0028453845276807744
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "get_string_length_test_1",
+          "passed": true,
+          "expected": "5",
+          "actual": "5",
+          "error": null
+        },
+        {
+          "test_name": "get_string_length_test_2",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        },
+        {
+          "test_name": "get_string_length_test_3",
+          "passed": true,
+          "expected": "11",
+          "actual": "11",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 15261.661040596664,
+      "estimated_cost_usd": 0.002643610173432777
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "compilation_success": true,
+      "execution_success": true,
+      "execution_tests": [
+        {
+          "test_name": "is_even_test_1",
+          "passed": true,
+          "expected": "True",
+          "actual": "True",
+          "error": null
+        },
+        {
+          "test_name": "is_even_test_2",
+          "passed": true,
+          "expected": "False",
+          "actual": "False",
+          "error": null
+        },
+        {
+          "test_name": "is_even_test_3",
+          "passed": true,
+          "expected": "True",
+          "actual": "True",
+          "error": null
+        },
+        {
+          "test_name": "is_even_test_4",
+          "passed": true,
+          "expected": "True",
+          "actual": "True",
+          "error": null
+        }
+      ],
+      "total_latency_ms": 17583.932041889057,
+      "estimated_cost_usd": 0.0030306553403148424
+    }
+  ]
+}

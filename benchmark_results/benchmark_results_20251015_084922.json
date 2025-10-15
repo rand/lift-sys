@@ -1,0 +1,137 @@
+{
+  "summary": {
+    "total_runs": 5,
+    "successful_runs": 0,
+    "failed_runs": 5,
+    "nlp_to_ir_mean": 0,
+    "nlp_to_ir_median": 0,
+    "nlp_to_ir_std": 0,
+    "ir_to_code_mean": 0,
+    "ir_to_code_median": 0,
+    "ir_to_code_std": 0,
+    "e2e_mean": 0,
+    "e2e_median": 0,
+    "e2e_std": 0,
+    "total_cost_usd": 0.0005000039654163023,
+    "cost_per_request_mean": 0.00010000079308326046,
+    "memory_mean": 0.00130462646484375,
+    "memory_peak": 0.00130462646484375
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "timestamp": "2025-10-15T08:49:22.560515",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.006583984941244125,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.006583984941244125,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.00010000109733082354,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    },
+    {
+      "test_name": "multiply",
+      "prompt": "Create a function that multiplies two numbers",
+      "timestamp": "2025-10-15T08:49:22.560536",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.004833796992897987,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.004833796992897987,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.00010000080563283215,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "timestamp": "2025-10-15T08:49:22.560551",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.00437488779425621,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.00437488779425621,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.00010000072914796571,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    },
+    {
+      "test_name": "max_of_two",
+      "prompt": "Create a function that returns the maximum of two numbers",
+      "timestamp": "2025-10-15T08:49:22.560564",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.004082918167114258,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.004082918167114258,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.0001000006804863612,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "timestamp": "2025-10-15T08:49:22.560577",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 0.003916909918189049,
+        "memory_mb": 0.00130462646484375,
+        "success": false,
+        "error": "Modal provider not initialized. Call initialize() first.",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 0.003916909918189049,
+      "total_memory_mb": 0.00130462646484375,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.0001000006528183197,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null
+    }
+  ]
+}

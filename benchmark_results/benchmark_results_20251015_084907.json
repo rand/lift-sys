@@ -1,0 +1,173 @@
+{
+  "summary": {
+    "total_runs": 1,
+    "successful_runs": 1,
+    "failed_runs": 0,
+    "nlp_to_ir_mean": 11006.236291956156,
+    "nlp_to_ir_median": 11006.236291956156,
+    "nlp_to_ir_std": 0,
+    "ir_to_code_mean": 4198.600333882496,
+    "ir_to_code_median": 4198.600333882496,
+    "ir_to_code_std": 0,
+    "e2e_mean": 15204.836625838652,
+    "e2e_median": 15204.836625838652,
+    "e2e_std": 0,
+    "total_cost_usd": 0.0026341394376397753,
+    "cost_per_request_mean": 0.0026341394376397753,
+    "memory_mean": 1.0877571105957031,
+    "memory_peak": 1.0877571105957031
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "timestamp": "2025-10-15T08:48:52.551521",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 11006.236291956156,
+        "memory_mb": 0.8111963272094727,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that adds two numbers",
+              "rationale": "This function will take two integers as input and return their sum.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "add_two_numbers",
+              "parameters": [
+                {
+                  "name": "num1",
+                  "type_hint": "int",
+                  "description": "The first number to be added.",
+                  "provenance": null
+                },
+                {
+                  "name": "num2",
+                  "type_hint": "int",
+                  "description": "The second number to be added.",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": "python",
+              "origin": "user",
+              "evidence": [
+                {
+                  "type": "requirement",
+                  "text": "Follow the JSON schema exactly"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Include all required fields"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Function names should be snake_case"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Be specific and complete"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4198.600333882496,
+        "memory_mb": 0.27656078338623047,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def add_two_numbers(num1: int, num2: int) -> int:\n    \"\"\"Create a function that adds two numbers.\n    \n    This function will take two integers as input and return their sum.\n    \n    Args:\n        num1: The first number to be added.\n        num2: The second number to be added.\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The function takes two integers as input and returns their sum.\n\n    # Return the sum of num1 and num2\n    num1 + num2",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": "user",
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 15204.836625838652,
+      "total_memory_mb": 1.0877571105957031,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0026341394376397753,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that adds two numbers",
+          "rationale": "This function will take two integers as input and return their sum.",
+          "holes": []
+        },
+        "signature": {
+          "name": "add_two_numbers",
+          "parameters": [
+            {
+              "name": "num1",
+              "type_hint": "int",
+              "description": "The first number to be added."
+            },
+            {
+              "name": "num2",
+              "type_hint": "int",
+              "description": "The second number to be added."
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": "python",
+          "origin": "user",
+          "evidence": [
+            {
+              "type": "requirement",
+              "text": "Follow the JSON schema exactly"
+            },
+            {
+              "type": "requirement",
+              "text": "Include all required fields"
+            },
+            {
+              "type": "requirement",
+              "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+            },
+            {
+              "type": "requirement",
+              "text": "Function names should be snake_case"
+            },
+            {
+              "type": "requirement",
+              "text": "Be specific and complete"
+            }
+          ]
+        }
+      },
+      "code_output": "<5 chars>"
+    }
+  ]
+}

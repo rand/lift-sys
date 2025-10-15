@@ -16,14 +16,21 @@ from lift_sys.ir.models import (
     Parameter,
     SigClause,
 )
-from lift_sys.providers.base import BaseProvider
+from lift_sys.providers.base import BaseProvider, ProviderCapabilities
 
 
 class MockCodeGenProvider(BaseProvider):
     """Mock provider for code generation testing."""
 
     def __init__(self, implementation_json: dict | None = None):
-        super().__init__(name="mock_codegen", capabilities=None)
+        super().__init__(
+            name="mock_codegen",
+            capabilities=ProviderCapabilities(
+                streaming=False,
+                structured_output=False,  # Mock doesn't support structured output
+                reasoning=False,
+            ),
+        )
         self.implementation_json = implementation_json
         self.call_count = 0
 
@@ -201,7 +208,9 @@ async def test_xgrammar_generator_simple_sum():
 
     # Verify metadata
     assert result.language == "python"
-    assert result.metadata["generator"] == "xgrammar"
+    # MockProvider uses text fallback (not structured output), so generator is "xgrammar_text"
+    assert result.metadata["generator"] in ("xgrammar_text", "xgrammar_constrained")
+    assert result.metadata["constrained_generation"] is False  # Mock doesn't support it
 
 
 @pytest.mark.asyncio

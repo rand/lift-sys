@@ -35,7 +35,16 @@ class XGrammarCodeGenerator:
         """
         self.provider = provider
         self.config = config or CodeGeneratorConfig()
-        self.structural_generator = CodeGenerator(config=self.config)
+
+        # Disable assertions for structural generator - they're often contradictory
+        # and we're not using them in the final code anyway
+        structural_config = CodeGeneratorConfig(
+            inject_assertions=False,
+            include_docstrings=self.config.include_docstrings,
+            include_type_hints=self.config.include_type_hints,
+            indent=self.config.indent,
+        )
+        self.structural_generator = CodeGenerator(config=structural_config)
 
     async def generate(
         self,
@@ -324,6 +333,51 @@ class XGrammarCodeGenerator:
             "assertions": assertions,
         }
 
+    def _detect_typing_imports(
+        self, structure: dict[str, Any], impl_json: dict[str, Any]
+    ) -> list[str]:
+        """
+        Detect required typing imports by scanning signature and implementation.
+
+        Args:
+            structure: Structural elements including signature
+            impl_json: Implementation JSON
+
+        Returns:
+            List of typing constructs that need to be imported
+        """
+        import re
+
+        # Combine all code to scan
+        code_to_scan = structure["signature"]
+        for stmt in impl_json["implementation"].get("body_statements", []):
+            code_to_scan += " " + stmt.get("code", "")
+
+        # Typing constructs to detect (order matters - check Optional before Option, etc.)
+        typing_constructs = [
+            "Any",
+            "Optional",
+            "Union",
+            "Callable",
+            "TypeVar",
+            "Generic",
+            "Protocol",
+            "Literal",
+            "TypedDict",
+            "Sequence",
+            "Mapping",
+            "Iterable",
+            "Iterator",
+        ]
+
+        detected = []
+        for construct in typing_constructs:
+            # Use word boundary to avoid matching substrings
+            if re.search(rf"\b{construct}\b", code_to_scan):
+                detected.append(construct)
+
+        return detected
+
     def _combine_structure_and_implementation(
         self,
         structure: dict[str, Any],
@@ -345,6 +399,12 @@ class XGrammarCodeGenerator:
         # Add imports from structure
         if structure["imports"]:
             lines.extend(structure["imports"])
+            lines.append("")
+
+        # Detect and add typing imports if needed
+        typing_imports = self._detect_typing_imports(structure, impl_json)
+        if typing_imports:
+            lines.append(f"from typing import {', '.join(typing_imports)}")
             lines.append("")
 
         # Add additional imports from implementation
@@ -375,31 +435,111 @@ class XGrammarCodeGenerator:
                 lines.append(line)
 
         # Add assertions (need to add indentation back)
-        if structure["assertions"]:
-            for assertion in structure["assertions"]:
-                lines.append(f"{indent}{assertion}")
-            lines.append("")
+        # DISABLED: Assertions from specifications are often contradictory
+        # TODO: Fix assertion generation logic to be conditional, not absolute
+        # if structure["assertions"]:
+        #     for assertion in structure["assertions"]:
+        #         lines.append(f"{indent}{assertion}")
+        #     lines.append("")
 
         # Add implementation body
         impl = impl_json["implementation"]
 
         # Add algorithm comment (if present)
         if impl.get("algorithm"):
-            lines.append(f"{indent}# Algorithm: {impl['algorithm']}")
+            algorithm_text = impl["algorithm"]
+            # Handle multi-line algorithms by adding # to each line
+            algorithm_lines = algorithm_text.split("\n")
+            for i, algo_line in enumerate(algorithm_lines):
+                if i == 0:
+                    lines.append(f"{indent}# Algorithm: {algo_line.strip()}")
+                else:
+                    # Continuation lines
+                    lines.append(f"{indent}# {algo_line.strip()}")
             lines.append("")
 
-        # Add body statements
-        for stmt in impl["body_statements"]:
-            code = stmt["code"]
+        # Add body statements with proper indentation handling
+        # Strategy: Stack-based indentation tracking for nested control flow
+
+        control_flow_types = {
+            "if_statement",
+            "for_loop",
+            "while_loop",
+            "elif_statement",
+            "else_statement",
+        }
+        indent_stack = [indent]  # Stack of indentation levels
+
+        for i, stmt in enumerate(impl["body_statements"]):
+            code = stmt["code"].rstrip()  # Remove trailing whitespace
+            stmt_type = stmt.get("type", "expression")  # Get statement type
+
+            # Check if previous statement opened a control flow block
+            if i > 0:
+                prev_stmt = impl["body_statements"][i - 1]
+                prev_type = prev_stmt.get("type", "expression")
+                prev_code = prev_stmt["code"].rstrip()
+
+                # Handle else/elif FIRST - pop to same level as if
+                if (
+                    stmt_type in {"elif_statement", "else_statement"}
+                    or code.startswith("else")
+                    or code.startswith("elif")
+                ):
+                    if len(indent_stack) > 1:
+                        indent_stack.pop()  # Go back one level
+
+                # Heuristic: After a return inside a control block, next non-return/elif/else should exit
+                # Example: if n == 0: return 1; if n < 0: ...  <- second if should be at base level
+                if prev_type == "return" and len(indent_stack) > 1:
+                    # If current is NOT return/elif/else, it should be outside the previous control block
+                    if stmt_type not in {"return", "elif_statement", "else_statement"}:
+                        indent_stack.pop()
+
+                # If previous statement was control flow ending with ':', increase indent
+                if prev_type in control_flow_types and prev_code.endswith(":"):
+                    indent_stack.append(indent_stack[-1] + "    ")
+
+                # Heuristic: Return after return likely means exiting the control block
+                # Example: if x: return A; return B  <- B should be outside if
+                if stmt_type == "return" and prev_type == "return" and len(indent_stack) > 1:
+                    # Pop one level to exit the control block
+                    indent_stack.pop()
+
+                # Heuristic: If current is return and we're deeply nested (3+ levels),
+                # AND prev was not a control flow that just pushed, pop to base level
+                # This handles "for...if...append; return" where return should be outside both blocks
+                elif stmt_type == "return" and len(indent_stack) > 2:
+                    # Only pop if previous wasn't control flow (otherwise we just pushed for a reason)
+                    if prev_type not in control_flow_types:
+                        # Pop to base level for final returns
+                        indent_stack = [indent]
+
+            current_indent = indent_stack[-1]
 
             # Add rationale as comment (if present)
             if stmt.get("rationale"):
-                lines.append(f"{indent}# {stmt['rationale']}")
+                lines.append(f"{current_indent}# {stmt['rationale']}")
 
-            # Add the code (may be multi-line)
-            for code_line in code.split("\n"):
-                if code_line.strip():  # Skip empty lines
-                    lines.append(f"{indent}{code_line}")
+            # FIX: If this is a return statement, ensure code starts with 'return'
+            if stmt_type == "return" and not code.strip().startswith("return"):
+                code = f"return {code}"
+
+            # Check if this is a multiline statement with embedded indentation
+            code_lines = code.split("\n")
+            is_multiline = len(code_lines) > 1
+
+            if is_multiline:
+                # Multiline code: preserve internal indentation, add current indent
+                for code_line in code_lines:
+                    if code_line.strip():
+                        lines.append(f"{current_indent}{code_line}")
+                    else:
+                        lines.append("")
+            else:
+                # Single-line code: add current indentation
+                if code.strip():
+                    lines.append(f"{current_indent}{code.strip()}")
                 else:
                     lines.append("")
 

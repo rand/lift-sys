@@ -1,0 +1,151 @@
+{
+  "summary": {
+    "total_runs": 1,
+    "successful_runs": 0,
+    "failed_runs": 1,
+    "nlp_to_ir_mean": 0,
+    "nlp_to_ir_median": 0,
+    "nlp_to_ir_std": 0,
+    "ir_to_code_mean": 0,
+    "ir_to_code_median": 0,
+    "ir_to_code_std": 0,
+    "e2e_mean": 0,
+    "e2e_median": 0,
+    "e2e_std": 0,
+    "total_cost_usd": 0.008802347812514441,
+    "cost_per_request_mean": 0.008802347812514441,
+    "memory_mean": 1.124074935913086,
+    "memory_peak": 1.124074935913086
+  },
+  "results": [
+    {
+      "test_name": "factorial",
+      "prompt": "Create a function to calculate the factorial of a number",
+      "timestamp": "2025-10-15T08:47:48.387232",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 11318.611250026152,
+        "memory_mb": 0.8109683990478516,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function to calculate the factorial of a number",
+              "rationale": "Factorial is a common mathematical operation that is used in various fields such as combinatorics, statistics, and computer science. By creating a function to calculate the factorial, we can easily reuse this functionality in other parts of the codebase.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "calculate_factorial",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": "The number for which the factorial is to be calculated",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": "python",
+              "origin": "user",
+              "evidence": [
+                {
+                  "type": "requirement",
+                  "text": "Follow the JSON schema exactly"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Include all required fields"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Function names should be snake_case"
+                },
+                {
+                  "type": "requirement",
+                  "text": "Be specific and complete"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 40895.4756250605,
+        "memory_mb": 0.3131065368652344,
+        "success": false,
+        "error": "Failed to generate valid implementation after 3 attempts. Last error: Generated invalid Python syntax: expected an indented block after 'if' statement on line 17 (<unknown>, line 19)",
+        "metadata": {
+          "result": null
+        }
+      },
+      "total_latency_ms": 52214.08687508665,
+      "total_memory_mb": 1.124074935913086,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.008802347812514441,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function to calculate the factorial of a number",
+          "rationale": "Factorial is a common mathematical operation that is used in various fields such as combinatorics, statistics, and computer science. By creating a function to calculate the factorial, we can easily reuse this functionality in other parts of the codebase.",
+          "holes": []
+        },
+        "signature": {
+          "name": "calculate_factorial",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": "The number for which the factorial is to be calculated"
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": "python",
+          "origin": "user",
+          "evidence": [
+            {
+              "type": "requirement",
+              "text": "Follow the JSON schema exactly"
+            },
+            {
+              "type": "requirement",
+              "text": "Include all required fields"
+            },
+            {
+              "type": "requirement",
+              "text": "Use proper Python type hints (int, str, list[int], dict[str, Any], etc.)"
+            },
+            {
+              "type": "requirement",
+              "text": "Function names should be snake_case"
+            },
+            {
+              "type": "requirement",
+              "text": "Be specific and complete"
+            }
+          ]
+        }
+      },
+      "code_output": null
+    }
+  ]
+}

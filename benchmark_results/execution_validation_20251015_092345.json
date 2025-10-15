@@ -1,0 +1,65 @@
+{
+  "timestamp": "2025-10-15T09:23:45.006766",
+  "summary": {
+    "total_tests": 3,
+    "compilation_success": 3,
+    "compilation_rate": 1.0,
+    "execution_success": 0,
+    "execution_rate": 0.0,
+    "both_success": 0,
+    "both_rate": 0.0
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "compilation_success": true,
+      "execution_success": false,
+      "execution_tests": [
+        {
+          "test_name": "add_two_numbers_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: TypeError: exec() arg 1 must be a string, bytes or code object"
+        }
+      ],
+      "total_latency_ms": 17331.69999998063,
+      "estimated_cost_usd": 0.002988616666663438
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "compilation_success": true,
+      "execution_success": false,
+      "execution_tests": [
+        {
+          "test_name": "get_string_length_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: TypeError: exec() arg 1 must be a string, bytes or code object"
+        }
+      ],
+      "total_latency_ms": 15365.260583115742,
+      "estimated_cost_usd": 0.0026608767638526235
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "compilation_success": true,
+      "execution_success": false,
+      "execution_tests": [
+        {
+          "test_name": "is_even_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: TypeError: exec() arg 1 must be a string, bytes or code object"
+        }
+      ],
+      "total_latency_ms": 17669.583584181964,
+      "estimated_cost_usd": 0.0030449305973636607
+    }
+  ]
+}

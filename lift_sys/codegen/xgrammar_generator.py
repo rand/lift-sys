@@ -10,6 +10,8 @@ from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
 from .code_schema import CODE_GENERATION_SCHEMA, get_prompt_for_code_generation
 from .generator import CodeGenerator, CodeGeneratorConfig, GeneratedCode
+from .multishot import MultishotGenerator
+from .validation import CodeValidator
 
 
 class XGrammarCodeGenerator:
@@ -45,11 +47,16 @@ class XGrammarCodeGenerator:
             indent=self.config.indent,
         )
         self.structural_generator = CodeGenerator(config=structural_config)
+        self.validator = CodeValidator()
+        self.multishot = MultishotGenerator(num_shots=3)
+        self._validation_feedback = ""  # Track validation feedback between attempts
 
     async def generate(
         self,
         ir: IntermediateRepresentation,
         max_retries: int = 3,
+        use_multishot: bool = False,
+        test_cases: list | None = None,
     ) -> GeneratedCode:
         """
         Generate complete code from IR with actual implementation.
@@ -62,6 +69,8 @@ class XGrammarCodeGenerator:
         Args:
             ir: Intermediate representation to translate
             max_retries: Number of retries if generation fails (rarely needed with XGrammar)
+            use_multishot: If True, use Phase 3 multishot generation with test validation
+            test_cases: Test cases for multishot validation [(inputs, expected), ...]
 
         Returns:
             GeneratedCode with complete implementation
@@ -69,6 +78,24 @@ class XGrammarCodeGenerator:
         Raises:
             ValueError: If generation fails after max_retries
         """
+        # Phase 3: Multi-shot generation with empirical testing
+        if use_multishot and test_cases:
+            candidate = await self.multishot.generate_and_test(self, ir, test_cases)
+            if candidate.score > 0:
+                return GeneratedCode(
+                    source_code=candidate.code,
+                    language="python",
+                    metadata={
+                        "ir_origin": ir.metadata.origin,
+                        "generator": "xgrammar_multishot",
+                        "multishot_score": candidate.score,
+                        "passed_tests": candidate.passed_tests,
+                        "total_tests": candidate.total_tests,
+                    },
+                    warnings=[],
+                )
+            # If multishot failed, fall through to regular generation
+
         # First, use structural generator to get signature, docstring, and structure
         structural_code = self.structural_generator.generate(ir)
 
@@ -93,6 +120,25 @@ class XGrammarCodeGenerator:
                     if attempt == max_retries - 1:
                         raise ValueError(f"Generated invalid Python syntax: {e}") from e
                     # Retry with error feedback
+                    continue
+
+                # Validate code logic (Phase 2: Code Validation Layer)
+                validation_issues = self.validator.validate(
+                    code=complete_code,
+                    function_name=ir.signature.name,
+                    context={
+                        "prompt": ir.intent.summary,
+                        "effects": [e.description for e in ir.effects],
+                    },
+                )
+
+                # If critical issues found and we have retries left, retry with feedback
+                critical_issues = [i for i in validation_issues if i.severity == "error"]
+                if critical_issues and attempt < max_retries - 1:
+                    # Add validation feedback to next attempt
+                    feedback = self.validator.format_issues_for_retry(critical_issues)
+                    # Store feedback for next iteration
+                    self._validation_feedback = feedback
                     continue
 
                 # Determine which generator was used
@@ -167,6 +213,11 @@ class XGrammarCodeGenerator:
             prompt += (
                 f"\n\nPrevious attempt {attempt} failed. Please ensure correct implementation."
             )
+
+        # Add validation feedback if available (from Phase 2: Validation Layer)
+        if hasattr(self, "_validation_feedback") and self._validation_feedback:
+            prompt += self._validation_feedback
+            self._validation_feedback = ""  # Clear after use
 
         # Check if provider supports constrained generation (Modal with XGrammar)
         if (

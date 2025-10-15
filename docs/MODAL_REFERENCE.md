@@ -15,12 +15,19 @@ A comprehensive reference for using Modal in the lift-sys project and beyond.
 2. [Core Concepts](#core-concepts)
 3. [GPU Usage](#gpu-usage)
 4. [Container Images](#container-images)
-5. [Secrets Management](#secrets-management)
-6. [Volumes & Storage](#volumes--storage)
-7. [Web Endpoints](#web-endpoints)
-8. [Scheduling](#scheduling)
-9. [Best Practices](#best-practices)
-10. [Common Patterns](#common-patterns)
+5. [Developing with LLMs](#developing-with-llms)
+   - [Development Workflow](#development-workflow)
+   - [Model Caching with Volumes](#model-caching-with-volumes)
+   - [GPU Selection Strategies](#gpu-selection-strategies)
+   - [Cold Start Optimization](#cold-start-optimization)
+   - [Batching and Concurrency](#batching-and-concurrency)
+   - [Monitoring and Debugging](#monitoring-and-debugging)
+6. [Secrets Management](#secrets-management)
+7. [Volumes & Storage](#volumes--storage)
+8. [Web Endpoints](#web-endpoints)
+9. [Scheduling](#scheduling)
+10. [Best Practices](#best-practices)
+11. [Common Patterns](#common-patterns)
 
 ---
 
@@ -245,6 +252,488 @@ image = (
 - Use `uv_pip_install` for Python packages (faster than pip)
 - Use `run_function()` for complex setup logic
 - Leverage caching by keeping stable layers first
+
+### Pre-Built Base Images (Advanced)
+
+For production deployments with frequent code updates, create a **pre-built base image** to cache dependencies.
+
+**Problem:** Inline `image.pip_install()` rebuilds on every deployment
+**Solution:** Build image once, reuse across deployments
+
+```python
+# lift_sys/infrastructure/modal_image.py
+import modal
+
+llm_image = (
+    modal.Image.debian_slim(python_version="3.12")
+    .pip_install(
+        "sglang[all]==0.5.3.post1",  # Pin exact versions
+        "transformers==4.51.2",
+        "fastapi[standard]==0.115.12",
+    )
+    .env({
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",  # Fast model downloads
+        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+    })
+)
+
+__all__ = ["llm_image"]
+```
+
+**Build and cache the image:**
+```bash
+# One-time build (3-5 minutes)
+modal image build lift_sys/infrastructure/modal_image.py::llm_image
+
+# Rebuilds are instant after this
+```
+
+**Use in your app:**
+```python
+# modal_app.py
+from lift_sys.infrastructure.modal_image import llm_image
+
+@app.function(image=llm_image)  # Use pre-built image
+def my_function():
+    # Code changes deploy in seconds, not minutes
+    pass
+```
+
+**Benefits:**
+- ✅ **Faster deployments**: Code changes deploy in seconds
+- ✅ **Faster cold starts**: No pip install on container startup
+- ✅ **Reproducibility**: Exact versions locked
+- ✅ **Cost savings**: Less build time = less compute time
+
+**When to rebuild:**
+- Dependency version updates
+- New dependencies added
+- Monthly maintenance (optional)
+
+**lift-sys Implementation:**
+See `lift_sys/infrastructure/modal_image.py` for the production-ready base image.
+
+---
+
+## Developing with LLMs
+
+Modal is purpose-built for LLM workloads. This section covers best practices for deploying, serving, and iterating on LLM applications.
+
+### Development Workflow
+
+Modal provides three commands for different development stages:
+
+```bash
+# 1. modal run - One-time execution, iterative development
+modal run script.py::my_function
+
+# 2. modal serve - Development with hot-reload (web endpoints)
+modal serve script.py
+
+# 3. modal deploy - Production deployment
+modal deploy script.py
+```
+
+**When to use each:**
+
+| Command | Use Case | Hot Reload | Persistent |
+|---------|----------|------------|------------|
+| `modal run` | Testing functions, debugging, one-off tasks | ❌ No | ❌ No |
+| `modal serve` | Developing web endpoints, rapid iteration | ✅ Yes | ❌ No |
+| `modal deploy` | Production, scheduled jobs | ❌ No | ✅ Yes |
+
+**Example Workflow:**
+```python
+import modal
+
+app = modal.App("my-llm-app")
+
+@app.function(gpu="A10G")
+def generate_text(prompt: str):
+    # Your LLM code here
+    return result
+
+@app.local_entrypoint()
+def main():
+    """For modal run"""
+    result = generate_text.remote("Hello world")
+    print(result)
+
+@app.function()
+@modal.fastapi_endpoint(method="POST")
+def api_generate(prompt: str):
+    """For modal serve"""
+    return generate_text.remote(prompt)
+```
+
+```bash
+# Development: Test the function
+modal run script.py
+
+# Development: Start web endpoint with hot-reload
+modal serve script.py
+# Visit https://your-workspace--api-generate.modal.run
+
+# Production: Deploy persistently
+modal deploy script.py
+```
+
+### Model Caching with Volumes
+
+**Problem:** Models download from HuggingFace on every cold start (slow, expensive bandwidth)
+
+**Solution:** Use Modal Volumes to cache models persistently
+
+```python
+import modal
+import os
+
+app = modal.App("llm-with-cache")
+
+# Create volume for model cache
+MODEL_DIR = "/models"
+volume = modal.Volume.from_name("model-cache", create_if_missing=True)
+
+image = modal.Image.debian_slim(python_version="3.12").pip_install(
+    "transformers>=4.51.0",
+    "torch==2.5.1",
+    "sglang[all]>=0.5.3.post1",
+)
+
+@app.cls(
+    gpu="A10G",
+    image=image,
+    volumes={MODEL_DIR: volume},  # Mount persistent cache
+)
+class ModelServer:
+    @modal.enter()
+    def load_model(self):
+        """Load model once, cache to volume"""
+        from transformers import AutoModel
+
+        # Point HuggingFace cache to volume
+        os.environ["HF_HOME"] = MODEL_DIR
+        os.environ["TRANSFORMERS_CACHE"] = f"{MODEL_DIR}/transformers"
+
+        print(f"Loading model (cached in {MODEL_DIR})")
+        self.model = AutoModel.from_pretrained(
+            "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+            cache_dir=MODEL_DIR,  # Save to volume
+            trust_remote_code=True,
+        )
+
+        # Commit changes to persist cache
+        volume.commit()
+
+    @modal.method()
+    def generate(self, prompt: str):
+        """Inference uses cached model"""
+        return self.model(prompt)
+```
+
+**Benefits:**
+- **First run**: Downloads model, saves to volume (slow)
+- **Subsequent runs**: Loads from volume (fast - seconds instead of minutes)
+- **Cost savings**: No repeated downloads from HuggingFace
+
+**Volume Best Practices:**
+- Always call `volume.commit()` after writing model weights
+- Use environment variables to point cache dirs to volume:
+  - `HF_HOME` - HuggingFace home directory
+  - `TRANSFORMERS_CACHE` - Transformers model cache
+  - `TORCH_HOME` - PyTorch model cache
+- One volume per model family (e.g., "qwen-models", "llama-models")
+
+### GPU Selection Strategies
+
+Modal supports flexible GPU configuration for availability and cost optimization:
+
+#### Single GPU
+```python
+@app.function(gpu="A10G")  # Specific GPU
+def inference():
+    pass
+```
+
+#### Multiple GPUs (Tensor Parallelism)
+```python
+@app.function(gpu="H100:4")  # 4x H100
+def multi_gpu_training():
+    pass
+```
+
+#### GPU Fallback Chain
+```python
+# Try GPUs in order, use first available
+@app.function(gpu=["H100", "A100", "A10G", "any"])
+def flexible_inference():
+    pass
+```
+
+**Using `modal.gpu` Helper:**
+```python
+import modal
+
+# Explicit GPU objects for more control
+@app.function(gpu=modal.gpu.A10G())
+def inference_a10g():
+    pass
+
+@app.function(gpu=modal.gpu.H100(count=4))
+def training_multi_gpu():
+    pass
+
+# Fallback with any GPU
+@app.function(gpu=modal.gpu.any())
+def run_on_anything():
+    pass
+```
+
+**Recommendations:**
+- **Development**: Use `gpu="A10G"` or `gpu=["A10G", "any"]` for cost efficiency
+- **Production**: Use specific GPU with fallback: `gpu=["L40S", "A100"]`
+- **Training**: Use `gpu="H100:8"` for multi-GPU parallelism
+- **Inference**: L40S offers best cost/performance for most models
+
+### Cold Start Optimization
+
+Cold starts happen when Modal spins up a new container. For LLMs, this includes model loading.
+
+**Optimization Strategies:**
+
+#### 1. Keep Containers Warm
+```python
+@app.function(
+    gpu="A10G",
+    keep_warm=1,  # Keep 1 container always ready
+)
+def inference():
+    pass
+```
+
+**Trade-offs:**
+- ✅ Zero cold starts for users
+- ❌ Pay for idle GPU time (~$1.10/hr for A10G)
+- Use for: Production APIs with consistent traffic
+
+#### 2. Use `scaledown_window`
+```python
+@app.function(
+    gpu="A10G",
+    scaledown_window=300,  # Keep warm for 5 minutes after last request
+)
+def inference():
+    pass
+```
+
+**Trade-offs:**
+- ✅ Balance responsiveness and cost
+- ✅ No charge if no requests
+- Use for: Moderate traffic, development
+
+#### 3. Cache Models with Volumes (Best)
+```python
+@app.cls(
+    gpu="A10G",
+    volumes={"/models": volume},  # Cached model loads in seconds
+)
+class ModelServer:
+    @modal.enter()
+    def load_model(self):
+        # Load from cached volume
+        self.model = load_from_cache("/models")
+```
+
+**Best Practices:**
+- Combine all three: volume caching + scaledown_window + (optional) keep_warm
+- Profile cold start time: `modal run script.py --profile`
+- Monitor cold starts in Modal dashboard
+
+### Batching and Concurrency
+
+Process multiple requests efficiently to maximize GPU utilization.
+
+#### Dynamic Batching
+```python
+@app.function(gpu="A10G")
+@modal.batched(max_batch_size=32, wait_ms=100)
+def batch_inference(prompts: list[str]) -> list[str]:
+    """Modal automatically batches requests"""
+    # Process all prompts together on GPU
+    results = model.generate(prompts)
+    return results
+
+# Clients call individually, Modal batches automatically
+result = batch_inference.remote("single prompt")
+```
+
+**Benefits:**
+- Automatic batching by Modal
+- Better GPU utilization (process 32 requests at once)
+- Lower latency for individual requests
+
+#### Concurrent Processing
+```python
+@app.cls(gpu="A10G")
+@modal.concurrent(max_inputs=20)  # Process up to 20 requests in parallel
+class ModelServer:
+    @modal.method()
+    def generate(self, prompt: str):
+        return self.model(prompt)
+```
+
+**Use Cases:**
+- **`@modal.batched`**: Requests can be processed together (same operation)
+- **`@modal.concurrent`**: Independent requests, different operations
+
+### Monitoring and Debugging
+
+#### View Logs in Real-Time
+```bash
+# Stream logs for deployed app
+modal app logs my-llm-app
+
+# Follow logs (like tail -f)
+modal app logs my-llm-app --follow
+```
+
+#### Enable Detailed Output
+```python
+import modal
+
+# Enable detailed logging for debugging
+modal.enable_output()
+
+@app.function(gpu="A10G")
+def inference(prompt: str):
+    print(f"Received prompt: {prompt}")  # Appears in logs
+    result = model.generate(prompt)
+    print(f"Generated {len(result)} tokens")
+    return result
+```
+
+#### View App Status
+```bash
+# List all running apps
+modal app list
+
+# Get app details
+modal app show my-llm-app
+
+# Stop app
+modal app stop my-llm-app
+```
+
+#### Profile Performance
+```bash
+# Profile cold start and execution time
+modal run script.py --profile
+```
+
+**Output includes:**
+- Container startup time
+- Model loading time (`@modal.enter()`)
+- Function execution time
+
+### Complete LLM Serving Example
+
+```python
+import modal
+import os
+
+app = modal.App("production-llm-server")
+
+# Model configuration
+MODEL_NAME = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
+MODEL_DIR = "/models"
+volume = modal.Volume.from_name("qwen-models", create_if_missing=True)
+
+# Container image
+image = modal.Image.debian_slim(python_version="3.12").pip_install(
+    "sglang[all]>=0.5.3.post1",
+    "torch==2.5.1",
+    "transformers>=4.51.0",
+)
+
+@app.cls(
+    image=image,
+    gpu=modal.gpu.A10G(),  # Or ["L40S", "A100"] for fallback
+    volumes={MODEL_DIR: volume},
+    scaledown_window=300,  # Keep warm 5 min after last request
+    # keep_warm=1,  # Optional: always keep 1 container ready (costs more)
+)
+@modal.concurrent(max_inputs=20)  # Handle 20 concurrent requests
+class ModelServer:
+    @modal.enter()
+    def load_model(self):
+        """Load model on container startup"""
+        from sglang import Runtime
+
+        # Cache to volume
+        os.environ["HF_HOME"] = MODEL_DIR
+        os.environ["TRANSFORMERS_CACHE"] = f"{MODEL_DIR}/transformers"
+
+        print(f"Loading {MODEL_NAME} from cache")
+        self.llm = Runtime(
+            model_path=MODEL_NAME,
+            tp_size=1,
+            context_length=8192,
+            trust_remote_code=True,
+            mem_fraction_static=0.90,
+        )
+
+        volume.commit()
+        print("Model loaded successfully")
+
+    @modal.method()
+    def generate(self, prompt: str, max_tokens: int = 512) -> str:
+        """Generate text from prompt"""
+        response = self.llm.generate(
+            prompts=[prompt],
+            sampling_params={"max_new_tokens": max_tokens, "temperature": 0.7},
+        )
+        return response[0]["text"]
+
+# Web endpoint
+@app.function()
+@modal.fastapi_endpoint(method="POST")
+def generate_api(prompt: str, max_tokens: int = 512):
+    """HTTP API for text generation"""
+    server = ModelServer()
+    result = server.generate.remote(prompt, max_tokens)
+    return {"result": result}
+
+# Test function
+@app.local_entrypoint()
+def test():
+    """Test the model locally"""
+    server = ModelServer()
+    result = server.generate.remote("Write a Python function to calculate fibonacci")
+    print(result)
+```
+
+**Deploy:**
+```bash
+# Development with hot-reload
+modal serve script.py
+
+# Production deployment
+modal deploy script.py
+
+# Test locally
+modal run script.py::test
+```
+
+**Access:**
+```bash
+# Get endpoint URL
+modal app show production-llm-server
+
+# Call API
+curl -X POST https://your-workspace--generate-api.modal.run \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello world", "max_tokens": 100}'
+```
 
 ---
 
@@ -955,5 +1444,6 @@ def use_secret():
 
 ---
 
-**Last Updated**: 2025-10-14
+**Last Updated**: 2025-10-14 (Added comprehensive LLM development guide)
 **Modal Version**: Latest (as of documentation fetch)
+**Key Additions**: Development workflow (serve/run/deploy), model caching, GPU strategies, cold start optimization, batching, monitoring

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -66,7 +67,7 @@ class ModalProvider(BaseProvider):
             **kwargs: Additional parameters (top_p, etc.)
 
         Returns:
-            Generated IR matching the schema
+            Generated structured output matching the schema
 
         Raises:
             RuntimeError: If Modal provider not initialized
@@ -75,25 +76,44 @@ class ModalProvider(BaseProvider):
         if not self._client:
             raise RuntimeError("Modal provider not initialized. Call initialize() first.")
 
-        response = await self._client.post(
-            self.endpoint_url,  # Direct endpoint URL (label-based or path-based)
-            json={
-                "prompt": prompt,
-                "schema": schema,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "top_p": kwargs.get("top_p", 0.95),
-            },
-        )
-        response.raise_for_status()
+        try:
+            response = await self._client.post(
+                self.endpoint_url,  # Direct endpoint URL (label-based or path-based)
+                json={
+                    "prompt": prompt,
+                    "schema": schema,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "top_p": kwargs.get("top_p", 0.95),
+                },
+            )
+            response.raise_for_status()
 
-        result = response.json()
+            result = response.json()
 
-        # Check for errors in the response
-        if "error" in result:
-            raise ValueError(f"Modal inference error: {result['error']}")
+            # Check for errors in the response
+            if "error" in result:
+                error_msg = result["error"]
+                raw_output = result.get("raw_output", "")
+                raise ValueError(
+                    f"Modal inference error: {error_msg}\n"
+                    f"Raw output (first 500 chars): {raw_output[:500]}"
+                )
 
-        return result["ir_json"]
+            # The Modal endpoint returns the generated JSON in the "ir_json" field
+            # (This field name is historical, but works for any schema-constrained generation)
+            return result["ir_json"]
+
+        except httpx.HTTPStatusError as e:
+            # Include response body in error for debugging
+            error_body = ""
+            try:
+                error_body = e.response.text
+            except Exception:
+                pass
+            raise ValueError(
+                f"Modal API error (HTTP {e.response.status_code}): {error_body[:500]}"
+            ) from e
 
     async def generate_text(
         self,
@@ -130,6 +150,34 @@ class ModalProvider(BaseProvider):
             return response.status_code == 200
         except Exception:
             return False
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        """
+        Generate streaming tokens (not supported by Modal provider).
+
+        Modal provider focuses on schema-constrained generation which doesn't support streaming.
+        Use AnthropicProvider for streaming text generation.
+        """
+        raise NotImplementedError(
+            "Modal provider does not support streaming. "
+            "Use AnthropicProvider for streaming text generation."
+        )
+        # Make this a proper async generator
+        yield ""  # Unreachable, but satisfies type checker
+
+    @property
+    def supports_streaming(self) -> bool:
+        """Modal provider does not support streaming."""
+        return False
+
+    @property
+    def supports_structured_output(self) -> bool:
+        """Modal provider supports structured output via XGrammar."""
+        return True
 
     async def aclose(self) -> None:
         """Close HTTP client connection."""

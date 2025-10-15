@@ -2,11 +2,33 @@
 Modal.com inference endpoint with vLLM + XGrammar constrained generation.
 
 This module provides GPU-accelerated, schema-constrained IR generation using:
-- vLLM for fast inference
-- XGrammar for JSON schema enforcement
-- Qwen2.5-Coder-32B-Instruct (or configurable model)
+- vLLM 0.9.2 for fast inference with PagedAttention
+- XGrammar (native in vLLM 0.9.2+) for JSON schema enforcement
+- Qwen2.5-Coder-7B-Instruct model
 
-Deploy with: modal deploy lift_sys/inference/modal_app.py
+Development Workflow:
+    # Development with hot-reload (recommended for testing)
+    modal serve lift_sys/inference/modal_app.py
+
+    # One-time test run
+    modal run lift_sys/inference/modal_app.py::test
+
+    # Production deployment
+    modal deploy lift_sys/inference/modal_app.py
+
+Endpoints:
+    - Health: https://rand--health.modal.run (GET)
+    - Generate: https://rand--generate.modal.run (POST)
+
+Performance:
+    - Cold start (first time): ~3-5 minutes (image build + model download)
+    - Cold start (subsequent): ~30-60 seconds (model loading from volume)
+    - Warm containers: 2-5 seconds response time
+
+For more info: https://modal.com/docs/guide/developing-with-llms
+
+Note: Switched from SGLang to vLLM due to sgl_kernel compatibility issues on Modal H100.
+SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimization.
 """
 
 import modal
@@ -14,59 +36,110 @@ import modal
 # Create Modal app
 app = modal.App("lift-sys-inference")
 
+# Dependency versions
+VLLM_VERSION = "0.9.2"  # v0.9.2+ has native XGrammar support
+TRANSFORMERS_VERSION = "4.53.0"  # Must be >=4.51.1 (vLLM req) and <4.54.0 (aimv2 conflict)
+FASTAPI_VERSION = "0.115.12"
+HF_HUB_VERSION = "0.20.0"
+
+# Create optimized base image with all dependencies
+# Image version: v8 (vLLM 0.9.2 + XGrammar + FlashInfer on CUDA 12.4.1)
+llm_image = (
+    # Use newer NVIDIA CUDA development image (12.4.1 fixes deprecation warnings)
+    modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
+    .apt_install(
+        "git",  # Required for transformers cache
+        "wget",  # Useful for downloading assets
+    )
+    .pip_install(
+        f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
+        "xgrammar",  # XGrammar for constrained generation
+        f"transformers=={TRANSFORMERS_VERSION}",  # Model support
+        f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework
+        f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
+        "hf-transfer",  # Fast downloads from HuggingFace (Rust-based)
+        "flashinfer-python",  # Optimized top-p/top-k sampling (10-20% faster)
+    )
+    .env(
+        {
+            # CUDA paths
+            "CUDA_HOME": "/usr/local/cuda",
+            "PATH": "/usr/local/cuda/bin:${PATH}",
+            "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
+            # Performance optimizations
+            "HF_HUB_ENABLE_HF_TRANSFER": "1",
+            "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+            "TOKENIZERS_PARALLELISM": "false",
+        }
+    )
+)
+
 # Model configuration
-MODEL_NAME = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
+# Using Qwen2.5-Coder-7B - fits comfortably on A10G/A100/H100 (all have 24GB+)
+# Note: Qwen3-Coder-30B MoE requires >40GB VRAM (doesn't fit on A100-40GB)
+MODEL_NAME = "Qwen/Qwen2.5-Coder-7B-Instruct"
 MODEL_REVISION = "main"
 
-# GPU configuration - A10G is cost-effective, A100 for faster inference
-GPU_CONFIG = "A10G"  # ~$1.10/hr, good balance
-# For production with high load: "A100"  # ~$3/hr
+# GPU configuration
+# vLLM works on all GPU types - using A10G for cost efficiency
+GPU_CONFIG = "A10G"  # A10G ~$1.10/hr, sufficient for 7B model
+# GPU_CONFIG = "A100"  # A100 ~$3/hr - more VRAM for larger models
+# GPU_CONFIG = "H100"  # H100 ~$4/hr - fastest but most expensive
+# GPU_CONFIG = ["A10G", "A100", "any"]  # For fallback chain
 
-# Container image with all dependencies
-image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "fastapi[standard]",  # Required for web endpoints
-    "vllm==0.6.4.post1",  # Includes compatible outlines version
-    "torch==2.5.1",
-    "transformers==4.46.3",  # Avoid yanked version
-    "xgrammar==0.1.5",
-)
+# Model caching with Modal Volume for faster cold starts
+# Models are downloaded once and reused across container restarts
+MODELS_DIR = "/models"
+volume = modal.Volume.from_name("lift-sys-models", create_if_missing=True)
 
 
 @app.cls(
-    image=image,
+    image=llm_image,  # Image with vLLM, transformers, FastAPI
     gpu=GPU_CONFIG,
+    volumes={MODELS_DIR: volume},  # Mount volume for model caching
     timeout=600,  # 10 minutes for model loading + inference
     scaledown_window=300,  # Keep warm for 5 minutes (balance cost vs latency)
 )
 @modal.concurrent(max_inputs=20)  # Process multiple requests concurrently
 class ConstrainedIRGenerator:
-    """GPU-accelerated IR generator with schema constraints."""
+    """GPU-accelerated IR generator with schema constraints using vLLM + XGrammar."""
 
     @modal.enter()
     def load_model(self):
         """Load model on container startup (cached after first cold start)."""
+        import os
         import time
 
-        from vllm import LLM
-
         print(f"Loading model: {MODEL_NAME}")
+        print(f"Model cache directory: {MODELS_DIR}")
         start = time.time()
 
+        # Set HuggingFace cache to use Modal volume for faster cold starts
+        # Use HF_HOME only (TRANSFORMERS_CACHE deprecated in transformers v5)
+        os.environ["HF_HOME"] = MODELS_DIR
+
+        # Import vLLM
+        from vllm import LLM
+
+        # Initialize vLLM with XGrammar backend for constrained generation
+        # vLLM 0.9.2+ has native XGrammar support (default backend)
         self.llm = LLM(
             model=MODEL_NAME,
-            revision=MODEL_REVISION,
-            tensor_parallel_size=1,  # Single GPU
-            max_model_len=8192,  # Context window
             trust_remote_code=True,
             dtype="auto",  # Use bfloat16 automatically on supported GPUs
-            gpu_memory_utilization=0.90,  # Use 90% of GPU memory
+            gpu_memory_utilization=0.90,  # 7B model fits comfortably in 24GB
+            guided_decoding_backend="xgrammar",  # XGrammar for fast JSON schema enforcement
         )
 
         load_time = time.time() - start
         print(f"Model loaded in {load_time:.2f}s")
+        print(f"Model: {MODEL_NAME}")
+        print("XGrammar backend enabled for structured outputs")
 
-    @modal.method()
-    def generate(
+        # Commit volume changes to persist model cache
+        volume.commit()
+
+    def _generate_impl(
         self,
         prompt: str,
         schema: dict,
@@ -75,7 +148,9 @@ class ConstrainedIRGenerator:
         top_p: float = 0.95,
     ) -> dict:
         """
-        Generate IR from natural language with JSON schema constraints.
+        Internal implementation of generation logic.
+
+        Generate IR from natural language with JSON schema constraints using vLLM.
 
         Args:
             prompt: Natural language specification
@@ -95,34 +170,8 @@ class ConstrainedIRGenerator:
         import json
         import time
 
-        import xgrammar as xgr
         from vllm import SamplingParams
-
-        # Convert JSON schema to XGrammar grammar
-        try:
-            grammar = xgr.Grammar.from_json_schema(
-                json.dumps(schema),
-                indent=2,  # Pretty-print JSON
-                separators=(",", ": "),
-                strict_mode=True,  # Enforce all schema constraints
-            )
-        except Exception as e:
-            return {
-                "error": f"Invalid schema: {str(e)}",
-                "ir_json": None,
-                "tokens_used": 0,
-                "generation_time_ms": 0,
-                "finish_reason": "schema_error",
-            }
-
-        # Create sampling params with XGrammar constraint
-        sampling_params = SamplingParams(
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            guided_decoding_backend="xgrammar",  # Use XGrammar for constraints
-            guided_grammar=grammar,
-        )
+        from vllm.sampling_params import GuidedDecodingParams
 
         # Format prompt for code model
         formatted_prompt = f"""You are a code specification assistant. Generate a valid JSON intermediate representation (IR) for the following specification.
@@ -140,33 +189,43 @@ Requirements:
 Generate the IR as valid JSON:
 """
 
-        # Generate with constraints
+        # Generate with JSON schema constraints using vLLM + XGrammar
         start_time = time.time()
         try:
-            outputs = self.llm.generate([formatted_prompt], sampling_params)
+            # vLLM 0.9.2+ API: Use GuidedDecodingParams for schema constraints
+            # XGrammar backend handles schema enforcement automatically
+            guided_decoding = GuidedDecodingParams(json=schema)
+            sampling_params = SamplingParams(
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                guided_decoding=guided_decoding,  # JSON schema constraint (uses XGrammar)
+            )
+
+            response = self.llm.generate([formatted_prompt], sampling_params)
             generation_time = (time.time() - start_time) * 1000
 
-            # Extract result
-            output = outputs[0].outputs[0]
-            generated_text = output.text.strip()
+            # Extract result (vLLM returns list of RequestOutput objects)
+            output = response[0]
+            generated_text = output.outputs[0].text.strip()
 
             # Parse JSON
             ir_json = json.loads(generated_text)
 
             return {
                 "ir_json": ir_json,
-                "tokens_used": len(output.token_ids),
+                "tokens_used": len(output.outputs[0].token_ids),
                 "generation_time_ms": generation_time,
-                "finish_reason": output.finish_reason,
+                "finish_reason": output.outputs[0].finish_reason,
             }
 
         except json.JSONDecodeError as e:
             return {
                 "error": f"Invalid JSON generated: {str(e)}",
-                "raw_output": generated_text[:500],  # First 500 chars for debugging
+                "raw_output": generated_text[:500] if "generated_text" in locals() else "",
                 "ir_json": None,
                 "tokens_used": 0,
-                "generation_time_ms": time.time() * 1000 - start_time,
+                "generation_time_ms": (time.time() - start_time) * 1000,
                 "finish_reason": "json_error",
             }
         except Exception as e:
@@ -174,24 +233,49 @@ Generate the IR as valid JSON:
                 "error": f"Generation failed: {str(e)}",
                 "ir_json": None,
                 "tokens_used": 0,
-                "generation_time_ms": time.time() * 1000 - start_time,
+                "generation_time_ms": (time.time() - start_time) * 1000,
                 "finish_reason": "error",
             }
+
+    @modal.method()
+    def generate(
+        self,
+        prompt: str,
+        schema: dict,
+        max_tokens: int = 2048,
+        temperature: float = 0.3,
+        top_p: float = 0.95,
+    ) -> dict:
+        """
+        Generate IR from natural language with JSON schema constraints using vLLM.
+
+        This is the Modal method endpoint. For internal use, call _generate_impl directly.
+        """
+        return self._generate_impl(prompt, schema, max_tokens, temperature, top_p)
 
     @modal.fastapi_endpoint(method="POST", label="generate")
     async def web_generate(self, item: dict) -> dict:
         """
-        HTTP endpoint for IR generation.
+        HTTP endpoint for schema-constrained generation.
+
+        Supports both:
+        - Prompt → IR generation
+        - IR → Code generation
 
         POST body:
         {
             "prompt": str,
             "schema": dict,
-            "max_tokens": int,
-            "temperature": float,
+            "max_tokens": int,  # optional, default 2048
+            "temperature": float,  # optional, default 0.3
+            "top_p": float,  # optional, default 0.95
         }
+
+        The schema determines what type of generation:
+        - IR_JSON_SCHEMA → generates IR from natural language
+        - CODE_GENERATION_SCHEMA → generates code implementation from IR
         """
-        return self.generate(
+        return self._generate_impl(
             prompt=item["prompt"],
             schema=item["schema"],
             max_tokens=item.get("max_tokens", 2048),
@@ -201,11 +285,16 @@ Generate the IR as valid JSON:
 
 
 # Health check endpoint - separate from GPU class to avoid triggering model load
-@app.function(image=image)
+@app.function(image=llm_image)
 @modal.fastapi_endpoint(method="GET", label="health")
 def health():
     """Health check endpoint that doesn't require GPU."""
-    return {"status": "healthy", "model": MODEL_NAME, "gpu": GPU_CONFIG}
+    return {
+        "status": "healthy",
+        "model": MODEL_NAME,
+        "gpu": GPU_CONFIG,
+        "backend": f"vLLM {VLLM_VERSION} with XGrammar",
+    }
 
 
 # Local testing function

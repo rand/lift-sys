@@ -23,6 +23,11 @@
 - **SMT Verification**: Automatic logical consistency checking
 - **Multiple Interfaces**: Web UI, CLI, TUI, Python SDK
 - **Code Generation**: Python code generation from finalized IR with runtime assertions
+  - **CRITICAL TECHNICAL REQUIREMENT**: IR → Code MUST use constrained generation
+  - Uses CODE_GENERATION_SCHEMA with SGLang + XGrammar
+  - Enables speculative parallel decoding for 3-10x faster inference
+  - Guarantees schema-valid JSON output, eliminates parsing failures
+  - Allows batched generation of multiple code variations in parallel
 - **IR Versioning**: Full version history with rollback and comparison
 - **Provenance Tracking**: Track origin of every IR element (human/agent/reverse/merge)
 - **Proactive Analysis**: AgentAdvisor provides quality suggestions across 6 categories
@@ -38,8 +43,11 @@
 
 #### Infrastructure
 - **OAuth System**: GitHub OAuth with encrypted token storage
-- **Multi-Provider Support**: Anthropic, OpenAI, Google Gemini, local vLLM
-- **Modal Deployment**: Production-ready hybrid cloud deployment
+- **Multi-Provider Support**: Anthropic, OpenAI, Google Gemini, SGLang (Modal)
+- **Modal Deployment**: SGLang + XGrammar + Qwen3-Coder-30B-A3B-Instruct on GPU
+  - Migrated from vLLM to SGLang for native Qwen3 MoE support
+  - XGrammar backend for constrained generation (3-10x faster JSON decoding)
+  - RadixAttention for efficient prefix caching
 - **Repository Management**: GitHub integration with sync and branch support
 - **Comprehensive Testing**: 100+ tests covering critical paths
 

@@ -1,0 +1,28 @@
+{
+  "implementation": {
+    "body_statements": [
+      {
+        "type": "if_statement",
+        "code": "if num1 > num2:",
+        "rationale": "Check if the first number is greater than the second"
+      },
+      {
+        "type": "return",
+        "code": "return num1",
+        "rationale": "Return the first number if it is greater"
+      },
+      {
+        "type": "return",
+        "code": "return num2",
+        "rationale": "Return the second number if the first is not greater"
+      }
+    ],
+    "algorithm": "Compare two numbers and return the maximum",
+    "complexity": {
+      "time": "O(1)",
+      "space": "O(1)"
+    }
+  },
+  "imports": [],
+  "helper_functions": []
+}

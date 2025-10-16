@@ -1,0 +1,38 @@
+{
+  "implementation": {
+    "body_statements": [
+      {
+        "type": "assignment",
+        "code": "filtered_list = []",
+        "rationale": "Initialize an empty list to store even numbers"
+      },
+      {
+        "type": "for_loop",
+        "code": "for number in input_list:",
+        "rationale": "Iterate over each number in the input list"
+      },
+      {
+        "type": "if_statement",
+        "code": "if number % 2 == 0:",
+        "rationale": "Check if the number is even"
+      },
+      {
+        "type": "assignment",
+        "code": "filtered_list.append(number)",
+        "rationale": "Add the even number to the filtered list"
+      },
+      {
+        "type": "return",
+        "code": "return filtered_list",
+        "rationale": "Return the list of even numbers"
+      }
+    ],
+    "algorithm": "The function iterates over the input list, checks if each number is even, and if so, adds it to a new list. The new list is then returned.",
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    }
+  },
+  "imports": [],
+  "helper_functions": []
+}

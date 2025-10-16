@@ -75,17 +75,14 @@ llm_image = (
 )
 
 # Model configuration
-# Using Qwen2.5-Coder-7B - fits comfortably on A10G/A100/H100 (all have 24GB+)
-# Note: Qwen3-Coder-30B MoE requires >40GB VRAM (doesn't fit on A100-40GB)
-MODEL_NAME = "Qwen/Qwen2.5-Coder-7B-Instruct"
+# Using Qwen2.5-Coder-32B-Instruct for code generation
+# 32B parameter model optimized for code tasks
+MODEL_NAME = "Qwen/Qwen2.5-Coder-32B-Instruct"
 MODEL_REVISION = "main"
 
 # GPU configuration
-# vLLM works on all GPU types - using A10G for cost efficiency
-GPU_CONFIG = "A10G"  # A10G ~$1.10/hr, sufficient for 7B model
-# GPU_CONFIG = "A100"  # A100 ~$3/hr - more VRAM for larger models
-# GPU_CONFIG = "H100"  # H100 ~$4/hr - fastest but most expensive
-# GPU_CONFIG = ["A10G", "A100", "any"]  # For fallback chain
+# 32B model fits comfortably on A100-80GB
+GPU_CONFIG = "A100-80GB"  # ~$4/hr
 
 # Model caching with Modal Volume for faster cold starts
 # Models are downloaded once and reused across container restarts
@@ -97,8 +94,8 @@ volume = modal.Volume.from_name("lift-sys-models", create_if_missing=True)
     image=llm_image,  # Image with vLLM, transformers, FastAPI
     gpu=GPU_CONFIG,
     volumes={MODELS_DIR: volume},  # Mount volume for model caching
-    timeout=600,  # 10 minutes for model loading + inference
-    scaledown_window=300,  # Keep warm for 5 minutes (balance cost vs latency)
+    timeout=1200,  # 20 minutes for first-time model download + loading + inference
+    scaledown_window=600,  # Keep warm for 10 minutes to avoid cold starts during testing
 )
 @modal.concurrent(max_inputs=20)  # Process multiple requests concurrently
 class ConstrainedIRGenerator:
@@ -123,11 +120,15 @@ class ConstrainedIRGenerator:
 
         # Initialize vLLM with XGrammar backend for constrained generation
         # vLLM 0.9.2+ has native XGrammar support (default backend)
+        # Optimized settings for 32B model on A100-80GB:
+        # - 32B BF16 model ~64GB, fits comfortably on 80GB GPU
+        # - Limited max_model_len (8192) sufficient for IR generation
         self.llm = LLM(
             model=MODEL_NAME,
             trust_remote_code=True,
-            dtype="auto",  # Use bfloat16 automatically on supported GPUs
-            gpu_memory_utilization=0.90,  # 7B model fits comfortably in 24GB
+            dtype="auto",  # BF16 for Qwen2.5
+            gpu_memory_utilization=0.90,  # 32B fits well on A100-80GB
+            max_model_len=8192,  # Sufficient for IR, reduces memory footprint
             guided_decoding_backend="xgrammar",  # XGrammar for fast JSON schema enforcement
         )
 

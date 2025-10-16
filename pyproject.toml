@@ -2,7 +2,7 @@
 name = "lift-sys"
 version = "0.1.0"
 description = "Modular platform for verifiable AI-native software development"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 authors = [{name = "Lift Sys Team"}]
 dependencies = [
     "fastapi>=0.110.0",

@@ -11,6 +11,13 @@ Design: Extensible to support future Semantic IR enhancements
 (entity resolution, clause analysis, relationship graphs, etc.)
 """
 
+import sys
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 import ast
 import asyncio
 import json
@@ -18,7 +25,6 @@ import time
 import tracemalloc
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from pathlib import Path
 from statistics import mean, median, stdev
 from typing import Any
 

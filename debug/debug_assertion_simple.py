@@ -1,11 +1,11 @@
 """Simple debug script to test assertion checker with buggy get_type_name code."""
 
 from lift_sys.ir.models import (
-    IntermediateRepresentation,
-    IntentClause,
-    SigClause,
     AssertClause,
+    IntentClause,
+    IntermediateRepresentation,
     Parameter,
+    SigClause,
 )
 from lift_sys.validation import AssertionChecker
 
@@ -13,34 +13,32 @@ from lift_sys.validation import AssertionChecker
 def test_buggy_get_type_name():
     """Test that buggy get_type_name is caught by assertion checker."""
 
-    print("="*70)
+    print("=" * 70)
     print("TESTING ASSERTION CHECKER ON BUGGY get_type_name")
-    print("="*70)
+    print("=" * 70)
 
     # Create IR manually (similar to unit test)
     ir = IntermediateRepresentation(
         intent=IntentClause(
             summary="Check the type of a value and return a type name string",
-            rationale="Type checking function that returns descriptive type names"
+            rationale="Type checking function that returns descriptive type names",
         ),
         signature=SigClause(
-            name="check_type",
-            parameters=[
-                Parameter(name="value", type_hint="Any")
-            ],
-            returns="str"
+            name="check_type", parameters=[Parameter(name="value", type_hint="Any")], returns="str"
         ),
         assertions=[
             AssertClause(predicate="Returns 'int' for integer inputs", rationale=""),
             AssertClause(predicate="Returns 'str' for string inputs", rationale=""),
             AssertClause(predicate="Returns 'list' for list inputs", rationale=""),
             AssertClause(predicate="Returns 'other' for anything else", rationale=""),
-        ]
+        ],
     )
 
     print("\n[1/3] IR Created")
     print(f"  - Intent: {ir.intent.summary}")
-    print(f"  - Signature: {ir.signature.name}({', '.join(p.name for p in ir.signature.parameters)})")
+    print(
+        f"  - Signature: {ir.signature.name}({', '.join(p.name for p in ir.signature.parameters)})"
+    )
     print(f"  - Assertions: {len(ir.assertions)}")
     for i, assertion in enumerate(ir.assertions, 1):
         print(f"    {i}. {assertion.predicate}")
@@ -64,11 +62,7 @@ def check_type(value):
 
     # Test assertion checker
     checker = AssertionChecker()
-    result = checker.validate(
-        code=buggy_code,
-        function_name="check_type",
-        ir=ir
-    )
+    result = checker.validate(code=buggy_code, function_name="check_type", ir=ir)
 
     print("\n[3/3] Validation Results")
     print(f"  - Validation passed: {result.passed}")
@@ -101,9 +95,9 @@ def check_type(value):
         input_type = type(inputs[0]).__name__ if inputs else "?"
         print(f"    {i}. Input: {inputs} (type: {input_type}) → Expected: {expected}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("DEBUG COMPLETE")
-    print("="*70)
+    print("=" * 70)
 
     if not result.passed:
         print("\n✅ GOOD: Assertion checker caught the bug!")

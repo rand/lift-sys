@@ -12,11 +12,12 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+from performance_benchmark import PerformanceBenchmark
+from test_cases_nontrivial import TEST_SUITES
+
 from lift_sys.codegen.xgrammar_generator import XGrammarCodeGenerator
 from lift_sys.ir.models import IntermediateRepresentation
 from lift_sys.providers.modal_provider import ModalProvider
-from performance_benchmark import PerformanceBenchmark
-from test_cases_nontrivial import TEST_SUITES
 
 
 async def run_test_with_multishot(

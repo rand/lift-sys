@@ -11,9 +11,10 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import PerformanceBenchmark
 from test_cases_expanded import ALL_TEST_CASES, CATEGORY_COUNTS, EXPECTED_SUCCESS_RATES
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 def analyze_by_category(benchmark: PerformanceBenchmark) -> dict:
@@ -28,7 +29,7 @@ def analyze_by_category(benchmark: PerformanceBenchmark) -> dict:
         category = None
 
         # Find matching test case
-        for name, prompt, cat in ALL_TEST_CASES:
+        for name, _prompt, cat in ALL_TEST_CASES:
             if name == test_name:
                 category = cat
                 break

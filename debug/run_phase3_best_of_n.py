@@ -3,10 +3,15 @@
 
 import asyncio
 import sys
+from pathlib import Path
 
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from debug.performance_benchmark import PerformanceBenchmark
+from debug.test_cases_nontrivial import TEST_SUITES
 from lift_sys.providers.modal_provider import ModalProvider
-from performance_benchmark import PerformanceBenchmark
-from test_cases_nontrivial import TEST_SUITES
 
 
 async def main():
@@ -18,9 +23,10 @@ async def main():
 
     if use_best_of_n:
         print("\n" + "=" * 70)
-        print("🎯 BEST-OF-N MODE ENABLED")
+        print("🎯 BEST-OF-N MODE ENABLED (temperature=0.8)")
         print(f"   Generating {n_candidates} candidates per IR, selecting best")
-        print("   Cost: {n_candidates}x baseline")
+        print("   Higher temperature for increased diversity")
+        print(f"   Cost: {n_candidates}x baseline")
         print("=" * 70 + "\n")
     else:
         print("\n" + "=" * 70)
@@ -37,7 +43,7 @@ async def main():
         from lift_sys.forward_mode.best_of_n_translator import BestOfNIRTranslator
 
         translator = BestOfNIRTranslator(
-            provider=provider, n_candidates=n_candidates, temperature=0.5
+            provider=provider, n_candidates=n_candidates, temperature=0.8
         )
     else:
         from lift_sys.forward_mode.xgrammar_translator import XGrammarIRTranslator

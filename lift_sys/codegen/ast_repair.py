@@ -50,6 +50,10 @@ class ASTRepairEngine:
         tree, type_fixes = self._fix_type_checks(tree, function_name)
         modifications.extend(type_fixes)
 
+        # Pass 3: Fix nested min/max checks
+        tree, minmax_fixes = self._fix_nested_minmax(tree, function_name)
+        modifications.extend(minmax_fixes)
+
         if not modifications:
             return None  # No repairs needed
 
@@ -99,6 +103,28 @@ class ASTRepairEngine:
         """
         modifications = []
         transformer = TypeCheckTransformer(modifications)
+        tree = transformer.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree, modifications
+
+    def _fix_nested_minmax(self, tree: ast.AST, function_name: str) -> tuple[ast.AST, list[str]]:
+        """
+        Fix nested min/max checks that should be independent.
+
+        Pattern:
+            if number < min_value:
+                min_value = number
+                if number > max_value:  # BUG: Nested, only runs on new min
+                    max_value = number
+
+        Fix:
+            if number < min_value:
+                min_value = number
+            if number > max_value:  # FIXED: Independent check
+                max_value = number
+        """
+        modifications = []
+        transformer = NestedMinMaxTransformer(modifications)
         tree = transformer.visit(tree)
         ast.fix_missing_locations(tree)
         return tree, modifications
@@ -265,6 +291,115 @@ class TypeCheckTransformer(ast.NodeTransformer):
 
         # Return the outermost If statement
         return current_orelse
+
+
+class NestedMinMaxTransformer(ast.NodeTransformer):
+    """
+    AST transformer to fix nested min/max checks.
+
+    Detects patterns where max check is nested inside min check, which causes
+    max to only update when finding a new minimum (incorrect logic).
+    """
+
+    def __init__(self, modifications: list[str]):
+        self.modifications = modifications
+
+    def visit_For(self, node: ast.For) -> ast.For:
+        """Visit for loops and check for nested min/max pattern."""
+        new_body = []
+        extracted_checks = []
+
+        for stmt in node.body:
+            if isinstance(stmt, ast.If) and self._is_min_check_with_nested_max(stmt):
+                # Found the pattern! Extract the nested max check
+                fixed_min_check, max_check = self._extract_nested_max(stmt)
+                new_body.append(fixed_min_check)
+                extracted_checks.append(max_check)
+                self.modifications.append(
+                    "Unnested max check from inside min check (min/max should be independent)"
+                )
+            else:
+                # Keep other statements unchanged
+                new_body.append(self.visit(stmt))
+
+        # Add extracted max checks after the modified body
+        new_body.extend(extracted_checks)
+        node.body = new_body
+
+        return node
+
+    def _is_min_check_with_nested_max(self, if_node: ast.If) -> bool:
+        """
+        Check if this is a min check with a nested max check.
+
+        Pattern:
+            if x < min_var:
+                min_var = x
+                if x > max_var:  # <- Nested max check
+                    max_var = x
+        """
+        # Must be a comparison (x < min_var)
+        if not isinstance(if_node.test, ast.Compare):
+            return False
+
+        # Must have at least 2 statements in body
+        if len(if_node.body) < 2:
+            return False
+
+        # First statement should be assignment (min_var = x)
+        first_stmt = if_node.body[0]
+        if not isinstance(first_stmt, ast.Assign):
+            return False
+
+        # Look for nested If that's a max check
+        for stmt in if_node.body[1:]:
+            if isinstance(stmt, ast.If) and self._is_max_check(stmt):
+                return True
+
+        return False
+
+    def _is_max_check(self, if_node: ast.If) -> bool:
+        """
+        Check if this is a max check pattern.
+
+        Pattern:
+            if x > max_var:
+                max_var = x
+        """
+        # Must be a comparison (x > max_var)
+        if not isinstance(if_node.test, ast.Compare):
+            return False
+
+        # Check for > operator
+        if not if_node.test.ops or not isinstance(if_node.test.ops[0], ast.Gt):
+            return False
+
+        # Body should be a single assignment
+        if len(if_node.body) != 1:
+            return False
+
+        return isinstance(if_node.body[0], ast.Assign)
+
+    def _extract_nested_max(self, min_check: ast.If) -> tuple[ast.If, ast.If]:
+        """
+        Extract the nested max check from the min check.
+
+        Returns:
+            (fixed_min_check, extracted_max_check)
+        """
+        new_body = []
+        max_check = None
+
+        for stmt in min_check.body:
+            if isinstance(stmt, ast.If) and self._is_max_check(stmt) and max_check is None:
+                # Found the nested max check - extract it
+                max_check = stmt
+            else:
+                # Keep other statements in min check
+                new_body.append(stmt)
+
+        min_check.body = new_body
+        return min_check, max_check
 
 
 __all__ = ["ASTRepairEngine"]

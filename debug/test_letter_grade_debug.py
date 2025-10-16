@@ -6,8 +6,9 @@ Debug letter_grade to see indentation issue.
 import asyncio
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import PerformanceBenchmark
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 async def main():

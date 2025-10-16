@@ -4,9 +4,10 @@
 import asyncio
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import PerformanceBenchmark
 from run_expanded_benchmark import analyze_by_category, print_category_analysis
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 async def main():

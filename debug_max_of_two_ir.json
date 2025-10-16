@@ -1,0 +1,24 @@
+{
+  "intent": {
+    "summary": "Create a function that returns the maximum of two numbers",
+    "rationale": "The function will take two numbers as input and return the larger of the two. This is a common utility function in many applications where finding the maximum value is required."
+  },
+  "signature": {
+    "name": "get_max",
+    "parameters": [
+      {
+        "name": "num1",
+        "type_hint": "int"
+      },
+      {
+        "name": "num2",
+        "type_hint": "int"
+      }
+    ],
+    "returns": "int"
+  },
+  "metadata": {
+    "language": "python",
+    "origin": "natural_language"
+  }
+}

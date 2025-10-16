@@ -8,6 +8,8 @@ from typing import Any
 
 from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
+from ..validation import AssertionChecker
+from .ast_repair import ASTRepairEngine
 from .code_schema import CODE_GENERATION_SCHEMA, get_prompt_for_code_generation
 from .generator import CodeGenerator, CodeGeneratorConfig, GeneratedCode
 from .multishot import MultishotGenerator
@@ -48,13 +50,15 @@ class XGrammarCodeGenerator:
         )
         self.structural_generator = CodeGenerator(config=structural_config)
         self.validator = CodeValidator()
+        self.repair_engine = ASTRepairEngine()  # Phase 4: Deterministic repair
+        self.assertion_checker = AssertionChecker()  # Phase 5: Semantic validation
         self.multishot = MultishotGenerator(num_shots=3)
         self._validation_feedback = ""  # Track validation feedback between attempts
 
     async def generate(
         self,
         ir: IntermediateRepresentation,
-        max_retries: int = 3,
+        max_retries: int = 5,
         use_multishot: bool = False,
         test_cases: list | None = None,
         temperature: float = 0.3,
@@ -132,7 +136,13 @@ class XGrammarCodeGenerator:
         # Generate implementation using constrained generation (XGrammar) or fallback
         for attempt in range(max_retries):
             try:
-                impl_json = await self._generate_implementation(ir, structure, attempt, temperature)
+                # Increase temperature on retries to get more diverse outputs
+                # attempt 0: base temperature, attempt 1+: gradually increase
+                retry_temperature = temperature + (attempt * 0.15)  # +0.15 per retry
+                retry_temperature = min(retry_temperature, 0.9)  # Cap at 0.9
+                impl_json = await self._generate_implementation(
+                    ir, structure, attempt, retry_temperature
+                )
 
                 # Validate implementation JSON
                 self._validate_implementation(impl_json)
@@ -147,6 +157,80 @@ class XGrammarCodeGenerator:
                     if attempt == max_retries - 1:
                         raise ValueError(f"Generated invalid Python syntax: {e}") from e
                     # Retry with error feedback
+                    continue
+
+                # Phase 4: Deterministic AST Repair (before validation)
+                # Try to fix known bug patterns automatically
+                try:
+                    repaired_code = self.repair_engine.repair(
+                        code=complete_code, function_name=ir.signature.name
+                    )
+                    if repaired_code:
+                        print("  🔧 Applied deterministic AST repairs")
+                        complete_code = repaired_code
+                except Exception as e:
+                    # If repair fails, continue with original code
+                    print(f"  ⚠️ AST repair failed (continuing with original): {e}")
+
+                # Phase 5: Semantic Validation (Assertion Checking)
+                # Validate generated code against IR assertions
+                assertion_result = self.assertion_checker.validate(
+                    code=complete_code, function_name=ir.signature.name, ir=ir
+                )
+
+                # If semantic validation fails and we have retries left, retry with feedback
+                if not assertion_result.passed and attempt < max_retries - 1:
+                    print(
+                        f"  ⚠️ Assertion validation failed: {len(assertion_result.issues)} issue(s)"
+                    )
+                    for issue in assertion_result.issues[:3]:  # Show first 3 issues
+                        print(f"    - {issue.message}")
+
+                    # Format assertion issues as feedback for next retry
+                    feedback_parts = ["\n\nPrevious attempt had assertion validation failures:"]
+
+                    # Detect if this is a type-checking function returning wrong format
+                    # (returning computed types instead of literal strings)
+                    has_type_mismatch = any(
+                        issue.expected
+                        and issue.actual
+                        and isinstance(issue.expected, str)
+                        and (
+                            str(issue.actual).startswith("<class ")
+                            or (
+                                isinstance(issue.actual, str)
+                                and issue.actual not in [issue.expected]
+                            )
+                        )
+                        for issue in assertion_result.issues
+                        if issue.test_input and issue.expected and issue.actual
+                    )
+
+                    if has_type_mismatch:
+                        feedback_parts.append(
+                            "\n⚠️ CRITICAL: Function must return LITERAL STRING values, not computed types!\n"
+                            "DO NOT use type(value) or type(value).__name__ or str(type(value)).\n"
+                            "Use EXPLICIT string literals in return statements:\n"
+                            "  ✓ Correct:   return 'int'    return 'str'    return 'list'    return 'other'\n"
+                            "  ✗ Wrong:     return type(value)    return type(value).__name__\n"
+                            "\n⚠️ PYTHON QUIRK: In Python, isinstance(True, int) returns True!\n"
+                            "If checking for booleans, ALWAYS check bool BEFORE int:\n"
+                            "  ✓ Correct order:   isinstance(value, bool), isinstance(value, int)\n"
+                            "  ✗ Wrong order:     isinstance(value, int), isinstance(value, bool)\n"
+                            "Otherwise True/False will incorrectly match 'int' instead of 'other'.\n"
+                        )
+
+                    for issue in assertion_result.issues[:5]:  # Include up to 5 issues
+                        if issue.test_input and issue.expected and issue.actual:
+                            feedback_parts.append(
+                                f"- Test failed: {ir.signature.name}{issue.test_input} "
+                                f"returned {repr(issue.actual)}, expected {repr(issue.expected)}"
+                            )
+                        else:
+                            feedback_parts.append(f"- {issue.message}")
+
+                    feedback_parts.append("\nPlease fix these issues in the next attempt.")
+                    self._validation_feedback = "\n".join(feedback_parts)
                     continue
 
                 # Validate code logic (Phase 2: Code Validation Layer)

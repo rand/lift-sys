@@ -44,7 +44,7 @@ class ModalProvider(BaseProvider):
     async def initialize(self, credentials: dict[str, Any]) -> None:
         """Initialize HTTP client."""
         self._client = httpx.AsyncClient(
-            timeout=180.0,  # 3 minutes for cold starts (model loading)
+            timeout=600.0,  # 10 minutes for cold starts (Qwen3-30B takes ~6-7 min)
             follow_redirects=True,
         )
 

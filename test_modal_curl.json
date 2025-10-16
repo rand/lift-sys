@@ -1,0 +1,27 @@
+{
+  "prompt": "You are an expert at converting natural language specifications into formal intermediate representations (IR). Given a natural language description of a function, generate a JSON object following the lift-sys IR schema. Create a function called add that takes two integers a and b, and returns their sum",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "intent": {
+        "type": "object",
+        "properties": {
+          "summary": {"type": "string"}
+        },
+        "required": ["summary"]
+      },
+      "signature": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "parameters": {"type": "array"},
+          "returns": {"type": "string"}
+        },
+        "required": ["name", "parameters"]
+      }
+    },
+    "required": ["intent", "signature"]
+  },
+  "max_tokens": 1024,
+  "temperature": 0.3
+}

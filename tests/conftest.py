@@ -372,3 +372,98 @@ def reset_test_state():
     reset_state()
     yield
     reset_state()
+
+
+# =============================================================================
+# Response Recording Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def modal_recorder(fixtures_dir: Path):
+    """
+    Provide response recorder for Modal API calls.
+
+    Records API responses on first run (RECORD_FIXTURES=true),
+    replays them on subsequent runs (default).
+
+    This enables:
+    - Integration tests to run in seconds instead of minutes
+    - Deterministic test results
+    - Offline testing
+    - No Modal API rate limits during testing
+
+    Usage:
+        async def test_translation(modal_recorder):
+            ir = await modal_recorder.get_or_record(
+                key="find_index_prompt",
+                generator_fn=lambda: translator.translate(prompt)
+            )
+
+    Environment Variables:
+        RECORD_FIXTURES=true  - Record new responses
+        RECORD_FIXTURES=false - Use cached responses (default)
+    """
+    from tests.fixtures import ResponseRecorder
+
+    record_mode = os.getenv("RECORD_FIXTURES", "false").lower() == "true"
+    fixture_file = fixtures_dir / "modal_responses.json"
+
+    recorder = ResponseRecorder(fixture_file=fixture_file, record_mode=record_mode, auto_save=True)
+
+    yield recorder
+
+    # Print stats at end of test
+    if record_mode:
+        stats = recorder.get_stats()
+        print("\n📊 Response Recorder Stats:")
+        print(f"  Cache hits: {stats['cache_hits']}")
+        print(f"  Cache misses: {stats['cache_misses']}")
+        print(f"  Total cached: {stats['num_cached_responses']}")
+
+
+@pytest.fixture
+def ir_recorder(fixtures_dir: Path):
+    """
+    Provide response recorder for IR generation.
+
+    Similar to modal_recorder but with IR-specific serialization.
+    Handles IntermediateRepresentation objects.
+
+    Usage:
+        async def test_ir_generation(ir_recorder):
+            ir = await ir_recorder.get_or_record(
+                key="test_prompt_1",
+                generator_fn=lambda: translator.translate(prompt)
+            )
+    """
+    from lift_sys.ir.models import IntermediateRepresentation
+    from tests.fixtures import SerializableResponseRecorder
+
+    record_mode = os.getenv("RECORD_FIXTURES", "false").lower() == "true"
+    fixture_file = fixtures_dir / "ir_responses.json"
+
+    def serialize_ir(ir: IntermediateRepresentation) -> dict:
+        """Convert IR to JSON-serializable dict."""
+        return ir.to_dict()
+
+    def deserialize_ir(data: dict) -> IntermediateRepresentation:
+        """Convert dict back to IR object."""
+        return IntermediateRepresentation.from_dict(data)
+
+    recorder = SerializableResponseRecorder(
+        fixture_file=fixture_file,
+        record_mode=record_mode,
+        auto_save=True,
+        serializer=serialize_ir,
+        deserializer=deserialize_ir,
+    )
+
+    yield recorder
+
+    if record_mode:
+        stats = recorder.get_stats()
+        print("\n📊 IR Recorder Stats:")
+        print(f"  Cache hits: {stats['cache_hits']}")
+        print(f"  Cache misses: {stats['cache_misses']}")
+        print(f"  Total cached IRs: {stats['num_cached_responses']}")

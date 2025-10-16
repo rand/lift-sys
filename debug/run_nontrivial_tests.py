@@ -11,9 +11,10 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import PerformanceBenchmark
 from test_cases_nontrivial import TEST_SUITES
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 async def run_test_suite(phase="phase1", save_results=True):

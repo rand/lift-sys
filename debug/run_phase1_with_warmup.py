@@ -8,9 +8,10 @@ Adds a warm-up phase to ensure Modal endpoint is ready.
 import asyncio
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import PerformanceBenchmark
 from test_cases_nontrivial import PHASE_1_TESTS
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 async def warm_up_modal(provider):

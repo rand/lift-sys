@@ -1,10 +1,8 @@
 """Debug script to understand why assertion checker didn't catch get_type_name bug."""
 
 import asyncio
-import json
 
 from lift_sys.codegen.xgrammar_generator import XGrammarCodeGenerator
-from lift_sys.ir.models import IntermediateRepresentation
 from lift_sys.providers.modal_provider import ModalProvider
 from lift_sys.validation import AssertionChecker
 
@@ -27,12 +25,15 @@ async def debug_get_type_name():
     # Generate IR from prompt
     print("\n[1/3] Generating IR from prompt...")
     from lift_sys.planner.planner import Planner
+
     planner = Planner(provider=provider)
     ir = await planner.synthesize_ir(prompt)
 
-    print(f"  ✓ IR generated")
+    print("  ✓ IR generated")
     print(f"  - Intent: {ir.intent.summary}")
-    print(f"  - Signature: {ir.signature.name}({', '.join(p.name for p in ir.signature.parameters)})")
+    print(
+        f"  - Signature: {ir.signature.name}({', '.join(p.name for p in ir.signature.parameters)})"
+    )
     print(f"  - Assertions: {len(ir.assertions)}")
 
     for i, assertion in enumerate(ir.assertions, 1):
@@ -55,11 +56,7 @@ def check_type(value):
 """
 
     checker = AssertionChecker()
-    result = checker.validate(
-        code=buggy_code,
-        function_name="check_type",
-        ir=ir
-    )
+    result = checker.validate(code=buggy_code, function_name="check_type", ir=ir)
 
     print(f"  - Validation passed: {result.passed}")
     print(f"  - Issues found: {len(result.issues)}")

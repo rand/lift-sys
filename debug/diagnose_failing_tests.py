@@ -2,7 +2,6 @@
 """Diagnose the two failing tests: find_index and get_type_name."""
 
 import asyncio
-import json
 
 from lift_sys.codegen.xgrammar_generator import XGrammarCodeGenerator
 from lift_sys.ir.models import IntermediateRepresentation
@@ -151,9 +150,9 @@ async def main():
         print(f"\n{result['name']}:")
         print(f"  Success Rate: {result['passed']}/{result['total']}")
         print(f"  Effects Generated: {len(result['effects'])}")
-        if not result['effects']:
-            print(f"  ⚠️  NO EFFECTS - This is the problem!")
-        print(f"  Key Issues:")
+        if not result["effects"]:
+            print("  ⚠️  NO EFFECTS - This is the problem!")
+        print("  Key Issues:")
         if result["passed"] < result["total"]:
             print(f"    - {result['total'] - result['passed']} test(s) failing")
             if not result["effects"]:

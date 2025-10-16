@@ -10,9 +10,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from lift_sys.providers.modal_provider import ModalProvider
 from performance_benchmark import BenchmarkResult, PerformanceBenchmark
 from test_case_definitions import QUICK_VALIDATION_TESTS
+
+from lift_sys.providers.modal_provider import ModalProvider
 
 
 async def run_benchmark_with_execution(

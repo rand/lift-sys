@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ..ir.constraint_detector import detect_and_apply_constraints
 from ..ir.models import (
     AssertClause,
     EffectClause,
@@ -82,6 +83,9 @@ class XGrammarIRTranslator:
                 # Add provenance
                 ir = self._add_provenance(ir, prompt)
 
+                # Phase 7: Automatically detect and apply constraints
+                ir = detect_and_apply_constraints(ir)
+
                 return ir
 
             except Exception as e:
@@ -108,6 +112,9 @@ class XGrammarIRTranslator:
 
                 # Add provenance
                 ir = self._add_provenance(ir, prompt)
+
+                # Phase 7: Automatically detect and apply constraints
+                ir = detect_and_apply_constraints(ir)
 
                 return ir
 

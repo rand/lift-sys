@@ -151,6 +151,18 @@ IR_JSON_SCHEMA: dict[str, Any] = {
             },
             "additionalProperties": False,
         },
+        "constraints": {
+            "type": "array",
+            "description": "Phase 7: Explicit constraints on code generation behavior",
+            "items": {
+                "oneOf": [
+                    {"$ref": "#/definitions/ReturnConstraint"},
+                    {"$ref": "#/definitions/LoopBehaviorConstraint"},
+                    {"$ref": "#/definitions/PositionConstraint"},
+                ]
+            },
+            "default": [],
+        },
     },
     "required": ["intent", "signature"],
     "additionalProperties": False,
@@ -187,7 +199,115 @@ IR_JSON_SCHEMA: dict[str, Any] = {
             },
             "required": ["identifier", "type_hint"],
             "additionalProperties": False,
-        }
+        },
+        "ReturnConstraint": {
+            "type": "object",
+            "description": "Constraint ensuring computed values are explicitly returned",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "return_constraint",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description of the constraint",
+                },
+                "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning"],
+                    "default": "error",
+                },
+                "value_name": {
+                    "type": "string",
+                    "description": "Name of the value that must be returned (e.g., 'count', 'result')",
+                },
+                "requirement": {
+                    "type": "string",
+                    "enum": ["MUST_RETURN", "OPTIONAL_RETURN"],
+                    "default": "MUST_RETURN",
+                },
+            },
+            "required": ["type", "value_name"],
+            "additionalProperties": False,
+        },
+        "LoopBehaviorConstraint": {
+            "type": "object",
+            "description": "Constraint enforcing specific loop behaviors",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "loop_constraint",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description of the constraint",
+                },
+                "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning"],
+                    "default": "error",
+                },
+                "search_type": {
+                    "type": "string",
+                    "description": "Type of search operation (first, last, all matches)",
+                    "enum": ["FIRST_MATCH", "LAST_MATCH", "ALL_MATCHES"],
+                    "default": "FIRST_MATCH",
+                },
+                "requirement": {
+                    "type": "string",
+                    "description": "Required loop behavior (early return, accumulate, transform)",
+                    "enum": ["EARLY_RETURN", "ACCUMULATE", "TRANSFORM"],
+                    "default": "EARLY_RETURN",
+                },
+                "loop_variable": {
+                    "type": ["string", "null"],
+                    "description": "Optional: Name of the loop variable for clarity",
+                },
+            },
+            "required": ["type"],
+            "additionalProperties": False,
+        },
+        "PositionConstraint": {
+            "type": "object",
+            "description": "Constraint specifying position requirements between elements",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "position_constraint",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description of the constraint",
+                },
+                "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning"],
+                    "default": "error",
+                },
+                "elements": {
+                    "type": "array",
+                    "description": "Elements whose positions are constrained (e.g., ['@', '.'])",
+                    "items": {"type": "string"},
+                },
+                "requirement": {
+                    "type": "string",
+                    "description": "Required relationship between elements",
+                    "enum": ["NOT_ADJACENT", "ORDERED", "MIN_DISTANCE", "MAX_DISTANCE"],
+                    "default": "NOT_ADJACENT",
+                },
+                "min_distance": {
+                    "type": "integer",
+                    "description": "Minimum character distance between elements",
+                    "default": 0,
+                },
+                "max_distance": {
+                    "type": ["integer", "null"],
+                    "description": "Maximum character distance between elements (None = unlimited)",
+                },
+            },
+            "required": ["type", "elements"],
+            "additionalProperties": False,
+        },
     },
 }
 

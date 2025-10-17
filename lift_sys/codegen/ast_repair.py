@@ -54,6 +54,14 @@ class ASTRepairEngine:
         tree, minmax_fixes = self._fix_nested_minmax(tree, function_name)
         modifications.extend(minmax_fixes)
 
+        # Pass 4: Add missing stdlib imports
+        tree, import_fixes = self._add_missing_imports(tree, code)
+        modifications.extend(import_fixes)
+
+        # Pass 5: Fix missing return statements
+        tree, return_fixes = self._fix_missing_returns(tree, function_name)
+        modifications.extend(return_fixes)
+
         if not modifications:
             return None  # No repairs needed
 
@@ -125,6 +133,52 @@ class ASTRepairEngine:
         """
         modifications = []
         transformer = NestedMinMaxTransformer(modifications)
+        tree = transformer.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree, modifications
+
+    def _add_missing_imports(self, tree: ast.AST, code: str) -> tuple[ast.AST, list[str]]:
+        """
+        Add missing stdlib imports.
+
+        Detects when stdlib modules are referenced but not imported.
+        Common patterns: re.search(), math.sqrt(), etc.
+
+        Pattern:
+            # Uses re.search() but missing import
+            if re.search(pattern, text):
+                ...
+
+        Fix:
+            import re  # ← ADDED
+
+            if re.search(pattern, text):
+                ...
+        """
+        modifications = []
+        transformer = MissingImportTransformer(modifications, code)
+        tree = transformer.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree, modifications
+
+    def _fix_missing_returns(self, tree: ast.AST, function_name: str) -> tuple[ast.AST, list[str]]:
+        """
+        Fix functions that should return but don't.
+
+        Detects functions with return type hints that have code paths without returns.
+
+        Pattern:
+            def count_words(text: str) -> int:
+                words = text.split()
+                # Missing: return len(words)
+
+        Fix:
+            def count_words(text: str) -> int:
+                words = text.split()
+                return len(words)  # ← ADDED based on heuristics
+        """
+        modifications = []
+        transformer = MissingReturnTransformer(modifications)
         tree = transformer.visit(tree)
         ast.fix_missing_locations(tree)
         return tree, modifications
@@ -400,6 +454,128 @@ class NestedMinMaxTransformer(ast.NodeTransformer):
 
         min_check.body = new_body
         return min_check, max_check
+
+
+class MissingImportTransformer(ast.NodeTransformer):
+    """
+    AST transformer to add missing stdlib imports.
+
+    Detects when code references stdlib modules without importing them.
+    """
+
+    # Common stdlib modules we can safely auto-import
+    STDLIB_MODULES = {
+        "re",
+        "math",
+        "random",
+        "json",
+        "os",
+        "sys",
+        "datetime",
+        "time",
+        "itertools",
+        "collections",
+        "functools",
+    }
+
+    def __init__(self, modifications: list[str], code: str):
+        self.modifications = modifications
+        self.code = code
+        self.modules_to_import = set()
+
+    def visit_Module(self, node: ast.Module) -> ast.Module:
+        """Visit module and detect missing imports."""
+        # Find all module references in the code
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Attribute):
+                # Check for module.function() patterns
+                if isinstance(stmt.value, ast.Name):
+                    module_name = stmt.value.id
+                    if module_name in self.STDLIB_MODULES:
+                        self.modules_to_import.add(module_name)
+
+        # Check if modules are already imported
+        existing_imports = set()
+        for stmt in node.body:
+            if isinstance(stmt, ast.Import):
+                for alias in stmt.names:
+                    existing_imports.add(alias.name)
+            elif isinstance(stmt, ast.ImportFrom):
+                if stmt.module:
+                    existing_imports.add(stmt.module)
+
+        # Add missing imports
+        missing = self.modules_to_import - existing_imports
+        if missing:
+            # Insert imports at the beginning
+            new_imports = [
+                ast.Import(names=[ast.alias(name=module, asname=None)])
+                for module in sorted(missing)
+            ]
+            node.body = new_imports + node.body
+            for module in sorted(missing):
+                self.modifications.append(f"Added missing import: {module}")
+
+        return node
+
+
+class MissingReturnTransformer(ast.NodeTransformer):
+    """
+    AST transformer to fix missing return statements.
+
+    Detects functions with return type hints that don't return on all paths.
+    """
+
+    def __init__(self, modifications: list[str]):
+        self.modifications = modifications
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        """Visit function and check for missing returns."""
+        # Only fix if function has return type hint
+        if not node.returns:
+            return node
+
+        # Check if function already has returns
+        has_return = self._has_return_statement(node.body)
+        if has_return:
+            return node
+
+        # Heuristic: Try to add a return based on last statement
+        if not node.body:
+            return node
+
+        last_stmt = node.body[-1]
+
+        # Pattern 1: Last statement assigns to a variable - return it
+        if isinstance(last_stmt, ast.Assign):
+            if len(last_stmt.targets) == 1 and isinstance(last_stmt.targets[0], ast.Name):
+                var_name = last_stmt.targets[0].id
+                # Add return statement
+                return_stmt = ast.Return(value=ast.Name(id=var_name, ctx=ast.Load()))
+                node.body.append(return_stmt)
+                self.modifications.append(f"Added missing return statement: return {var_name}")
+
+        # Pattern 2: Last statement is an expression (e.g., len(words)) - return it
+        elif isinstance(last_stmt, ast.Expr):
+            # Convert expression to return
+            return_stmt = ast.Return(value=last_stmt.value)
+            node.body[-1] = return_stmt
+            self.modifications.append("Added missing return statement for expression")
+
+        return node
+
+    def _has_return_statement(self, body: list) -> bool:
+        """Check if function body has any return statements."""
+        for stmt in body:
+            if isinstance(stmt, ast.Return):
+                return True
+            # Check nested structures
+            if isinstance(stmt, (ast.If, ast.For, ast.While)):
+                if self._has_return_statement(stmt.body):
+                    return True
+                if hasattr(stmt, "orelse") and self._has_return_statement(stmt.orelse):
+                    return True
+        return False
 
 
 __all__ = ["ASTRepairEngine"]

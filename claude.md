@@ -182,6 +182,12 @@ Include motivation, implementation notes, and impact.
 - Reference issues/beads: Fixes lift-sys-42
 ```
 
+**IMPORTANT - No Co-Author Attribution:**
+- ❌ **NEVER** add "Co-Authored-By: Claude" or similar attribution to commits
+- ❌ **NEVER** add "Generated with Claude Code" footers to commits
+- ✅ Commits should appear as regular commits by the developer
+- ✅ Keep commit messages professional and focused on the change
+
 ### Pull Request Process
 
 **Before creating PR:**

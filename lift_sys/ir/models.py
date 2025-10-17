@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from lift_sys.ir.constraints import Constraint
 
 
 class HoleKind(str, Enum):
@@ -249,6 +252,8 @@ class IntermediateRepresentation:
     effects: list[EffectClause] = field(default_factory=list)
     assertions: list[AssertClause] = field(default_factory=list)
     metadata: Metadata = field(default_factory=Metadata)
+    constraints: list[Constraint] = field(default_factory=list)
+    """Phase 7: Explicit constraints on code generation behavior"""
 
     def typed_holes(self) -> list[TypedHole]:
         """Return every typed hole contained within the IR."""
@@ -268,13 +273,19 @@ class IntermediateRepresentation:
     def to_dict(self) -> dict[str, object]:
         """Serialise the IR into a dictionary suitable for APIs."""
 
-        return {
+        result = {
             "intent": self.intent.to_dict(),
             "signature": self.signature.to_dict(),
             "effects": [eff.to_dict() for eff in self.effects],
             "assertions": [assertion.to_dict() for assertion in self.assertions],
             "metadata": self.metadata.to_dict(),
         }
+
+        # Add constraints if present (Phase 7)
+        if self.constraints:
+            result["constraints"] = [constraint.to_dict() for constraint in self.constraints]
+
+        return result
 
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> IntermediateRepresentation:
@@ -365,12 +376,26 @@ class IntermediateRepresentation:
             evidence=list(metadata_payload.get("evidence", [])),
         )
 
+        # Parse constraints (Phase 7)
+        constraints = []
+        if "constraints" in payload:
+            from lift_sys.ir.constraints import parse_constraint
+
+            for constraint_data in payload["constraints"]:
+                try:
+                    constraint = parse_constraint(constraint_data)
+                    constraints.append(constraint)
+                except (KeyError, ValueError) as e:
+                    # Skip invalid constraints but log
+                    print(f"Warning: Skipping invalid constraint: {e}")
+
         return cls(
             intent=intent,
             signature=signature,
             effects=effects,
             assertions=assertions,
             metadata=metadata,
+            constraints=constraints,
         )
 
 

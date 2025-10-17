@@ -6,6 +6,7 @@ import ast
 import json
 from typing import Any
 
+from ..ir.constraint_validator import ConstraintValidator
 from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
 from ..validation import AssertionChecker
@@ -52,6 +53,7 @@ class XGrammarCodeGenerator:
         self.structural_generator = CodeGenerator(config=structural_config)
         self.validator = CodeValidator()
         self.repair_engine = ASTRepairEngine()  # Phase 4: Deterministic repair
+        self.constraint_validator = ConstraintValidator()  # Phase 7: IR constraint validation
         self.ir_interpreter = IRInterpreter()  # Phase 5: IR semantic validation (before codegen)
         self.assertion_checker = (
             AssertionChecker()
@@ -204,6 +206,38 @@ class XGrammarCodeGenerator:
                 except Exception as e:
                     # If repair fails, continue with original code
                     print(f"  ⚠️ AST repair failed (continuing with original): {e}")
+
+                # Phase 7: IR Constraint Validation (after repair, before assertions)
+                # Validate that generated code satisfies IR-level constraints
+                if ir.constraints:
+                    constraint_violations = self.constraint_validator.validate(complete_code, ir)
+
+                    # Filter to error-level violations only (ignore warnings)
+                    error_violations = [v for v in constraint_violations if v.severity == "error"]
+
+                    if error_violations and attempt < max_retries - 1:
+                        print(
+                            f"  ⚠️ Constraint validation failed: {len(error_violations)} violation(s)"
+                        )
+                        for violation in error_violations[:3]:  # Show first 3 violations
+                            print(f"    - {violation}")
+
+                        # Format constraint violations as feedback for next retry
+                        feedback_parts = ["\n\nPrevious attempt violated IR constraints:"]
+                        for violation in error_violations[:5]:  # Include up to 5 violations
+                            feedback_parts.append(f"- {violation.description}")
+                        feedback_parts.append(
+                            "\nPlease fix these constraint violations in the next attempt."
+                        )
+                        self._validation_feedback = "\n".join(feedback_parts)
+                        continue
+                    elif constraint_violations:
+                        # Log violations but continue (may have warnings)
+                        warning_violations = [
+                            v for v in constraint_violations if v.severity == "warning"
+                        ]
+                        if warning_violations:
+                            print(f"  ⚠️ Constraint warnings: {len(warning_violations)}")
 
                 # Phase 5: Semantic Validation (Assertion Checking)
                 # Validate generated code against IR assertions

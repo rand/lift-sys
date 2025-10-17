@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    /* Neutral zinc-like scale - Light mode */
-    --background: 0 0% 100%;
+    /* Neutral scale - Light mode (codelift.space inspired) */
+    --background: 0 0% 98%;
     --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
@@ -25,16 +25,16 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
 
-    /* Brand - Cyan-emerald spectrum */
-    --brand: 189 94% 43%;
+    /* Brand - Pink-red spectrum (inspired by codelift.space) */
+    --brand: 343 77% 44%;
     --brand-foreground: 0 0% 100%;
 
-    /* Accent - Emerald tones */
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Light pink tones */
+    --accent: 346 100% 73%;
+    --accent-foreground: 343 77% 20%;
 
-    /* Primary - Cyan focus */
-    --primary: 189 94% 43%;
+    /* Primary - Pink-red focus */
+    --primary: 343 77% 44%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Muted zinc */
@@ -45,16 +45,16 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Success - Emerald */
-    --success: 142 76% 36%;
+    /* Success - Green (adjusted for pink palette) */
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     /* Warning - Amber */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Info - Cyan */
-    --info: 189 94% 43%;
+    /* Info - Pink-red (matching brand) */
+    --info: 343 77% 44%;
     --info-foreground: 0 0% 100%;
 
     /* Radius - ~1rem with derived sizes */
@@ -65,7 +65,7 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
-    --shadow-brand: 0 0 0 3px hsl(189 94% 43% / 0.1);
+    --shadow-brand: 0 0 0 3px hsl(343 77% 44% / 0.1);
 
     /* Motion - Smooth easing curve */
     --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -75,34 +75,34 @@
   }
 
   .dark {
-    /* Neutral zinc-like scale - Dark mode */
-    --background: 240 10% 3.9%;
+    /* Dark mode with burgundy-red tones (codelift.space inspired) */
+    --background: 343 50% 5%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 7%;
+    --card: 343 40% 8%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 7%;
+    --popover: 343 40% 8%;
     --popover-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 343 30% 15%;
+    --muted-foreground: 0 0% 70%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 343 30% 18%;
+    --input: 343 30% 18%;
+    --ring: 343 70% 70%;
 
-    /* Brand - Cyan (brighter for dark mode) */
-    --brand: 189 94% 53%;
-    --brand-foreground: 240 10% 3.9%;
+    /* Brand - Pink-red (brighter for dark mode) */
+    --brand: 343 82% 58%;
+    --brand-foreground: 343 50% 5%;
 
-    /* Accent - Emerald (adjusted) */
-    --accent: 142 76% 46%;
-    --accent-foreground: 240 10% 3.9%;
+    /* Accent - Light pink (adjusted) */
+    --accent: 346 100% 78%;
+    --accent-foreground: 343 50% 5%;
 
-    /* Primary - Cyan focus */
-    --primary: 189 94% 53%;
-    --primary-foreground: 240 10% 3.9%;
+    /* Primary - Pink-red focus */
+    --primary: 343 82% 58%;
+    --primary-foreground: 343 50% 5%;
 
     /* Secondary - Muted zinc */
     --secondary: 240 3.7% 15.9%;
@@ -112,24 +112,24 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Success - Emerald */
-    --success: 142 76% 46%;
-    --success-foreground: 240 10% 3.9%;
+    /* Success - Green (adjusted) */
+    --success: 142 71% 50%;
+    --success-foreground: 343 50% 5%;
 
     /* Warning - Amber */
     --warning: 38 92% 50%;
-    --warning-foreground: 240 10% 3.9%;
+    --warning-foreground: 343 50% 5%;
 
-    /* Info - Cyan */
-    --info: 189 94% 53%;
-    --info-foreground: 240 10% 3.9%;
+    /* Info - Pink-red (matching brand) */
+    --info: 343 82% 58%;
+    --info-foreground: 343 50% 5%;
 
     /* Shadows - Deeper for dark mode */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
     --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
-    --shadow-brand: 0 0 0 3px hsl(189 94% 53% / 0.2);
+    --shadow-brand: 0 0 0 3px hsl(343 82% 58% / 0.2);
   }
 
   .hc {
@@ -150,16 +150,16 @@
     --input: 0 0% 0%;
     --ring: 0 0% 0%;
 
-    /* Brand - High contrast cyan */
-    --brand: 189 100% 25%;
+    /* Brand - High contrast pink-red */
+    --brand: 343 100% 30%;
     --brand-foreground: 0 0% 100%;
 
-    /* Accent - High contrast emerald */
-    --accent: 142 100% 20%;
+    /* Accent - High contrast pink */
+    --accent: 346 100% 40%;
     --accent-foreground: 0 0% 100%;
 
     /* Primary - High contrast */
-    --primary: 189 100% 25%;
+    --primary: 343 100% 30%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - High contrast */
@@ -170,16 +170,16 @@
     --destructive: 0 100% 35%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - High contrast emerald */
-    --success: 142 100% 20%;
+    /* Success - High contrast green */
+    --success: 142 100% 25%;
     --success-foreground: 0 0% 100%;
 
     /* Warning - High contrast amber */
     --warning: 38 100% 35%;
     --warning-foreground: 0 0% 100%;
 
-    /* Info - High contrast cyan */
-    --info: 189 100% 25%;
+    /* Info - High contrast pink-red */
+    --info: 343 100% 30%;
     --info-foreground: 0 0% 100%;
 
     /* Shadows - None for HC mode */
@@ -187,7 +187,7 @@
     --shadow-md: 0 0 0 2px hsl(0 0% 0%);
     --shadow-lg: 0 0 0 3px hsl(0 0% 0%);
     --shadow-inner: none;
-    --shadow-brand: 0 0 0 4px hsl(189 100% 25%);
+    --shadow-brand: 0 0 0 4px hsl(343 100% 30%);
   }
 }
 

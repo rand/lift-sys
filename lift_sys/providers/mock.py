@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from .base import BaseProvider
+from .base import BaseProvider, ProviderCapabilities
 
 
 class MockProvider(BaseProvider):
@@ -16,9 +16,19 @@ class MockProvider(BaseProvider):
 
     def __init__(self):
         """Initialize mock provider."""
+        # Initialize base class with capabilities
+        super().__init__(
+            name="mock",
+            capabilities=ProviderCapabilities(
+                streaming=True,
+                structured_output=False,  # Default to False, can be enabled per-test
+                reasoning=True,
+            ),
+        )
         self._responses: list[str] = []
         self._response_index = 0
         self._default_response = '{"implementation": {"body_statements": []}}'
+        self._structured_response: dict[str, Any] | None = None
 
     def set_response(self, response: str):
         """Set a single response to return."""
@@ -29,6 +39,12 @@ class MockProvider(BaseProvider):
         """Set multiple responses to return in sequence."""
         self._responses = responses
         self._response_index = 0
+
+    def set_structured_response(self, response: dict[str, Any]):
+        """Set a structured response to return from generate_structured()."""
+        self._structured_response = response
+        # Enable structured output capability when structured response is set
+        self.capabilities.structured_output = True
 
     async def initialize(self) -> None:
         """Initialize provider (no-op for mock)."""
@@ -97,6 +113,11 @@ class MockProvider(BaseProvider):
         """Generate structured response (returns default empty structure)."""
         import json
 
+        # If structured response is set, return it directly
+        if self._structured_response is not None:
+            return self._structured_response
+
+        # Otherwise try to parse text response as JSON
         response = await self.generate_text(prompt, max_tokens, temperature, **kwargs)
         try:
             return json.loads(response)

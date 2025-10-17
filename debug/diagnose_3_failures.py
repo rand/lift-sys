@@ -15,6 +15,18 @@ from lift_sys.providers.modal_provider import ModalProvider
 
 FAILING_TESTS = [
     {
+        "name": "count_words",
+        "prompt": "Create a function that counts the number of words in a string, where words are separated by spaces",
+        "function_name": "count_words",
+        "test_cases": [
+            (("hello world",), 2),
+            (("single",), 1),
+            (("",), 0),
+            (("one two three",), 3),
+            (("  extra   spaces  ",), 2),
+        ],
+    },
+    {
         "name": "find_index",
         "prompt": "Create a function that takes a list and a value as parameters (in that order). Use a for loop with enumerate to iterate through the list. Inside the loop, if an item equals the value, return its index immediately. After the loop ends (not inside it), return -1 to indicate the value was not found.",
         "function_name": "find_value_index",
@@ -34,18 +46,8 @@ FAILING_TESTS = [
             (("user@example.com",), True),
             (("invalid.email",), False),
             (("missing@domain",), False),
+            (("test@.com",), False),  # This one failed - expected False, got True
             (("user@domain.com",), True),
-        ],
-    },
-    {
-        "name": "min_max_tuple",
-        "prompt": "Create a function that returns both the minimum and maximum values from a list as a tuple (min, max)",
-        "function_name": "get_min_max",
-        "test_cases": [
-            (([1, 5, 3],), (1, 5)),  # Failed - got (1, 1)
-            (([10],), (10, 10)),
-            (([3, 1, 4, 1, 5],), (1, 5)),  # Failed - got (1, 3)
-            (([-5, -1, -10],), (-10, -1)),
         ],
     },
 ]

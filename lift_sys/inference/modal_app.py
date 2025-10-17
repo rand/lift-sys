@@ -285,6 +285,40 @@ Generate the IR as valid JSON:
         )
 
 
+# Web endpoint for generation - standalone function that calls GPU class
+@app.function(image=llm_image)
+@modal.fastapi_endpoint(method="POST", label="generate")
+def generate_web_endpoint(item: dict) -> dict:
+    """
+    HTTP POST endpoint for schema-constrained generation.
+
+    POST body:
+    {
+        "prompt": str,
+        "schema": dict,
+        "max_tokens": int,  # optional, default 2048
+        "temperature": float,  # optional, default 0.3
+        "top_p": float,  # optional, default 0.95
+    }
+
+    Returns:
+    {
+        "ir_json": dict,  # Generated output matching schema
+        "tokens_used": int,
+        "generation_time_ms": float,
+        "finish_reason": str,
+    }
+    """
+    generator = ConstrainedIRGenerator()
+    return generator.generate.remote(
+        prompt=item["prompt"],
+        schema=item["schema"],
+        max_tokens=item.get("max_tokens", 2048),
+        temperature=item.get("temperature", 0.3),
+        top_p=item.get("top_p", 0.95),
+    )
+
+
 # Health check endpoint - separate from GPU class to avoid triggering model load
 @app.function(image=llm_image)
 @modal.fastapi_endpoint(method="GET", label="health")

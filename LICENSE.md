@@ -1,4 +1,4 @@
-Copyright (c) 2023-2025 Rand Arete
+Copyright © 2023-2025 Rand Arete
 All rights reserved.
 
 This source code is made available for reference and educational purposes.

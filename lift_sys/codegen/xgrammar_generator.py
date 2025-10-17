@@ -9,6 +9,7 @@ from typing import Any
 from ..ir.models import IntermediateRepresentation
 from ..providers.base import BaseProvider
 from ..validation import AssertionChecker
+from ..validation.ir_interpreter import IRInterpreter
 from .ast_repair import ASTRepairEngine
 from .code_schema import CODE_GENERATION_SCHEMA, get_prompt_for_code_generation
 from .generator import CodeGenerator, CodeGeneratorConfig, GeneratedCode
@@ -51,7 +52,10 @@ class XGrammarCodeGenerator:
         self.structural_generator = CodeGenerator(config=structural_config)
         self.validator = CodeValidator()
         self.repair_engine = ASTRepairEngine()  # Phase 4: Deterministic repair
-        self.assertion_checker = AssertionChecker()  # Phase 5: Semantic validation
+        self.ir_interpreter = IRInterpreter()  # Phase 5: IR semantic validation (before codegen)
+        self.assertion_checker = (
+            AssertionChecker()
+        )  # Phase 5b: Code assertion checking (after codegen)
         self.multishot = MultishotGenerator(num_shots=3)
         self._validation_feedback = ""  # Track validation feedback between attempts
 
@@ -108,6 +112,35 @@ class XGrammarCodeGenerator:
                 raise ValueError(
                     f"IR contains unresolved holes that could not be cleared: {', '.join(h.identifier for h in remaining_holes)}"
                 )
+
+        # Phase 5: IR Semantic Validation (before code generation)
+        # Interpret IR to detect semantic logic errors
+        interpretation = self.ir_interpreter.interpret(ir)
+
+        # Log interpretation results (warnings are informational)
+        if interpretation.has_warnings():
+            print(f"  ⚠️  IR has {len(interpretation.warnings)} warnings:")
+            for warning in interpretation.warnings:
+                print(f"      {warning.message}")
+
+        # Block code generation if there are errors
+        if interpretation.has_errors():
+            error_messages = "\n".join([f"  - {err.message}" for err in interpretation.errors])
+            return GeneratedCode(
+                source_code="# Code generation blocked due to semantic errors\n"
+                f"# Errors detected in IR:\n{error_messages}\n",
+                language="python",
+                metadata={
+                    "ir_origin": ir.metadata.origin,
+                    "generator": "xgrammar_blocked",
+                    "semantic_validation": "failed",
+                    "errors": [err.message for err in interpretation.errors],
+                    "warnings": [warn.message for warn in interpretation.warnings],
+                },
+                warnings=[
+                    f"Semantic validation failed: {err.message}" for err in interpretation.errors
+                ],
+            )
 
         # Phase 3: Multi-shot generation with empirical testing
         if use_multishot and test_cases:

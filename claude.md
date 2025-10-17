@@ -32,10 +32,14 @@ uv init project && cd project && uv add package-name && uv run script.py
 ```
 
 **Zig** → Latest stable, explicit allocators, comptime, `defer` cleanup
+  - **Comprehensive skill**: Use `/zig-dev` for Zig projects, build.zig, testing, package management
+  - See: Section 11 (Skills Reference) for detailed capabilities
 
 **Rust** → `cargo`, ownership/borrowing, `Result`/`Option`, iterators over loops, `anyhow` (apps), `thiserror` (libs), `tokio` (async)
 
 **Go** → Standard toolchain, small interfaces, explicit errors, table-driven tests
+  - **TUI Development**: Use `/tui-development` for terminal UIs with Charm.sh (Bubble Tea, Lip Gloss, Bubbles)
+  - See: Section 11 (Skills Reference) for TUI patterns
 
 **C/C++** → CMake 3.20+, C11/C17 or C++17/20, RAII, smart pointers, STL algorithms
 
@@ -43,6 +47,10 @@ uv init project && cd project && uv add package-name && uv run script.py
 ```json
 {"compilerOptions": {"strict": true, "target": "ES2022", "module": "ESNext"}}
 ```
+
+**Swift** → iOS/macOS native development with SwiftUI, Swift 6 concurrency, async/await
+  - **Comprehensive skill**: Use `/ios-native-dev` for iOS apps with SwiftUI, UIKit, SwiftData
+  - See: Section 11 (Skills Reference) for iOS architecture patterns
 
 **Lean** → Lean 4, mathlib4, readable tactics, `snake_case`
 
@@ -53,16 +61,29 @@ uv init project && cd project && uv add package-name && uv run script.py
 **Cloudflare** → Workers (TypeScript), KV/R2/D1 bindings, `wrangler dev`
 
 **Modal** → `@app.function(gpu="L40S")`, volumes for persistence, Modal secrets, `uv_pip_install()` for packages
-  - **See**: `docs/MODAL_REFERENCE.md` for comprehensive guide
+  - **Comprehensive skill**: Use `/modal-dev` for Modal app development, GPU workloads, web endpoints
+  - **See**: `docs/MODAL_REFERENCE.md` for project-specific implementation details
   - **Examples**: https://github.com/modal-labs/modal-examples (check 01-14 learning tracks)
   - **Recommended GPU**: L40S for best cost/performance
   - **Image building**: Use `uv_pip_install()`, pin versions, optimize caching
+  - See: Section 11 (Skills Reference) for Modal patterns and best practices
 
 **Cloud Run** → Listen on PORT, multi-stage Dockerfile, Secret Manager, set concurrency
 
 **WorkOS** → SSO (SAML/OAuth), Directory Sync, server-side API keys only
 
 **Resend** → React Email templates, domain verification, batch sending
+
+### Secure Networking & Infrastructure
+
+**VPN & Secure Access** → Tailscale (WireGuard-based mesh), WireGuard for custom implementations
+**Resilient Connectivity** → mosh (Mobile Shell) for unstable networks, SSH alternatives
+**Service Security** → mTLS for service-to-service auth, certificate management
+**NAT Traversal** → STUN/TURN, hole punching, peer-to-peer connectivity
+
+- **Comprehensive skill**: Use `/secure-networking` for secure networking implementation
+- Covers: Tailscale, mosh, mTLS, WireGuard, NAT traversal, zero-trust architectures
+- See: Section 11 (Skills Reference) for networking security patterns
 
 ### Cost Management & Resource Cleanup
 
@@ -301,13 +322,16 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 ❌ Commit directly to `main` for features (use branches)
 ❌ Force push to `main` or shared branches
 ❌ Merge PRs without careful review
+❌ Start specialized work without activating relevant skill (e.g., Zig project without `/zig-dev`)
 
 ## 10. Quick Reference
 
-**Languages:** Python (uv), Zig, Rust (cargo), Go, C/C++ (CMake), TS (strict), Lean 4
+**Languages:** Python (uv), Zig (/zig-dev), Rust (cargo), Go (/tui-development), Swift (/ios-native-dev), C/C++ (CMake), TS (strict), Lean 4
 
-**Cloud:** Workers/Modal (serverless), Cloud Run (containers), WorkOS (auth), Resend (email)
+**Cloud:** Modal (/modal-dev), Workers/Cloudflare, Cloud Run (containers), WorkOS (auth), Resend (email)
   - Modal details: `docs/MODAL_REFERENCE.md`
+
+**Networking:** Tailscale, mosh, mTLS, WireGuard (/secure-networking for comprehensive guide)
 
 **UI:** shadcn blocks → shadcn components → custom (permission only), theme colors from https://ui.shadcn.com/themes
 
@@ -315,4 +339,151 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 
 **Workflow:** Requirements → Confirm → Map flows → shadcn blocks → Implement
 
-**When in doubt:** Ask questions, check shadcn blocks, test edge cases
+**Skills:** Use slash commands (e.g., `/modal-dev`) to activate specialized knowledge - see Section 11
+
+**When in doubt:** Ask questions, check shadcn blocks, test edge cases, activate relevant skill
+
+## 11. Skills Reference
+
+**Specialized knowledge domains available via slash commands** - These skills provide comprehensive, expert-level guidance for specific technologies and workflows. Activate them when working in their respective domains.
+
+### `/zig-dev` - Zig Development Expert
+
+**When to use:** Zig projects, build.zig, testing, package management, comptime, ZLS
+
+**Capabilities:**
+- Project setup and build configuration (build.zig, build.zig.zon)
+- Testing patterns and test organization
+- Package management and dependency handling
+- Cross-compilation for multiple targets
+- Memory management patterns (allocators, defer, errdefer)
+- Comptime programming and generic functions
+- C library integration and FFI
+- ZLS configuration and editor integration
+- Performance profiling and optimization
+- Common troubleshooting and debugging
+
+**Use when:** Creating Zig projects, configuring build systems, writing Zig code, managing dependencies, cross-compiling, or troubleshooting Zig-specific issues.
+
+### `/modal-dev` - Modal.com Serverless Platform
+
+**When to use:** Modal apps, GPU workloads, serverless functions, web endpoints, scheduled jobs
+
+**Capabilities:**
+- Modal app structure and function decorators
+- GPU selection and optimization (T4, A10G, A100, H100, L40S)
+- Image building with pip_install, apt_install, uv_pip_install
+- Volume management for persistent storage
+- Secret management and environment variables
+- Web endpoints (ASGI, WSGI, FastAPI integration)
+- Scheduled jobs (Cron, Period)
+- Parallel execution with .map() and .starmap()
+- Resource management and cost optimization
+- Deployment workflows and CLI commands
+- Troubleshooting common issues
+
+**Use when:** Deploying ML models, building serverless APIs, running GPU workloads, creating scheduled jobs, or any Modal.com development.
+
+### `/tui-development` - Terminal User Interfaces
+
+**When to use:** Terminal apps, CLI tools with interactive UIs, dashboards, TUI development
+
+**Capabilities:**
+- **Go + Charm.sh ecosystem:**
+  - Bubble Tea (Elm-inspired framework)
+  - Lip Gloss (styling and layout)
+  - Bubbles (pre-built components)
+  - Harmonica (animations)
+  - Glamour (markdown rendering)
+- **Rust + Ratatui:**
+  - Widget-based UI construction
+  - Layout system with constraints
+  - Event handling and input
+  - Stateful widgets
+  - Crossterm/termion backends
+- Architecture patterns (MVC, message passing)
+- State management and navigation
+- Performance optimization
+- Cross-platform compatibility
+- Testing strategies
+
+**Use when:** Building terminal applications, interactive CLIs, monitoring dashboards, file managers, or any text-based user interface.
+
+### `/secure-networking` - Secure & Resilient Networking
+
+**When to use:** VPNs, mTLS, secure connectivity, NAT traversal, network security
+
+**Capabilities:**
+- **VPN & Overlay Networks:**
+  - Tailscale (WireGuard mesh VPN)
+  - WireGuard configuration
+  - Zero-config networking
+- **Resilient Connectivity:**
+  - mosh (Mobile Shell) for unstable networks
+  - Connection resilience patterns
+  - SSH alternatives
+- **Service Security:**
+  - Mutual TLS (mTLS) implementation
+  - Certificate management (cert-manager, cfssl, step-ca)
+  - Zero-trust architectures
+- **NAT Traversal:**
+  - STUN/TURN protocols
+  - Hole punching techniques
+  - Peer-to-peer connectivity
+- Security best practices and threat modeling
+- Network resilience patterns (retries, circuit breakers)
+- Implementation across languages (Go, Python, Rust, Node.js)
+
+**Use when:** Setting up VPNs, implementing mTLS, building resilient networked services, NAT traversal, or any secure networking task.
+
+### `/ios-native-dev` - iOS Native Development
+
+**When to use:** iOS apps, SwiftUI, UIKit, Xcode projects, Apple platforms
+
+**Capabilities:**
+- **Modern iOS development (iOS 17+, Xcode 15+):**
+  - SwiftUI 5.0+ (primary UI framework)
+  - Swift 6.0+ with strict concurrency
+  - UIKit integration when needed
+- **Architecture & Patterns:**
+  - MVVM with Observation framework
+  - State management (@State, @Observable, @Environment)
+  - Dependency injection patterns
+- **Modern Features:**
+  - NavigationStack for type-safe navigation
+  - SwiftData for persistence
+  - Swift Charts for visualization
+  - Async/await and structured concurrency
+- **Integration:**
+  - UIKit wrapping (UIViewRepresentable)
+  - SwiftUI in UIKit (UIHostingController)
+  - Third-party library integration
+- Testing (Swift Testing, XCTest, UI tests)
+- Performance optimization
+- App architecture and project structure
+- Common patterns and best practices
+
+**Use when:** Building iOS apps, working with SwiftUI or UIKit, implementing iOS features, architecting iOS solutions, or iOS-specific development.
+
+## How to Use Skills
+
+### Explicit Activation
+When you encounter a task that matches a skill's domain, mention it:
+- "I need to set up a Zig project" → I'll use `/zig-dev`
+- "Help me deploy this to Modal" → I'll use `/modal-dev`
+- "Build a terminal dashboard" → I'll use `/tui-development`
+
+### Auto-Detection
+Skills are automatically activated when working with relevant files or technologies:
+- Working with `.zig` files → `/zig-dev` activates
+- Working with Modal code → `/modal-dev` activates
+- Building terminal UIs → `/tui-development` activates
+
+### Skill Composition
+Multiple skills can work together:
+- `/zig-dev` + `/secure-networking` for a Zig-based VPN client
+- `/modal-dev` + `/secure-networking` for secure Modal endpoints
+- `/tui-development` + `/secure-networking` for a mosh-like terminal application
+
+### Best Practice
+**Always activate the relevant skill at the start of specialized work** to ensure comprehensive, expert-level guidance throughout the task.

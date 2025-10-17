@@ -62,6 +62,14 @@ class ASTRepairEngine:
         tree, return_fixes = self._fix_missing_returns(tree, function_name)
         modifications.extend(return_fixes)
 
+        # Pass 6: Fix email validation adjacency bugs
+        tree, email_fixes = self._fix_email_validation(tree, function_name)
+        modifications.extend(email_fixes)
+
+        # Pass 7: Fix enumerate loops that accumulate result instead of early return
+        tree, enumerate_fixes = self._fix_enumerate_early_return(tree, function_name)
+        modifications.extend(enumerate_fixes)
+
         if not modifications:
             return None  # No repairs needed
 
@@ -179,6 +187,57 @@ class ASTRepairEngine:
         """
         modifications = []
         transformer = MissingReturnTransformer(modifications)
+        tree = transformer.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree, modifications
+
+    def _fix_email_validation(self, tree: ast.AST, function_name: str) -> tuple[ast.AST, list[str]]:
+        """
+        Fix email validation adjacency bugs.
+
+        Detects email validation that checks positional ordering but misses
+        adjacency (e.g., "test@.com" should be invalid).
+
+        Pattern:
+            if email.index('@') > email.rindex('.'):
+                return False
+
+        Fix:
+            at_pos = email.index('@')
+            dot_pos = email.rindex('.')
+            if at_pos >= dot_pos or dot_pos - at_pos == 1:
+                return False
+        """
+        modifications = []
+        transformer = EmailValidationTransformer(modifications)
+        tree = transformer.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree, modifications
+
+    def _fix_enumerate_early_return(
+        self, tree: ast.AST, function_name: str
+    ) -> tuple[ast.AST, list[str]]:
+        """
+        Fix enumerate loops that accumulate result instead of early return.
+
+        Detects pattern where loops assign to a result variable instead of
+        returning immediately when a match is found (returns LAST match instead of FIRST).
+
+        Pattern:
+            result = -1
+            for i, item in enumerate(items):
+                if item == target:
+                    result = i
+            return result  # BUG: Returns LAST match
+
+        Fix:
+            for i, item in enumerate(items):
+                if item == target:
+                    return i  # FIXED: Early return on FIRST match
+            return -1
+        """
+        modifications = []
+        transformer = EnumerateEarlyReturnTransformer(modifications, function_name)
         tree = transformer.visit(tree)
         ast.fix_missing_locations(tree)
         return tree, modifications
@@ -576,6 +635,334 @@ class MissingReturnTransformer(ast.NodeTransformer):
                 if hasattr(stmt, "orelse") and self._has_return_statement(stmt.orelse):
                     return True
         return False
+
+
+class EmailValidationTransformer(ast.NodeTransformer):
+    """
+    Fix email validation patterns that check positional ordering but miss adjacency.
+
+    Detects: if email.index('@') > email.rindex('.'): return False
+    Fixes: Add adjacency check (dot_pos - at_pos == 1)
+    """
+
+    def __init__(self, modifications: list[str]):
+        self.modifications = modifications
+
+    def visit_If(self, node: ast.If) -> ast.If:
+        """Detect and fix email index comparison pattern."""
+        if self._is_email_index_pattern(node):
+            # Found the pattern - replace with fixed version
+            fixed_stmts = self._create_fixed_check(node)
+            self.modifications.append("Fixed email validation to check @ and . adjacency")
+            # Return the first statement (the other will be added via generic_visit)
+            # Actually, we need to replace this If with multiple statements
+            # Since we can't return multiple statements from visit_If, we'll transform in place
+            return self._transform_in_place(node)
+        return self.generic_visit(node)
+
+    def _is_email_index_pattern(self, node: ast.If) -> bool:
+        """
+        Detect pattern: if email.index('@') > email.rindex('.'): return False
+
+        Returns True if this If statement matches the buggy email validation pattern.
+        """
+        # Check if test is a Compare with > operator
+        if not isinstance(node.test, ast.Compare):
+            return False
+
+        compare = node.test
+        if len(compare.ops) != 1 or not isinstance(compare.ops[0], ast.Gt):
+            return False
+
+        # Check left side: email.index('@')
+        left = compare.left
+        if not self._is_method_call(left, "index", "@"):
+            return False
+
+        # Check right side: email.rindex('.')
+        if len(compare.comparators) != 1:
+            return False
+        right = compare.comparators[0]
+        if not self._is_method_call(right, "rindex", "."):
+            return False
+
+        # Check that body has return False
+        if len(node.body) != 1 or not isinstance(node.body[0], ast.Return):
+            return False
+
+        return_stmt = node.body[0]
+        if return_stmt.value is None:
+            return False
+
+        # Check if returning False
+        if isinstance(return_stmt.value, ast.Constant) and return_stmt.value.value is False:
+            return True
+
+        # Older Python versions use ast.NameConstant
+        if isinstance(return_stmt.value, ast.NameConstant) and return_stmt.value.value is False:
+            return True
+
+        return False
+
+    def _is_method_call(self, node: ast.AST, method_name: str, arg_value: str) -> bool:
+        """
+        Check if node is a method call like email.index('@').
+
+        Args:
+            node: AST node to check
+            method_name: Expected method name (e.g., "index")
+            arg_value: Expected string argument (e.g., "@")
+        """
+        if not isinstance(node, ast.Call):
+            return False
+
+        # Check if it's an attribute access (e.g., email.index)
+        if not isinstance(node.func, ast.Attribute):
+            return False
+
+        # Check method name
+        if node.func.attr != method_name:
+            return False
+
+        # Check argument
+        if len(node.args) != 1:
+            return False
+
+        arg = node.args[0]
+        # Check if argument is the expected string
+        if isinstance(arg, ast.Constant) and arg.value == arg_value:
+            return True
+
+        # Older Python: ast.Str
+        if isinstance(arg, ast.Str) and arg.s == arg_value:
+            return True
+
+        return False
+
+    def _transform_in_place(self, node: ast.If) -> ast.If:
+        """
+        Transform the buggy If statement into a fixed version.
+
+        Original:
+            if email.index('@') > email.rindex('.'): return False
+
+        Fixed:
+            at_pos = email.index('@')
+            dot_pos = email.rindex('.')
+            if at_pos >= dot_pos or dot_pos - at_pos == 1: return False
+
+        Since we can't insert multiple statements in visit_If, we need a different approach.
+        We'll use a helper that modifies the parent's body list instead.
+
+        For now, we'll transform to a compound check with intermediate variables
+        using a more complex If test that includes the adjacency check.
+
+        Actually, we can't easily do multi-statement replacement in NodeTransformer.
+        Let's use a simpler fix: just update the comparison to include adjacency.
+
+        Change: email.index('@') > email.rindex('.')
+        To: email.index('@') >= email.rindex('.') or email.rindex('.') - email.index('@') == 1
+        """
+        # Extract the email variable/expression
+        compare = node.test
+        email_var = compare.left.func.value  # The 'email' part of email.index
+
+        # Create: at_pos >= dot_pos
+        at_pos_call = compare.left  # email.index('@')
+        dot_pos_call = compare.comparators[0]  # email.rindex('.')
+
+        # Create: at_pos >= dot_pos (change > to >=)
+        greater_or_equal = ast.Compare(
+            left=at_pos_call, ops=[ast.GtE()], comparators=[dot_pos_call]
+        )
+
+        # Create: dot_pos - at_pos == 1
+        # This is: email.rindex('.') - email.index('@') == 1
+        adjacency_check = ast.Compare(
+            left=ast.BinOp(left=dot_pos_call, op=ast.Sub(), right=at_pos_call),
+            ops=[ast.Eq()],
+            comparators=[ast.Constant(value=1)],
+        )
+
+        # Combine with or: (at_pos >= dot_pos or dot_pos - at_pos == 1)
+        new_test = ast.BoolOp(op=ast.Or(), values=[greater_or_equal, adjacency_check])
+
+        # Update the node's test
+        node.test = new_test
+
+        return node
+
+    def _create_fixed_check(self, node: ast.If) -> list[ast.AST]:
+        """
+        Create fixed version with intermediate variables.
+
+        This method is currently unused but kept for reference.
+        """
+        # This would be used if we could return multiple statements
+        pass
+
+
+class EnumerateEarlyReturnTransformer(ast.NodeTransformer):
+    """
+    Fix enumerate loops that accumulate last result instead of early return.
+
+    Detects pattern:
+        result = -1
+        for i, item in enumerate(items):
+            if item == target:
+                result = i
+        return result
+
+    Transforms to:
+        for i, item in enumerate(items):
+            if item == target:
+                return i
+        return -1
+    """
+
+    def __init__(self, modifications: list[str], function_name: str):
+        self.modifications = modifications
+        self.function_name = function_name
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        """Visit function and fix enumerate early return pattern."""
+        # Only process target function
+        if node.name != self.function_name:
+            return node
+
+        # Look for the pattern:
+        # 1. result = -1 (or None)
+        # 2. for i, item in enumerate(...):
+        #      if ...: result = i
+        # 3. return result
+
+        result_var = None
+        result_init_idx = None
+        enumerate_loop_idx = None
+        return_idx = None
+
+        # Find result initialization
+        for i, stmt in enumerate(node.body):
+            if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+                target = stmt.targets[0]
+                if isinstance(target, ast.Name) and isinstance(
+                    stmt.value, (ast.Constant, ast.UnaryOp)
+                ):
+                    # Found result = -1 or result = None
+                    result_var = target.id
+                    result_init_idx = i
+                    break
+
+        if not result_var:
+            return node
+
+        # Find enumerate loop that assigns to result_var
+        for i, stmt in enumerate(node.body[result_init_idx + 1 :], start=result_init_idx + 1):
+            if isinstance(stmt, ast.For):
+                # Check if loop uses enumerate
+                if self._is_enumerate_loop(stmt):
+                    # Check if loop assigns to result_var
+                    if self._assigns_to_var(stmt.body, result_var):
+                        enumerate_loop_idx = i
+                        break
+
+        if enumerate_loop_idx is None:
+            return node
+
+        # Find return statement that returns result_var
+        for i, stmt in enumerate(node.body[enumerate_loop_idx + 1 :], start=enumerate_loop_idx + 1):
+            if isinstance(stmt, ast.Return) and stmt.value:
+                if isinstance(stmt.value, ast.Name) and stmt.value.id == result_var:
+                    return_idx = i
+                    break
+
+        if return_idx is None:
+            return node
+
+        # Found the pattern! Transform it
+        loop = node.body[enumerate_loop_idx]
+        result_init = node.body[result_init_idx]
+
+        # Transform loop body: replace 'result = i' with 'return i'
+        new_loop_body = self._transform_assignments_to_returns(loop.body, result_var)
+        loop.body = new_loop_body
+
+        # Get the fallback value from result initialization
+        fallback_value = result_init.value
+
+        # Build new function body:
+        # - Keep statements before result init
+        # - Remove result init
+        # - Keep loop (now with early returns)
+        # - Replace final return with fallback
+        new_body = []
+        new_body.extend(node.body[:result_init_idx])  # Before result init
+        new_body.append(loop)  # Transformed loop
+        # Add fallback return
+        new_body.append(ast.Return(value=fallback_value))
+
+        # Keep any statements after the old return (shouldn't be any, but just in case)
+        if return_idx + 1 < len(node.body):
+            new_body.extend(node.body[return_idx + 1 :])
+
+        node.body = new_body
+        self.modifications.append(
+            "Fixed enumerate loop to use early return (returns FIRST match, not last)"
+        )
+
+        return node
+
+    def _is_enumerate_loop(self, loop: ast.For) -> bool:
+        """Check if loop uses enumerate()."""
+        if not isinstance(loop.iter, ast.Call):
+            return False
+        if not isinstance(loop.iter.func, ast.Name):
+            return False
+        return loop.iter.func.id == "enumerate"
+
+    def _assigns_to_var(self, body: list[ast.stmt], var_name: str) -> bool:
+        """Check if body contains assignment to var_name."""
+        for stmt in body:
+            if isinstance(stmt, ast.Assign):
+                for target in stmt.targets:
+                    if isinstance(target, ast.Name) and target.id == var_name:
+                        return True
+            # Check nested structures (if/else)
+            if isinstance(stmt, ast.If):
+                if self._assigns_to_var(stmt.body, var_name):
+                    return True
+                if stmt.orelse and self._assigns_to_var(stmt.orelse, var_name):
+                    return True
+        return False
+
+    def _transform_assignments_to_returns(
+        self, body: list[ast.stmt], var_name: str
+    ) -> list[ast.stmt]:
+        """Transform assignments to var_name into return statements."""
+        new_body = []
+        for stmt in body:
+            if isinstance(stmt, ast.Assign):
+                # Check if this assigns to var_name
+                is_result_assign = False
+                for target in stmt.targets:
+                    if isinstance(target, ast.Name) and target.id == var_name:
+                        is_result_assign = True
+                        break
+
+                if is_result_assign:
+                    # Replace with return
+                    new_body.append(ast.Return(value=stmt.value))
+                else:
+                    new_body.append(stmt)
+            elif isinstance(stmt, ast.If):
+                # Recursively transform if body
+                stmt.body = self._transform_assignments_to_returns(stmt.body, var_name)
+                if stmt.orelse:
+                    stmt.orelse = self._transform_assignments_to_returns(stmt.orelse, var_name)
+                new_body.append(stmt)
+            else:
+                new_body.append(stmt)
+        return new_body
 
 
 __all__ = ["ASTRepairEngine"]

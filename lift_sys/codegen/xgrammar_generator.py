@@ -210,6 +210,8 @@ class XGrammarCodeGenerator:
                 # Phase 7: IR Constraint Validation (after repair, before assertions)
                 # Validate that generated code satisfies IR-level constraints
                 if ir.constraints:
+                    from lift_sys.ir.constraint_messages import format_violations_summary
+
                     constraint_violations = self.constraint_validator.validate(complete_code, ir)
 
                     # Filter to error-level violations only (ignore warnings)
@@ -220,16 +222,21 @@ class XGrammarCodeGenerator:
                             f"  ⚠️ Constraint validation failed: {len(error_violations)} violation(s)"
                         )
                         for violation in error_violations[:3]:  # Show first 3 violations
-                            print(f"    - {violation}")
+                            print(f"    - {violation.description}")
 
-                        # Format constraint violations as feedback for next retry
-                        feedback_parts = ["\n\nPrevious attempt violated IR constraints:"]
-                        for violation in error_violations[:5]:  # Include up to 5 violations
-                            feedback_parts.append(f"- {violation.description}")
-                        feedback_parts.append(
-                            "\nPlease fix these constraint violations in the next attempt."
+                        # Format constraint violations with enhanced messages for next retry
+                        # Build constraint lookup for better error messages
+                        constraint_lookup = {
+                            c.type.value if hasattr(c, "type") else "unknown": c
+                            for c in ir.constraints
+                        }
+
+                        # Generate enhanced violation summary
+                        enhanced_summary = format_violations_summary(
+                            error_violations, constraint_lookup
                         )
-                        self._validation_feedback = "\n".join(feedback_parts)
+
+                        self._validation_feedback = f"\n\n{enhanced_summary}"
                         continue
                     elif constraint_violations:
                         # Log violations but continue (may have warnings)

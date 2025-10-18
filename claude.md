@@ -152,7 +152,27 @@ Building [PROJECT]:
 Confirmed?
 ```
 
-## 7. Version Control & Git Workflow
+## 7. Testing Protocol
+
+**MANDATORY: Read `.claude/testing-protocol.md` before running ANY validation tests**
+
+This protocol prevents wasting time by running tests with stale code. Key rules:
+
+1. **NEVER** run tests in background while making changes
+2. **ALWAYS** kill background tests before making code changes
+3. **ALWAYS** commit changes BEFORE starting validation tests
+4. **ALWAYS** verify commit applied: `git log -1 --oneline`
+5. **ALWAYS** use timestamped log files: `/tmp/test_$(date +%Y%m%d_%H%M%S).log`
+6. **ALWAYS** check test timestamp vs commit timestamp before reporting results
+
+**Correct sequence:**
+```
+CHANGE → COMMIT → VERIFY COMMITTED → KILL OLD TESTS → START NEW TEST
+```
+
+See `.claude/testing-protocol.md` for complete protocol and violation consequences.
+
+## 8. Version Control & Git Workflow
 
 **Keep GitHub synchronized:** Push changes regularly to keep remote up to date
 
@@ -308,7 +328,7 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 **DO:** Change colors, text, spacing
 **DON'T:** Restructure, change composition, rewrite
 
-## 9. Anti-Patterns
+## 10. Anti-Patterns
 ❌ Assume tech stack
 ❌ Skip shadcn blocks exploration
 ❌ Restructure shadcn components
@@ -323,8 +343,11 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 ❌ Force push to `main` or shared branches
 ❌ Merge PRs without careful review
 ❌ Start specialized work without activating relevant skill (e.g., Zig project without `/zig-dev`)
+❌ **Run tests before committing code changes** (CRITICAL - see Testing Protocol)
+❌ **Run tests in background while making changes** (CRITICAL - see Testing Protocol)
+❌ **Report test results without verifying test used current code** (CRITICAL - see Testing Protocol)
 
-## 10. Quick Reference
+## 11. Quick Reference
 
 **Languages:** Python (uv), Zig (/zig-dev), Rust (cargo), Go (/tui-development), Swift (/ios-native-dev), C/C++ (CMake), TS (strict), Lean 4
 
@@ -339,11 +362,11 @@ Plan loading states (skeleton) and error states (alerts) from the start.
 
 **Workflow:** Requirements → Confirm → Map flows → shadcn blocks → Implement
 
-**Skills:** Use slash commands (e.g., `/modal-dev`) to activate specialized knowledge - see Section 11
+**Skills:** Use slash commands (e.g., `/modal-dev`) to activate specialized knowledge - see Section 12
 
 **When in doubt:** Ask questions, check shadcn blocks, test edge cases, activate relevant skill
 
-## 11. Skills Reference
+## 12. Skills Reference
 
 **Specialized knowledge domains available via slash commands** - These skills provide comprehensive, expert-level guidance for specific technologies and workflows. Activate them when working in their respective domains.
 

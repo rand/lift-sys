@@ -109,13 +109,16 @@ def test_find_index_off_by_one():
 
     print(f"\n{result}")
 
-    if result.has_warnings():
+    if result.has_errors() or result.has_warnings():
         print("\n✅ SUCCESS: IR Interpreter detected potential off-by-one issue!")
-        print("   Code generation would proceed with warnings.")
+        if result.has_errors():
+            print("   This IR would be BLOCKED from code generation.")
+        else:
+            print("   Code generation would proceed with warnings.")
     else:
         print("\n⚠️  WARNING: IR Interpreter did not detect off-by-one risk.")
 
-    return result.has_warnings()
+    return result.has_errors() or result.has_warnings()
 
 
 def test_is_valid_email_incomplete():
@@ -157,13 +160,16 @@ def test_is_valid_email_incomplete():
 
     print(f"\n{result}")
 
-    if result.has_warnings():
+    if result.has_errors() or result.has_warnings():
         print("\n✅ SUCCESS: IR Interpreter detected incomplete validation!")
-        print("   Code generation would proceed with warnings.")
+        if result.has_errors():
+            print("   This IR would be BLOCKED from code generation.")
+        else:
+            print("   Code generation would proceed with warnings.")
     else:
         print("\n⚠️  WARNING: IR Interpreter did not detect validation issue.")
 
-    return result.has_warnings()
+    return result.has_errors() or result.has_warnings()
 
 
 def main():

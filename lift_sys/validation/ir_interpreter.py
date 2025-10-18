@@ -201,12 +201,12 @@ class IRInterpreter:
                     )
                 )
             else:
-                # No return effect mentioned - warning (might be implicit)
+                # No return effect mentioned - error (function must explicitly return)
                 computed_values = [v for v in trace.values.values() if v.source == "computed"]
                 if computed_values:
                     issues.append(
                         SemanticIssue(
-                            severity="warning",
+                            severity="error",
                             category="implicit_return",
                             message=f"Function computes values but no explicit return effect. "
                             f"Computed: {', '.join(v.name for v in computed_values)}",
@@ -250,10 +250,19 @@ class IRInterpreter:
             return issues
 
         # Analyze effect descriptions for loop intent
+        # Only check loop behaviors if there are actual loop-related keywords in effects
+        has_loop_keywords = any(
+            any(
+                kw in effect.description.lower()
+                for kw in ["iterate", "loop", "for each", "traverse"]
+            )
+            for effect in ir.effects
+        )
+
         for i, effect in enumerate(ir.effects):
             desc_lower = effect.description.lower()
 
-            # Check for FIRST_MATCH patterns
+            # Check for FIRST_MATCH patterns (only if there's a loop)
             first_match_keywords = [
                 "first",
                 "earliest",
@@ -261,7 +270,7 @@ class IRInterpreter:
                 "find and return",
                 "stop when",
             ]
-            if any(keyword in desc_lower for keyword in first_match_keywords):
+            if has_loop_keywords and any(keyword in desc_lower for keyword in first_match_keywords):
                 # Should have early termination
                 has_break = any(op in trace.operations for op in ["break", "return", "exit"])
                 has_return_in_loop = any(

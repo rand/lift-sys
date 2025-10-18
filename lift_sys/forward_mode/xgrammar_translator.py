@@ -73,7 +73,7 @@ class XGrammarIRTranslator:
                 ir_json = await self.provider.generate_structured(
                     prompt=system_prompt,
                     schema=self.schema,
-                    max_tokens=2000,
+                    max_tokens=3072,
                     temperature=0.3,
                 )
 
@@ -97,7 +97,7 @@ class XGrammarIRTranslator:
                 # Generate IR JSON using LLM
                 response = await self.provider.generate_text(
                     prompt=system_prompt,
-                    max_tokens=2000,
+                    max_tokens=3072,
                     temperature=0.3,  # Lower temperature for more structured output
                 )
 

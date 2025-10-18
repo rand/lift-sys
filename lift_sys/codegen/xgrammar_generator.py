@@ -127,7 +127,7 @@ class XGrammarCodeGenerator:
 
         # Block code generation if there are errors
         if interpretation.has_errors():
-            error_messages = "\n".join([f"  - {err.message}" for err in interpretation.errors])
+            error_messages = "\n".join([f"#   - {err.message}" for err in interpretation.errors])
             return GeneratedCode(
                 source_code="# Code generation blocked due to semantic errors\n"
                 f"# Errors detected in IR:\n{error_messages}\n",
@@ -672,7 +672,7 @@ class XGrammarCodeGenerator:
         # Add function signature
         lines.append(structure["signature"])
 
-        # Add docstring (if present) - already has indentation
+        # Add docstring (if present)
         if structure["docstring"]:
             for line in structure["docstring"].split("\n"):
                 lines.append(line)

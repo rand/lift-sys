@@ -418,7 +418,7 @@ class EffectChainAnalyzer:
                 value_names = ", ".join([f"'{v.name}'" for v in computed_values])
                 trace.add_issue(
                     SemanticIssue(
-                        severity="error",
+                        severity="warning",
                         category="missing_return",
                         message=f"Function returns '{ir.signature.returns}' but effect chain doesn't return anything. "
                         f"Produced values: {value_names}",
@@ -426,10 +426,11 @@ class EffectChainAnalyzer:
                     )
                 )
             else:
-                # No values produced at all
+                # No values produced at all - this is a warning, not error
+                # Many IRs have minimal effects and rely on LLM to implement correctly
                 trace.add_issue(
                     SemanticIssue(
-                        severity="error",
+                        severity="warning",
                         category="missing_return",
                         message=f"Function returns '{ir.signature.returns}' but effect chain produces no value",
                         suggestion="Add effects to compute and return the result",

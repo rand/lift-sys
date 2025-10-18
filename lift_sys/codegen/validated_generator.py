@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..ir.models import IntermediateRepresentation
+from ..validation.constraint_filter import filter_applicable_constraints
 from ..validation.ir_interpreter import IRInterpreter
 from .execution_validator import ExecutionValidator, ValidationResult
 from .models import GeneratedCode
@@ -159,6 +160,29 @@ class ValidatedCodeGenerator:
                 print(f"  ℹ️  IR validation passed with {len(interpretation.warnings)} warning(s)")
                 for warning in interpretation.warnings[:2]:
                     print(f"     • [{warning.category}] {warning.message}")
+
+        # Step 0.5: Filter non-applicable constraints (Phase 3.1)
+        if ir.constraints:
+            original_count = len(ir.constraints)
+            filtered_constraints = filter_applicable_constraints(ir, ir.constraints)
+            filtered_count = len(filtered_constraints)
+
+            if filtered_count < original_count:
+                print(
+                    f"  🔧 Filtered constraints: {original_count} → {filtered_count} "
+                    f"({original_count - filtered_count} non-applicable)"
+                )
+
+                # Create a modified IR with filtered constraints for code generation
+                # Preserve original IR structure but with filtered constraints
+                ir = IntermediateRepresentation(
+                    intent=ir.intent,
+                    signature=ir.signature,
+                    effects=ir.effects,
+                    assertions=ir.assertions,
+                    metadata=ir.metadata,
+                    constraints=filtered_constraints,  # Use filtered constraints
+                )
 
         # Step 1: Generate test cases from IR
         test_cases = self.test_generator.generate_test_cases(ir)

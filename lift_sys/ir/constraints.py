@@ -345,6 +345,31 @@ class PositionConstraint(Constraint):
             # Position constraints on parameter names are only meaningful for
             # string/list operations where element ordering matters
 
+            # Phase 3.2: First check if this is a semantic description rather than
+            # actual position checking requirement
+            semantic_keywords = [
+                "should take",  # "function should take one argument"
+                "should accept",  # "should accept non-negative integers"
+                "should return",  # "should return the nth number"
+                "ignore",  # "ignore spaces/punctuation"
+                "parameter",  # references to parameters conceptually
+                "argument",  # "exactly one argument"
+                "input",  # "input should be..."
+                "exactly one",  # "function should take exactly one"
+                "non-negative",  # "n is a non-negative integer" (value constraint, not position)
+            ]
+
+            description_lower = self.description.lower()
+            is_semantic = any(kw in description_lower for kw in semantic_keywords)
+
+            if is_semantic:
+                reason = (
+                    f"Position constraint on parameter names {self.elements} "
+                    f"describes semantic intent ('{self.description[:60]}...'), "
+                    f"not structural position checking requirement"
+                )
+                return (False, reason)
+
             # Check if function operates on strings/lists based on:
             # 1. Return type (str, list)
             # 2. Parameter types (str, list)
@@ -378,6 +403,34 @@ class PositionConstraint(Constraint):
                 reason = (
                     f"Position constraint on parameters {self.elements} not applicable: "
                     f"function performs arithmetic/logic operations, not string/list manipulation"
+                )
+                return (False, reason)
+
+        # Phase 3.2: Check for output value constraints (semantic, not structural)
+        # Elements like ["A", "B", "C", "D", "F"] describe output domain, not position checks
+        all_alphanumeric = all(
+            elem.replace("_", "").replace("-", "").isalnum() and 1 <= len(elem) <= 15
+            for elem in self.elements
+        )
+
+        # Not special chars, not params → likely output values or literals
+        if all_alphanumeric and not elements_are_params:
+            output_keywords = [
+                "return",
+                "output",
+                "map",
+                "convert",
+                "grade",
+                "representing",
+            ]
+
+            mentions_output = any(kw in self.description.lower() for kw in output_keywords)
+
+            if mentions_output:
+                reason = (
+                    f"Position constraint on output values {self.elements} "
+                    f"describes semantic mapping ('{self.description[:60]}...'), "
+                    f"not structural position checking requirement"
                 )
                 return (False, reason)
 

@@ -281,6 +281,22 @@ class PerformanceBenchmark:
         try:
             # Execute code to define the function
             namespace = {}
+
+            # DEBUG: Save code to file for inspection
+            import os
+
+            os.makedirs("/tmp/lift-sys-debug", exist_ok=True)
+            debug_file = f"/tmp/lift-sys-debug/{function_name}_generated.py"
+            with open(debug_file, "w") as f:
+                f.write(f"# Generated code for {function_name}\n")
+                f.write(f"# Length: {len(code)} chars\n")
+                f.write(f"# Lines: {len(code.split(chr(10)))}\n")
+                f.write("# " + "=" * 70 + "\n")
+                for i, line in enumerate(code.split("\n"), 1):
+                    f.write(f"# Line {i}: {repr(line)}\n")
+                f.write("# " + "=" * 70 + "\n\n")
+                f.write(code)
+
             exec(code, namespace)
 
             # If expected function name not found, try to auto-detect

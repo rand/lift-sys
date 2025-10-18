@@ -155,12 +155,11 @@ class ConstraintDetector:
         if not has_return_keyword:
             return None
 
-        # Check if return is already explicitly mentioned in effects
-        has_explicit_return = "return" in effects_text
-
-        if has_explicit_return:
-            # Return is already mentioned, less likely to be forgotten
-            return None
+        # NOTE: Previously, we skipped constraint creation if "return" was explicitly
+        # mentioned in effects, assuming the LLM wouldn't forget. However, empirical
+        # evidence shows LLMs still forget to return values even when IR says "return X".
+        # Therefore, we create ReturnConstraint whenever a return keyword is present,
+        # regardless of whether "return" is explicitly mentioned in effects.
 
         # Extract likely variable name from intent
         value_name = self._extract_value_name(intent_text, effects_text)
@@ -190,10 +189,16 @@ class ConstraintDetector:
         effects_text = " ".join(effect.description.lower() for effect in ir.effects)
         combined_text = f"{intent_text} {effects_text}"
 
-        # Check if looping is mentioned
+        # Check if looping is mentioned OR if first/last/all keywords present
+        # (first/last/all keywords imply iteration even without explicit loop mention)
         has_loop = any(keyword in combined_text for keyword in self.LOOP_KEYWORDS)
+        has_search_pattern = (
+            any(keyword in combined_text for keyword in self.FIRST_MATCH_KEYWORDS)
+            or any(keyword in combined_text for keyword in self.LAST_MATCH_KEYWORDS)
+            or any(keyword in combined_text for keyword in self.ALL_MATCHES_KEYWORDS)
+        )
 
-        if not has_loop:
+        if not has_loop and not has_search_pattern:
             return None
 
         # Determine search type based on keywords
@@ -255,12 +260,8 @@ class ConstraintDetector:
         # Check if position-related keywords are present
         has_position = any(keyword in combined_text for keyword in self.POSITION_KEYWORDS)
 
-        if not has_position:
-            return constraints
-
-        # Detect specific patterns
-
         # Pattern 1: Email validation (@ and . not adjacent)
+        # Always check for email validation since it has well-known semantic constraints
         if self._is_email_validation(combined_text):
             constraints.append(
                 PositionConstraint(
@@ -270,6 +271,13 @@ class ConstraintDetector:
                     description="@ and . must not be immediately adjacent (e.g., reject 'test@.com')",
                 )
             )
+            # Email validation constraint added, continue checking for other patterns
+            has_position = True  # Ensure we continue pattern detection
+
+        if not has_position:
+            return constraints
+
+        # Detect other specific patterns
 
         # Pattern 2: Parentheses matching (ordered)
         if self._is_parentheses_matching(combined_text):

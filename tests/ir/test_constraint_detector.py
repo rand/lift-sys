@@ -75,9 +75,11 @@ class TestReturnConstraintDetection:
         detector = ConstraintDetector()
         constraints = detector.detect_constraints(ir)
 
-        # Should NOT detect return constraint (return already mentioned)
+        # SHOULD detect return constraint even when "return" is mentioned
+        # (LLMs still forget to return values even when IR says "return X")
         return_constraints = [c for c in constraints if isinstance(c, ReturnConstraint)]
-        assert len(return_constraints) == 0
+        assert len(return_constraints) == 1
+        assert return_constraints[0].value_name == "result"
 
     def test_no_return_constraint_for_none_return_type(self):
         """Should NOT detect constraint for None return type."""

@@ -1,0 +1,261 @@
+{
+  "timestamp": "2025-10-17T16:31:02.227146",
+  "phase": "phase2",
+  "suite_name": "Phase 2: Medium Coverage",
+  "suite_description": "Comprehensive validation (10 tests)",
+  "summary": {
+    "phase": "phase2",
+    "total_tests": 10,
+    "compilation_success": 9,
+    "compilation_rate": 0.9,
+    "execution_success": 0,
+    "execution_rate": 0.0,
+    "overall_success": 0,
+    "overall_rate": 0.0,
+    "by_category": {
+      "control_flow": {
+        "total": 2,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "list_operations": {
+        "total": 2,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "string_manipulation": {
+        "total": 2,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "edge_cases": {
+        "total": 2,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "mathematical": {
+        "total": 1,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "type_operations": {
+        "total": 1,
+        "passed": 0,
+        "rate": 0.0
+      }
+    },
+    "by_complexity": {
+      "medium": {
+        "total": 7,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "easy": {
+        "total": 2,
+        "passed": 0,
+        "rate": 0.0
+      },
+      "medium_hard": {
+        "total": 1,
+        "passed": 0,
+        "rate": 0.0
+      }
+    },
+    "total_latency_ms": 370396.681252867,
+    "total_cost_usd": 0.06273278020881116
+  },
+  "results": [
+    {
+      "test_name": "letter_grade",
+      "category": "control_flow",
+      "complexity": "medium",
+      "prompt": "Create a function that returns a letter grade (A, B, C, D, or F) based on a numeric score. A is 90+, B is 80-89, C is 70-79, D is 60-69, F is below 60",
+      "compiled": false,
+      "executed": false,
+      "success": false,
+      "execution_tests": [],
+      "latency_ms": 197431.1075420119,
+      "cost_usd": 0.033005184590335315
+    },
+    {
+      "test_name": "filter_even",
+      "category": "list_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that returns a new list containing only the even numbers from the input list",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "filter_even_numbers_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 16905.89625085704,
+      "cost_usd": 0.00291764937514284
+    },
+    {
+      "test_name": "count_words",
+      "category": "string_manipulation",
+      "complexity": "easy",
+      "prompt": "Create a function that counts the number of words in a string, where words are separated by spaces",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "count_words_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 15991.168125066906,
+      "cost_usd": 0.0027651946875111508
+    },
+    {
+      "test_name": "first_or_none",
+      "category": "edge_cases",
+      "complexity": "easy",
+      "prompt": "Create a function that returns the first element of a list, or None if the list is empty",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "first_element_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 15695.708374958485,
+      "cost_usd": 0.002715951395826414
+    },
+    {
+      "test_name": "classify_number",
+      "category": "control_flow",
+      "complexity": "medium_hard",
+      "prompt": "Create a function that classifies a number. Return 'zero' if zero, 'negative' if negative, 'positive even' if positive and even, or 'positive odd' if positive and odd",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "classify_number_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 17311.59833422862,
+      "cost_usd": 0.0029852663890381033
+    },
+    {
+      "test_name": "find_index",
+      "category": "list_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that takes a list and a value as parameters (in that order). Use a for loop with enumerate to iterate through the list. Inside the loop, if an item equals the value, return its index immediately. After the loop ends (not inside it), return -1 to indicate the value was not found.",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "find_value_index_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 23090.16324975528,
+      "cost_usd": 0.003948360541625879
+    },
+    {
+      "test_name": "title_case",
+      "category": "string_manipulation",
+      "complexity": "medium",
+      "prompt": "Create a function that capitalizes the first letter of each word in a string (title case)",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "to_title_case_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 19913.5811671149,
+      "cost_usd": 0.0034189301945191496
+    },
+    {
+      "test_name": "factorial",
+      "category": "mathematical",
+      "complexity": "medium",
+      "prompt": "Create a function that calculates the factorial of a non-negative integer. Factorial of n is n * (n-1) * ... * 1, and 0! = 1",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "calculate_factorial_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 18132.877666968852,
+      "cost_usd": 0.0031221462778281417
+    },
+    {
+      "test_name": "get_type_name",
+      "category": "type_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that checks the type of a value. Use isinstance() to check if the value is an int, str, or list (in that order with if-elif). Return the exact string 'int', 'str', or 'list' if it matches. If none match, return exactly 'other' (not 'unknown' or anything else, must be the string 'other').",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "get_type_name_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 23882.0267082192,
+      "cost_usd": 0.0040803377847032
+    },
+    {
+      "test_name": "clamp_value",
+      "category": "edge_cases",
+      "complexity": "medium",
+      "prompt": "Create a function that clamps a value between a minimum and maximum (inclusive). If value < min return min, if value > max return max, otherwise return value",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "clamp_exec_error",
+          "passed": false,
+          "expected": "None",
+          "actual": "None",
+          "error": "Code execution failed: IndentationError: unexpected indent (<string>, line 3)"
+        }
+      ],
+      "latency_ms": 22042.553833685815,
+      "cost_usd": 0.0037737589722809687
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "count_words": {
+    "test_name": "count_words",
+    "num_samples": 5,
+    "detected": 0,
+    "total": 0,
+    "error_categories": {},
+    "warning_categories": {},
+    "samples": [
+      {
+        "sample_num": 0,
+        "temperature": 0.3,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 1,
+        "temperature": 0.44999999999999996,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 2,
+        "temperature": 0.6,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 3,
+        "temperature": 0.75,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 4,
+        "temperature": 0.8999999999999999,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      }
+    ],
+    "detection_rate": 0
+  },
+  "find_index": {
+    "test_name": "find_index",
+    "num_samples": 5,
+    "detected": 0,
+    "total": 0,
+    "error_categories": {},
+    "warning_categories": {},
+    "samples": [
+      {
+        "sample_num": 0,
+        "temperature": 0.3,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 1,
+        "temperature": 0.44999999999999996,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 2,
+        "temperature": 0.6,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 3,
+        "temperature": 0.75,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 4,
+        "temperature": 0.8999999999999999,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      }
+    ],
+    "detection_rate": 0
+  },
+  "is_valid_email": {
+    "test_name": "is_valid_email",
+    "num_samples": 5,
+    "detected": 0,
+    "total": 0,
+    "error_categories": {},
+    "warning_categories": {},
+    "samples": [
+      {
+        "sample_num": 0,
+        "temperature": 0.3,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 1,
+        "temperature": 0.44999999999999996,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 2,
+        "temperature": 0.6,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 3,
+        "temperature": 0.75,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      },
+      {
+        "sample_num": 4,
+        "temperature": 0.8999999999999999,
+        "error": "XGrammarIRTranslator.translate() got an unexpected keyword argument 'temperature'"
+      }
+    ],
+    "detection_rate": 0
+  }
+}

@@ -1,0 +1,506 @@
+{
+  "timestamp": "2025-10-17T18:20:56.860897",
+  "phase": "phase2",
+  "suite_name": "Phase 2: Medium Coverage",
+  "suite_description": "Comprehensive validation (10 tests)",
+  "summary": {
+    "phase": "phase2",
+    "total_tests": 10,
+    "compilation_success": 9,
+    "compilation_rate": 0.9,
+    "execution_success": 8,
+    "execution_rate": 0.8,
+    "overall_success": 8,
+    "overall_rate": 0.8,
+    "by_category": {
+      "control_flow": {
+        "total": 2,
+        "passed": 1,
+        "rate": 0.5
+      },
+      "list_operations": {
+        "total": 2,
+        "passed": 2,
+        "rate": 1.0
+      },
+      "string_manipulation": {
+        "total": 2,
+        "passed": 2,
+        "rate": 1.0
+      },
+      "edge_cases": {
+        "total": 2,
+        "passed": 1,
+        "rate": 0.5
+      },
+      "mathematical": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      },
+      "type_operations": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      }
+    },
+    "by_complexity": {
+      "medium": {
+        "total": 7,
+        "passed": 5,
+        "rate": 0.7142857142857143
+      },
+      "easy": {
+        "total": 2,
+        "passed": 2,
+        "rate": 1.0
+      },
+      "medium_hard": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      }
+    },
+    "total_latency_ms": 984544.3268758245,
+    "total_cost_usd": 0.16509072114597073
+  },
+  "results": [
+    {
+      "test_name": "letter_grade",
+      "category": "control_flow",
+      "complexity": "medium",
+      "prompt": "Create a function that returns a letter grade (A, B, C, D, or F) based on a numeric score. A is 90+, B is 80-89, C is 70-79, D is 60-69, F is below 60",
+      "compiled": false,
+      "executed": false,
+      "success": false,
+      "execution_tests": [],
+      "latency_ms": 569472.0266249496,
+      "cost_usd": 0.09501200443749161
+    },
+    {
+      "test_name": "filter_even",
+      "category": "list_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that returns a new list containing only the even numbers from the input list",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "filter_even_numbers_test_1",
+          "passed": true,
+          "expected": "[2, 4, 6]",
+          "actual": "[2, 4, 6]",
+          "error": null
+        },
+        {
+          "test_name": "filter_even_numbers_test_2",
+          "passed": true,
+          "expected": "[]",
+          "actual": "[]",
+          "error": null
+        },
+        {
+          "test_name": "filter_even_numbers_test_3",
+          "passed": true,
+          "expected": "[]",
+          "actual": "[]",
+          "error": null
+        },
+        {
+          "test_name": "filter_even_numbers_test_4",
+          "passed": true,
+          "expected": "[2, 4, 6]",
+          "actual": "[2, 4, 6]",
+          "error": null
+        },
+        {
+          "test_name": "filter_even_numbers_test_5",
+          "passed": true,
+          "expected": "[0, -2, 4]",
+          "actual": "[0, -2, 4]",
+          "error": null
+        }
+      ],
+      "latency_ms": 68788.0145420786,
+      "cost_usd": 0.011564669090346431
+    },
+    {
+      "test_name": "count_words",
+      "category": "string_manipulation",
+      "complexity": "easy",
+      "prompt": "Create a function that counts the number of words in a string, where words are separated by spaces",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "count_words_test_1",
+          "passed": true,
+          "expected": "2",
+          "actual": "2",
+          "error": null
+        },
+        {
+          "test_name": "count_words_test_2",
+          "passed": true,
+          "expected": "1",
+          "actual": "1",
+          "error": null
+        },
+        {
+          "test_name": "count_words_test_3",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        },
+        {
+          "test_name": "count_words_test_4",
+          "passed": true,
+          "expected": "2",
+          "actual": "2",
+          "error": null
+        },
+        {
+          "test_name": "count_words_test_5",
+          "passed": true,
+          "expected": "5",
+          "actual": "5",
+          "error": null
+        }
+      ],
+      "latency_ms": 43145.159541862085,
+      "cost_usd": 0.007290859923643681
+    },
+    {
+      "test_name": "first_or_none",
+      "category": "edge_cases",
+      "complexity": "easy",
+      "prompt": "Create a function that returns the first element of a list, or None if the list is empty",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "get_first_element_test_1",
+          "passed": true,
+          "expected": "1",
+          "actual": "1",
+          "error": null
+        },
+        {
+          "test_name": "get_first_element_test_2",
+          "passed": true,
+          "expected": "None",
+          "actual": "None",
+          "error": null
+        },
+        {
+          "test_name": "get_first_element_test_3",
+          "passed": true,
+          "expected": "a",
+          "actual": "a",
+          "error": null
+        },
+        {
+          "test_name": "get_first_element_test_4",
+          "passed": true,
+          "expected": "42",
+          "actual": "42",
+          "error": null
+        }
+      ],
+      "latency_ms": 16371.375541901216,
+      "cost_usd": 0.002828562590316869
+    },
+    {
+      "test_name": "classify_number",
+      "category": "control_flow",
+      "complexity": "medium_hard",
+      "prompt": "Create a function that classifies a number. Return 'zero' if zero, 'negative' if negative, 'positive even' if positive and even, or 'positive odd' if positive and odd",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "classify_number_test_1",
+          "passed": true,
+          "expected": "positive even",
+          "actual": "positive even",
+          "error": null
+        },
+        {
+          "test_name": "classify_number_test_2",
+          "passed": true,
+          "expected": "positive odd",
+          "actual": "positive odd",
+          "error": null
+        },
+        {
+          "test_name": "classify_number_test_3",
+          "passed": true,
+          "expected": "negative",
+          "actual": "negative",
+          "error": null
+        },
+        {
+          "test_name": "classify_number_test_4",
+          "passed": true,
+          "expected": "zero",
+          "actual": "zero",
+          "error": null
+        },
+        {
+          "test_name": "classify_number_test_5",
+          "passed": true,
+          "expected": "negative",
+          "actual": "negative",
+          "error": null
+        },
+        {
+          "test_name": "classify_number_test_6",
+          "passed": true,
+          "expected": "positive odd",
+          "actual": "positive odd",
+          "error": null
+        }
+      ],
+      "latency_ms": 24679.59141684696,
+      "cost_usd": 0.00421326523614116
+    },
+    {
+      "test_name": "find_index",
+      "category": "list_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that takes a list and a value as parameters (in that order). Use a for loop with enumerate to iterate through the list. Inside the loop, if an item equals the value, return its index immediately. After the loop ends (not inside it), return -1 to indicate the value was not found.",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "find_value_index_test_1",
+          "passed": true,
+          "expected": "1",
+          "actual": "1",
+          "error": null
+        },
+        {
+          "test_name": "find_value_index_test_2",
+          "passed": true,
+          "expected": "-1",
+          "actual": "-1",
+          "error": null
+        },
+        {
+          "test_name": "find_value_index_test_3",
+          "passed": true,
+          "expected": "-1",
+          "actual": "-1",
+          "error": null
+        },
+        {
+          "test_name": "find_value_index_test_4",
+          "passed": true,
+          "expected": "0",
+          "actual": "0",
+          "error": null
+        },
+        {
+          "test_name": "find_value_index_test_5",
+          "passed": true,
+          "expected": "2",
+          "actual": "2",
+          "error": null
+        }
+      ],
+      "latency_ms": 25893.208084162325,
+      "cost_usd": 0.004415534680693721
+    },
+    {
+      "test_name": "title_case",
+      "category": "string_manipulation",
+      "complexity": "medium",
+      "prompt": "Create a function that capitalizes the first letter of each word in a string (title case)",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "capitalize_words_test_1",
+          "passed": true,
+          "expected": "Hello World",
+          "actual": "Hello World",
+          "error": null
+        },
+        {
+          "test_name": "capitalize_words_test_2",
+          "passed": true,
+          "expected": "A",
+          "actual": "A",
+          "error": null
+        },
+        {
+          "test_name": "capitalize_words_test_3",
+          "passed": true,
+          "expected": "",
+          "actual": "",
+          "error": null
+        },
+        {
+          "test_name": "capitalize_words_test_4",
+          "passed": true,
+          "expected": "Python Programming",
+          "actual": "Python Programming",
+          "error": null
+        }
+      ],
+      "latency_ms": 50311.16933305748,
+      "cost_usd": 0.008485194888842912
+    },
+    {
+      "test_name": "factorial",
+      "category": "mathematical",
+      "complexity": "medium",
+      "prompt": "Create a function that calculates the factorial of a non-negative integer. Factorial of n is n * (n-1) * ... * 1, and 0! = 1",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "calculate_factorial_test_1",
+          "passed": true,
+          "expected": "120",
+          "actual": "120",
+          "error": null
+        },
+        {
+          "test_name": "calculate_factorial_test_2",
+          "passed": true,
+          "expected": "1",
+          "actual": "1",
+          "error": null
+        },
+        {
+          "test_name": "calculate_factorial_test_3",
+          "passed": true,
+          "expected": "1",
+          "actual": "1",
+          "error": null
+        },
+        {
+          "test_name": "calculate_factorial_test_4",
+          "passed": true,
+          "expected": "6",
+          "actual": "6",
+          "error": null
+        },
+        {
+          "test_name": "calculate_factorial_test_5",
+          "passed": true,
+          "expected": "3628800",
+          "actual": "3628800",
+          "error": null
+        }
+      ],
+      "latency_ms": 91100.3105409909,
+      "cost_usd": 0.01528338509016515
+    },
+    {
+      "test_name": "get_type_name",
+      "category": "type_operations",
+      "complexity": "medium",
+      "prompt": "Create a function that checks the type of a value. Use isinstance() to check if the value is an int, str, or list (in that order with if-elif). Return the exact string 'int', 'str', or 'list' if it matches. If none match, return exactly 'other' (not 'unknown' or anything else, must be the string 'other').",
+      "compiled": true,
+      "executed": true,
+      "success": true,
+      "execution_tests": [
+        {
+          "test_name": "check_value_type_test_1",
+          "passed": true,
+          "expected": "int",
+          "actual": "int",
+          "error": null
+        },
+        {
+          "test_name": "check_value_type_test_2",
+          "passed": true,
+          "expected": "str",
+          "actual": "str",
+          "error": null
+        },
+        {
+          "test_name": "check_value_type_test_3",
+          "passed": true,
+          "expected": "list",
+          "actual": "list",
+          "error": null
+        },
+        {
+          "test_name": "check_value_type_test_4",
+          "passed": true,
+          "expected": "other",
+          "actual": "other",
+          "error": null
+        },
+        {
+          "test_name": "check_value_type_test_5",
+          "passed": true,
+          "expected": "other",
+          "actual": "other",
+          "error": null
+        }
+      ],
+      "latency_ms": 68298.96137490869,
+      "cost_usd": 0.011483160229151447
+    },
+    {
+      "test_name": "clamp_value",
+      "category": "edge_cases",
+      "complexity": "medium",
+      "prompt": "Create a function that clamps a value between a minimum and maximum (inclusive). If value < min return min, if value > max return max, otherwise return value",
+      "compiled": true,
+      "executed": false,
+      "success": false,
+      "execution_tests": [
+        {
+          "test_name": "clamp_value_test_1",
+          "passed": false,
+          "expected": "5",
+          "actual": "None",
+          "error": "Expected 5, got None"
+        },
+        {
+          "test_name": "clamp_value_test_2",
+          "passed": false,
+          "expected": "0",
+          "actual": "None",
+          "error": "Expected 0, got None"
+        },
+        {
+          "test_name": "clamp_value_test_3",
+          "passed": true,
+          "expected": "10",
+          "actual": "10",
+          "error": null
+        },
+        {
+          "test_name": "clamp_value_test_4",
+          "passed": false,
+          "expected": "0",
+          "actual": "None",
+          "error": "Expected 0, got None"
+        },
+        {
+          "test_name": "clamp_value_test_5",
+          "passed": false,
+          "expected": "10",
+          "actual": "None",
+          "error": "Expected 10, got None"
+        }
+      ],
+      "latency_ms": 26484.50987506658,
+      "cost_usd": 0.004514084979177763
+    }
+  ]
+}

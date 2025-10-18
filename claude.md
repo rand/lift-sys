@@ -1,512 +1,1029 @@
 # Claude Development Guidelines
 
-## 1. Agentic Work
-**Default:** Beads framework (https://github.com/steveyegge/beads)
+> **Critical Success Principle**: Following these guidelines is not optional. Each section contains decision trees, mandatory checkpoints, and anti-patterns that protect against wasted time and technical debt.
 
-Use for all agentic work and sub-agents. Break tasks into discrete beads with clear I/O. Chain beads for workflows, maintain state between beads.
+---
 
-**Session Start:** Update beads CLI at the start of each session:
+## Table of Contents
+1. [Core Workflow: Agentic Work](#1-core-workflow-agentic-work)
+2. [Critical Thinking & Pushback](#2-critical-thinking--pushback)
+3. [Language Stack & Tooling](#3-language-stack--tooling)
+4. [Cloud Platforms & Infrastructure](#4-cloud-platforms--infrastructure)
+5. [Project Initiation Protocol](#5-project-initiation-protocol)
+6. [Testing & Validation](#6-testing--validation)
+7. [Version Control & Git](#7-version-control--git)
+8. [Frontend Development](#8-frontend-development)
+9. [Skills System](#9-skills-system)
+10. [Anti-Patterns & Violations](#10-anti-patterns--violations)
+11. [Quick Reference](#11-quick-reference)
+
+---
+
+## 1. Core Workflow: Agentic Work
+
+### Primary Framework: Beads
+
+**Mandatory for**: All agentic work, sub-agents, multi-session tasks, complex workflows
+
+**Framework URL**: https://github.com/steveyegge/beads
+
+### Session Start Protocol
+
 ```bash
+# STEP 1: Update beads CLI (MANDATORY at session start)
 go install github.com/steveyegge/beads/cmd/bd@latest
+
+# STEP 2: Verify installation
+bd version
+
+# STEP 3: If in existing project, import state
+bd import -i .beads/issues.jsonl
+
+# STEP 4: Check ready work
+bd ready --json --limit 5
 ```
 
-**No incomplete work:** Never leave `TODO`, mocks, or stubbed implementations. Either fully implement NOW or create explicit Beads plan to revisit when unblocked.
+### Core Workflow Pattern
 
-## 2. Critical Thinking
-Don't default to "you're absolutely right" - challenge assumptions and decisions.
+```mermaid
+graph TD
+    A[Session Start] --> B[Import State: bd import]
+    B --> C[Check Ready Work: bd ready]
+    C --> D{Have Ready Work?}
+    D -->|Yes| E[Claim Task: bd update ID --status in_progress]
+    D -->|No| F[Create New Work: bd create]
+    E --> G[Execute & Discover]
+    G --> H{Discover Sub-tasks?}
+    H -->|Yes| I[File Immediately: bd create + bd dep add]
+    H -->|No| J[Continue]
+    I --> J
+    J --> K{Task Complete?}
+    K -->|Yes| L[Close: bd close ID --reason]
+    K -->|No| M{Context Bloat?}
+    M -->|Yes| N[/compact or /context]
+    M -->|No| G
+    L --> O[Export State: bd export]
+    O --> P[Commit: git add + commit]
+```
 
-**Push back on:**
-- Vague requirements that cause rework
-- Tech choices that don't fit constraints
-- Architectural decisions with hidden costs
-- Missing error handling or edge cases
-- Overly complex solutions
+### Context Management (Critical Skill)
 
-**Be constructive:** Offer alternatives with reasoning ("Consider X because Y"), flag potential issues, explain tradeoffs.
+**ACTIVATE**: `/beads-context` skill when working with bd commands or multi-session work
 
-## 3. Language Stack
+**Strategic /context Usage** (Preserve State):
+- Before working on complex issues
+- After discovering significant new work
+- Before major refactoring
+- When switching between unrelated issues
+- After resolving merge conflicts
 
-**Python** → `uv` (not pip/poetry)
+**Strategic /compact Usage** (Compress State):
+- After completing an issue
+- After routine operations (bd list, bd show)
+- When context approaches 75% full
+- After bulk issue creation
+- During long troubleshooting sessions
+
+### Non-Negotiable Rules
+
+1. **NEVER** leave TODO, mocks, or stubs → Either implement NOW or create explicit Beads issue
+2. **ALWAYS** use `--json` flag with bd commands for parseable output
+3. **ALWAYS** export state before ending session: `bd export -o .beads/issues.jsonl`
+4. **ALWAYS** commit .beads/issues.jsonl to git for version control
+
+---
+
+## 2. Critical Thinking & Pushback
+
+### When to Push Back (MANDATORY)
+
+You MUST challenge these situations:
+
+```
+TRIGGER                          → RESPONSE
+────────────────────────────────────────────────────────
+Vague requirements              → "Let's clarify X, Y, Z first"
+Poor tech choice                → "Consider [alternative] because [reason]"
+Missing error handling          → "This needs error handling for [cases]"
+Overly complex solution         → "Simpler approach: [alternative]"
+Hidden architectural costs      → "This will cause [problem] because [reason]"
+Scalability issues              → "This won't scale past [limit] due to [constraint]"
+Security vulnerabilities        → "This exposes [risk]. Use [secure pattern] instead"
+Missing edge cases              → "What happens when [edge case]?"
+```
+
+### Constructive Challenge Pattern
+
+```
+WRONG: "You're absolutely right!"
+RIGHT: "Consider X because Y. Here's the tradeoff: [analysis]"
+
+WRONG: "That won't work."
+RIGHT: "That approach has [limitation]. Alternative: [solution] with [benefit]"
+```
+
+### Decision Framework
+
+```
+Question asked
+    ↓
+Is requirement clear?
+    ├─ No → ASK for clarification
+    ↓
+Is tech choice optimal?
+    ├─ No → SUGGEST better alternative with reasoning
+    ↓
+Are edge cases handled?
+    ├─ No → FLAG missing cases
+    ↓
+Is solution maintainable?
+    ├─ No → PROPOSE simpler approach
+    ↓
+Proceed with implementation
+```
+
+---
+
+## 3. Language Stack & Tooling
+
+### Python → UV (MANDATORY)
+
 ```bash
-uv init project && cd project && uv add package-name && uv run script.py
+# CORRECT
+uv init project && cd project
+uv add package-name
+uv run script.py
+
+# WRONG - DO NOT USE
+pip install package-name        # ❌
+poetry add package-name         # ❌
 ```
 
-**Zig** → Latest stable, explicit allocators, comptime, `defer` cleanup
-  - **Comprehensive skill**: Use `/zig-dev` for Zig projects, build.zig, testing, package management
-  - See: Section 11 (Skills Reference) for detailed capabilities
+**Skill**: No specific skill needed (standard workflow)
 
-**Rust** → `cargo`, ownership/borrowing, `Result`/`Option`, iterators over loops, `anyhow` (apps), `thiserror` (libs), `tokio` (async)
+### Zig → Comprehensive Skill Required
 
-**Go** → Standard toolchain, small interfaces, explicit errors, table-driven tests
-  - **TUI Development**: Use `/tui-development` for terminal UIs with Charm.sh (Bubble Tea, Lip Gloss, Bubbles)
-  - See: Section 11 (Skills Reference) for TUI patterns
+**ACTIVATE**: `/zig-dev` skill for ANY Zig work
 
-**C/C++** → CMake 3.20+, C11/C17 or C++17/20, RAII, smart pointers, STL algorithms
+**Skill covers**:
+- Project setup (build.zig, build.zig.zon)
+- Memory management (allocators, defer, errdefer)
+- Testing patterns
+- Cross-compilation
+- Comptime programming
+- C library integration
 
-**TypeScript** → Strict mode, ESM, `async/await`, Vitest/Jest
+**Standards**:
+- Latest stable version (0.13.x+)
+- Explicit allocators (never implicit allocation)
+- Comptime for zero-cost abstractions
+- defer/errdefer for cleanup
+
+### Rust → Standard Patterns
+
+```bash
+cargo new project-name
+cargo add anyhow thiserror tokio
+```
+
+**Standards**:
+- Ownership/borrowing first
+- `Result<T, E>` and `Option<T>` over exceptions
+- Iterators over loops
+- `anyhow` for applications, `thiserror` for libraries
+- `tokio` for async runtime
+
+**Skill**: No specific skill needed
+
+### Go → TUI Development Skill Available
+
+**ACTIVATE**: `/tui-development` for terminal UIs
+
+**Standards**:
+- Small interfaces (1-3 methods)
+- Explicit error returns (not panic)
+- Table-driven tests
+- Standard toolchain (no custom build tools)
+
+**TUI Framework**: Charm.sh (Bubble Tea + Lip Gloss + Bubbles)
+
+### TypeScript → Strict Configuration
+
+**Mandatory tsconfig.json**:
 ```json
-{"compilerOptions": {"strict": true, "target": "ES2022", "module": "ESNext"}}
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "skipLibCheck": false,
+    "forceConsistentCasingInFileNames": true
+  }
+}
 ```
 
-**Swift** → iOS/macOS native development with SwiftUI, Swift 6 concurrency, async/await
-  - **Comprehensive skill**: Use `/ios-native-dev` for iOS apps with SwiftUI, UIKit, SwiftData
-  - See: Section 11 (Skills Reference) for iOS architecture patterns
+**Standards**:
+- Strict mode (non-negotiable)
+- async/await over promises
+- ESM imports
+- Vitest or Jest for testing
 
-**Lean** → Lean 4, mathlib4, readable tactics, `snake_case`
+### Swift → iOS Native Skill Required
 
-## 4. Cloud Platforms
+**ACTIVATE**: `/ios-native-dev` for iOS development
 
-**AWS** → Lambda layers, S3 presigned URLs, DynamoDB single-table, IAM least privilege, Secrets Manager
+**Skill covers**:
+- SwiftUI 5.0+ patterns
+- Swift 6.0 concurrency
+- MVVM architecture
+- SwiftData, Charts, Navigation
+- UIKit integration
 
-**Cloudflare** → Workers (TypeScript), KV/R2/D1 bindings, `wrangler dev`
+**Standards**:
+- SwiftUI first (UIKit only when necessary)
+- Async/await over completion handlers
+- Observation framework for state
+- iOS 17.0+ minimum target
 
-**Modal** → `@app.function(gpu="L40S")`, volumes for persistence, Modal secrets, `uv_pip_install()` for packages
-  - **Comprehensive skill**: Use `/modal-dev` for Modal app development, GPU workloads, web endpoints
-  - **See**: `docs/MODAL_REFERENCE.md` for project-specific implementation details
-  - **Examples**: https://github.com/modal-labs/modal-examples (check 01-14 learning tracks)
-  - **Recommended GPU**: L40S for best cost/performance
-  - **Image building**: Use `uv_pip_install()`, pin versions, optimize caching
-  - See: Section 11 (Skills Reference) for Modal patterns and best practices
+### C/C++ → Modern Standards
 
-**Cloud Run** → Listen on PORT, multi-stage Dockerfile, Secret Manager, set concurrency
+**Standards**:
+- CMake 3.20+ for build
+- C11/C17 or C++17/20
+- RAII for resource management
+- Smart pointers (shared_ptr, unique_ptr)
+- STL algorithms over raw loops
 
-**WorkOS** → SSO (SAML/OAuth), Directory Sync, server-side API keys only
+### Lean → Proof Development
 
-**Resend** → React Email templates, domain verification, batch sending
+**Standards**:
+- Lean 4 with mathlib4
+- Readable tactics (avoid proof golf)
+- snake_case naming
+- Comprehensive documentation
 
-### Secure Networking & Infrastructure
+---
 
-**VPN & Secure Access** → Tailscale (WireGuard-based mesh), WireGuard for custom implementations
-**Resilient Connectivity** → mosh (Mobile Shell) for unstable networks, SSH alternatives
-**Service Security** → mTLS for service-to-service auth, certificate management
-**NAT Traversal** → STUN/TURN, hole punching, peer-to-peer connectivity
+## 4. Cloud Platforms & Infrastructure
 
-- **Comprehensive skill**: Use `/secure-networking` for secure networking implementation
-- Covers: Tailscale, mosh, mTLS, WireGuard, NAT traversal, zero-trust architectures
-- See: Section 11 (Skills Reference) for networking security patterns
+### Modal.com → Comprehensive Skill Required
 
-### Cost Management & Resource Cleanup
+**ACTIVATE**: `/modal-dev` for ANY Modal work
 
-**Always spin down resources when not in use**, especially for development and testing:
+**Skill covers**:
+- App structure and decorators
+- GPU selection (L40S recommended for cost/performance)
+- Image building (uv_pip_install preferred)
+- Volume management
+- Web endpoints (FastAPI integration)
+- Scheduled jobs
+- Resource optimization
 
-**Modal**
-- Use `modal app stop` to stop running apps
-- Delete unused volumes: `modal volume list` → `modal volume delete [name]`
-- Check running apps: `modal app list`
-- Use `--timeout` parameter for auto-shutdown on functions
+**Reference**: Check `docs/MODAL_REFERENCE.md` for project-specific patterns
 
-**AWS**
-- Stop EC2 instances when not needed (not terminate, just stop)
-- Delete unused EBS volumes and snapshots
-- Use Lambda for dev/test (pay per invocation, no idle costs)
-- Set CloudWatch alarms for unexpected usage
+**Best Practices**:
+```python
+# Image building - use uv_pip_install
+image = modal.Image.debian_slim().uv_pip_install(
+    "torch==2.1.0",
+    "transformers==4.35.0"
+)
 
-**Cloud Run**
-- Scales to zero automatically (no manual cleanup needed)
-- Set `max-instances` to prevent runaway costs: `gcloud run services update SERVICE --max-instances=10`
-- Review Cloud Run logs for unexpected invocations
+# GPU selection - L40S for best cost/performance
+@app.function(gpu="l40s")
+def inference(input: str) -> str:
+    ...
 
-**Cloudflare Workers**
-- Free tier scales to zero automatically
-- Paid plans: review analytics for unexpected traffic
+# Auto-shutdown for cost control
+@app.function(gpu="l40s", timeout=300)
+def batch_job():
+    ...
+```
 
-**General practices:**
-- Tag resources with `environment: dev/test/prod` for easy identification
-- Use infrastructure-as-code (Terraform, Pulumi) to tear down entire stacks: `terraform destroy`
-- Set budget alerts in cloud provider consoles
-- Schedule automatic shutdown for dev/test: cron jobs, AWS Instance Scheduler, Cloud Run jobs
-- Delete after testing: databases, caches, load balancers (high idle costs)
+**Examples**: https://github.com/modal-labs/modal-examples (tracks 01-14)
 
-**Development workflow:**
+### Cloudflare Workers
+
+**Standards**:
+- TypeScript for worker code
+- KV/R2/D1 bindings for storage
+- `wrangler dev` for local development
+- Environment variables via wrangler.toml
+
+### AWS Best Practices
+
+**Standards**:
+- Lambda layers for shared dependencies
+- S3 presigned URLs for temporary access
+- DynamoDB single-table design
+- IAM least privilege
+- Secrets Manager for credentials
+
+### Secure Networking → Comprehensive Skill Required
+
+**ACTIVATE**: `/secure-networking` for VPN, mTLS, or network security
+
+**Skill covers**:
+- Tailscale (WireGuard mesh VPN)
+- mosh (resilient SSH alternative)
+- mTLS implementation
+- NAT traversal (STUN/TURN)
+- Zero-trust architectures
+- Certificate management
+
+**Use when**: Setting up VPNs, implementing service-to-service auth, building resilient networked services
+
+### Cost Management (CRITICAL)
+
+**MANDATORY: Spin down resources when not in use**
+
 ```bash
-# Start work
-modal app deploy                    # or equivalent
+# Modal
+modal app stop [app-name]
+modal volume delete [unused-volume]
 
-# End work session
-modal app stop [app-name]          # Stop Modal apps
-terraform destroy -target=module.dev  # or tear down dev environment
+# AWS
+aws ec2 stop-instances --instance-ids [id]  # Stop, don't terminate
+aws ec2 describe-volumes --filters "Name=status,Values=available" | jq '.Volumes[].VolumeId'
+
+# Terraform
+terraform destroy -target=module.dev
+
+# Cloud Run (auto-scales to zero, but set limits)
+gcloud run services update SERVICE --max-instances=10
 ```
 
-**Anti-pattern:** Leaving GPU instances, databases, or load balancers running overnight/weekends in dev/test environments.
+**Anti-Pattern**: Leaving GPU instances, databases, or load balancers running overnight/weekends in dev/test.
 
-## 5. Design Aesthetics
+**Workflow**:
+1. Start work → Deploy resources
+2. End work → Stop/destroy resources
+3. Set budget alerts
+4. Tag resources: `environment: dev/test/prod`
 
-Inspired by: v0.dev (minimal, purposeful contrast), Firebase (high-density dashboards), Hex (scannable complexity), Principle (data-rich but breathable)
+---
 
-## 6. Project Initiation
+## 5. Project Initiation Protocol
 
-**Gather requirements first - ASK, don't assume:**
-- Functional: Problem, users, features, workflows, edge cases
-- Technical: Language, framework, database, auth, integrations, performance
-- Deploy: Platform, domain, environments, CI/CD
-- Constraints: Budget, timeline, compliance, browser support
-- Success: Metrics, KPIs, definition of done
+### STOP Before Coding
 
-**Confirm before coding:**
+**DO NOT write code until completing this checklist:**
+
 ```
-Building [PROJECT]:
-- Tech: [stack]
-- Deploy: [platform] at [domain]
-- Timeline: [dates]
-- Success: [criteria]
-Confirmed?
+[ ] Functional Requirements
+    - Problem statement clear?
+    - Target users identified?
+    - Core features listed?
+    - User workflows mapped?
+    - Edge cases documented?
+
+[ ] Technical Requirements
+    - Language/framework confirmed?
+    - Database choice finalized?
+    - Authentication method decided?
+    - External integrations listed?
+    - Performance requirements defined?
+
+[ ] Deployment Requirements
+    - Target platform confirmed?
+    - Domain/hosting decided?
+    - Environment strategy (dev/staging/prod)?
+    - CI/CD pipeline required?
+
+[ ] Constraints
+    - Budget limits?
+    - Timeline/milestones?
+    - Compliance requirements (GDPR, HIPAA, etc.)?
+    - Browser/device support?
+
+[ ] Success Criteria
+    - KPIs defined?
+    - Metrics to track?
+    - Definition of done?
 ```
 
-## 7. Testing Protocol
+### Confirmation Template
 
-**MANDATORY: Read `.claude/testing-protocol.md` before running ANY validation tests**
+**ALWAYS use this confirmation before starting:**
 
-This protocol prevents wasting time by running tests with stale code. Key rules:
+```
+Building [PROJECT NAME]:
+
+Tech Stack:
+- Language: [choice]
+- Framework: [choice]
+- Database: [choice]
+- Auth: [choice]
+
+Deployment:
+- Platform: [choice]
+- Domain: [if applicable]
+- Environments: [dev/staging/prod]
+
+Timeline:
+- Start: [date]
+- Milestones: [key dates]
+- Launch: [target date]
+
+Success Metrics:
+- [metric 1]
+- [metric 2]
+- [metric 3]
+
+Confirmed? Any adjustments needed?
+```
+
+### Decision Tree: When to Ask vs. Assume
+
+```
+User provides requirement
+    ↓
+Is tech stack specified?
+    ├─ No → ASK for preferences
+    ↓
+Are integrations listed?
+    ├─ No → ASK what services needed
+    ↓
+Is deployment platform clear?
+    ├─ No → ASK where to deploy
+    ↓
+Are constraints documented?
+    ├─ No → ASK about budget/timeline/compliance
+    ↓
+Proceed with confirmed plan
+```
+
+---
+
+## 6. Testing & Validation
+
+### MANDATORY: Testing Protocol
+
+**CRITICAL RULE**: Read `.claude/testing-protocol.md` BEFORE running ANY validation tests
+
+### The Golden Rules
 
 1. **NEVER** run tests in background while making changes
 2. **ALWAYS** kill background tests before making code changes
 3. **ALWAYS** commit changes BEFORE starting validation tests
 4. **ALWAYS** verify commit applied: `git log -1 --oneline`
 5. **ALWAYS** use timestamped log files: `/tmp/test_$(date +%Y%m%d_%H%M%S).log`
-6. **ALWAYS** check test timestamp vs commit timestamp before reporting results
+6. **ALWAYS** check test timestamp vs commit timestamp before reporting
 
-**Correct sequence:**
+### Correct Test Sequence
+
 ```
-CHANGE → COMMIT → VERIFY COMMITTED → KILL OLD TESTS → START NEW TEST
+CORRECT FLOW:
+    Make changes
+        ↓
+    COMMIT changes (git add + commit)
+        ↓
+    VERIFY commit (git log -1)
+        ↓
+    KILL any background tests
+        ↓
+    START new test with timestamped log
+        ↓
+    WAIT for completion
+        ↓
+    CHECK test timestamp vs commit timestamp
+        ↓
+    Report results
+
+WRONG FLOW (CAUSES WASTED HOURS):
+    Make changes
+        ↓
+    Start test in background  ← ❌ NO!
+        ↓
+    Make more changes         ← ❌ Test now invalid!
+        ↓
+    Report test results       ← ❌ Results are stale!
 ```
 
-See `.claude/testing-protocol.md` for complete protocol and violation consequences.
+### Timestamp Verification
 
-## 8. Version Control & Git Workflow
+**Before reporting any test results:**
 
-**Keep GitHub synchronized:** Push changes regularly to keep remote up to date
-
-### Branch Strategy
-
-**Use branches for all work:**
-- `main` - Production-ready code only
-- `feature/*` - New features (e.g., `feature/modal-inference`, `feature/ir-versioning`)
-- `fix/*` - Bug fixes (e.g., `fix/session-validation`)
-- `refactor/*` - Code improvements (e.g., `refactor/provider-interface`)
-- `docs/*` - Documentation updates (e.g., `docs/modal-guide`)
-
-**Branch workflow:**
 ```bash
-# Start new feature
+# Check commit time
+git log -1 --format="%ai"  # e.g., 2025-01-15 14:30:00
+
+# Check test log time (in filename)
+ls -lh /tmp/test_*.log
+
+# Test time MUST be >= Commit time
+# If test time < commit time → Test used old code → Invalid results
+```
+
+### Consequences of Violations
+
+- Wasting hours debugging non-existent bugs
+- False positive/negative results
+- Degraded trust in testing process
+- Rework and confusion
+
+**IF IN DOUBT**: Kill tests, commit, restart tests.
+
+---
+
+## 7. Version Control & Git
+
+### Branch Strategy (MANDATORY)
+
+```
+main              - Production-ready code ONLY
+    ↓
+feature/*         - New features (feature/modal-inference)
+fix/*             - Bug fixes (fix/validation-edge-case)
+refactor/*        - Code improvements (refactor/provider-interface)
+docs/*            - Documentation (docs/api-guide)
+```
+
+### Workflow
+
+```bash
+# Start new work
 git checkout -b feature/my-feature
 
-# Work and commit frequently
-git add . && git commit -m "Clear, descriptive message"
+# Work and commit frequently (atomic commits)
+git add .
+git commit -m "Clear, descriptive message"
 
-# Push branch to remote
+# Push to remote
 git push -u origin feature/my-feature
 
 # Create PR when ready
-gh pr create --title "Add my feature" --body "Description..."
+gh pr create --title "Add feature" --body "Description"
 
-# After PR approved and merged
-git checkout main && git pull
+# After approval, merge via PR
+# Delete branch after merge
 git branch -d feature/my-feature
 ```
 
-### Commit Hygiene
+### Commit Message Standards
 
-**Good commits:**
-- Atomic: One logical change per commit
-- Descriptive: Clear what and why (not just what)
-- Tested: Code works before committing
-- Formatted: Pass pre-commit hooks (or use `--no-verify` with justification)
-
-**Commit message format:**
 ```
-Brief summary (50 chars or less)
+GOOD:
+✓ "Add user authentication with JWT tokens"
+✓ "Fix validation error in signup form"
+✓ "Refactor payment processing for clarity"
 
-Optional detailed explanation of what changed and why.
-Include motivation, implementation notes, and impact.
-
-- Bullet points for multiple changes
-- Reference issues/beads: Fixes lift-sys-42
+BAD:
+✗ "update code"
+✗ "fix bug"
+✗ "WIP"
+✗ "stuff"
 ```
 
-**IMPORTANT - No Co-Author Attribution:**
-- ❌ **NEVER** add "Co-Authored-By: Claude" or similar attribution to commits
-- ❌ **NEVER** add "Generated with Claude Code" footers to commits
-- ✅ Commits should appear as regular commits by the developer
-- ✅ Keep commit messages professional and focused on the change
+### Protected Main Branch Rules
 
-### Pull Request Process
+1. **NEVER** commit directly to main for features
+2. **NEVER** force push to main or shared branches
+3. **ALWAYS** use PRs for code review
+4. **ALWAYS** require PR approval before merging
+5. **ALWAYS** delete feature branches after merge
 
-**Before creating PR:**
-1. Ensure branch is up to date: `git pull origin main` (or rebase)
-2. All tests passing
-3. Documentation updated
-4. Beads updated with status
-5. Self-review the diff
+### Daily Sync Protocol
 
-**PR Description:**
-```markdown
-## Summary
-Brief overview of changes
-
-## Changes
-- List of specific changes
-- Organized by category if needed
-
-## Testing
-- How changes were tested
-- Test results
-
-## Related
-- Beads: lift-sys-XX
-- Docs: Link to relevant documentation
-```
-
-**Reviewing PRs:**
-- Read entire diff carefully
-- Check for logic errors, edge cases, security issues
-- Verify tests cover new functionality
-- Ensure documentation is updated
-- Test locally if substantial changes
-- Ask questions if anything unclear
-- Approve only when confident
-
-**Merging PRs:**
-- Squash small PRs (< 5 commits of iteration)
-- Merge commit for feature branches (preserves history)
-- Never force-push to `main`
-- Delete branch after merge
-
-### Daily Workflow
-
-**Start of day:**
 ```bash
-go install github.com/steveyegge/beads/cmd/bd@latest  # Update beads
-git checkout main && git pull origin main              # Sync with remote
+# Morning: Pull latest
+git checkout main
+git pull origin main
+
+# Create feature branch
+git checkout -b feature/new-work
+
+# End of day: Push progress
+git push origin feature/new-work
+
+# Keep feature branch updated
+git checkout feature/new-work
+git rebase main  # or merge main if team prefers
 ```
 
-**End of session:**
-```bash
-git status                                             # Check for uncommitted work
-git add -A && git commit -m "WIP: Description"        # Save progress if needed
-git push origin <branch-name>                          # Push to remote
+---
+
+## 8. Frontend Development
+
+### shadcn/ui Component Library (MANDATORY)
+
+**Decision Tree**:
+
+```
+Need UI component?
+    ↓
+Browse https://ui.shadcn.com/blocks first
+    ↓
+Found matching block?
+    ├─ Yes → Copy UNCHANGED → Customize ONLY colors/text/spacing
+    ↓
+    └─ No → Check https://ui.shadcn.com/docs/components
+           ↓
+           Found component?
+               ├─ Yes → Install: npx shadcn@latest add [component]
+               ↓
+               └─ No → STOP and ASK for permission before custom component
 ```
 
-**Keep main updated:**
-- Push to `main` directly only for: documentation fixes, minor typos, config updates
-- Use branches + PRs for: features, refactors, bug fixes, breaking changes
-- When in doubt, use a branch
+### Implementation Protocol
 
-### Anti-Patterns
-
-❌ Force push to `main`
-❌ Commit directly to `main` for features
-❌ Large commits mixing multiple concerns
-❌ Vague commit messages ("fix stuff", "updates")
-❌ Merging PRs without review/testing
-❌ Leaving branches un-pushed (risk of data loss)
-❌ Forgetting to sync before starting work
-❌ Not deleting merged branches
-
-## 8. UI Development
-
-**Always follow this sequence:**
-
-1. Map states with Graphviz - all user states, transitions, edge cases, minimize dead ends
-
-2. Browse shadcn blocks (https://ui.shadcn.com/blocks) FIRST for complete solutions
-
-3. Use shadcn components (https://ui.shadcn.com/) SECOND for granular needs
-
-4. Custom components ONLY with explicit permission - STOP and ASK if shadcn doesn't cover it
-
-**Implementation steps:**
 ```
-STEP 1: Browse https://ui.shadcn.com/blocks
+STEP 1: Browse blocks (https://ui.shadcn.com/blocks)
 STEP 2: Copy complete block unchanged
-STEP 3: npx shadcn@latest add [components]
-STEP 4: Customize colors/text/spacing ONLY
+STEP 3: Install dependencies: npx shadcn@latest add [components]
+STEP 4: Customize ONLY:
+        - Colors
+        - Text content
+        - Spacing (margins, padding)
 STEP 5: Add business logic
 ```
 
-Plan loading states (skeleton) and error states (alerts) from the start.
+### Loading & Error States (MANDATORY)
 
-**DO:** Change colors, text, spacing
-**DON'T:** Restructure, change composition, rewrite
+**ALWAYS plan these from the start:**
 
-## 10. Anti-Patterns
-❌ Assume tech stack
-❌ Skip shadcn blocks exploration
-❌ Restructure shadcn components
-❌ Use pip/poetry instead of uv
-❌ Skip loading/error states
-❌ Deploy without environment config
-❌ Leave TODOs, mocks, or stubs
-❌ Accept vague requirements without pushback
-❌ Agree reflexively without critical analysis
-❌ Leave cloud resources running when not in use (dev/test)
-❌ Commit directly to `main` for features (use branches)
-❌ Force push to `main` or shared branches
-❌ Merge PRs without careful review
-❌ Start specialized work without activating relevant skill (e.g., Zig project without `/zig-dev`)
-❌ **Run tests before committing code changes** (CRITICAL - see Testing Protocol)
-❌ **Run tests in background while making changes** (CRITICAL - see Testing Protocol)
-❌ **Report test results without verifying test used current code** (CRITICAL - see Testing Protocol)
+- Loading states → Use skeleton components
+- Error states → Use alert components
+- Empty states → Use empty state patterns
+
+### What You CAN Change
+
+✅ Colors (theme tokens)
+✅ Text content
+✅ Spacing (margins, padding)
+✅ Icons
+✅ Sizes (within component API)
+
+### What You CANNOT Change Without Permission
+
+❌ Component structure
+❌ Component composition
+❌ HTML hierarchy
+❌ Event handler patterns
+❌ Accessibility attributes
+
+### Design Inspiration
+
+**Study these for aesthetic guidance**:
+- v0.dev (minimal, purposeful contrast)
+- Firebase (high-density dashboards)
+- Hex (scannable complexity)
+- Principle (data-rich but breathable)
+
+**Get theme colors**: https://ui.shadcn.com/themes
+
+---
+
+## 9. Skills System
+
+### Skill Activation Protocol
+
+**CRITICAL**: Skills are not optional for their domains. They represent concentrated expertise that prevents common pitfalls.
+
+### Available Skills & Activation Triggers
+
+| Skill | Activate When | Slash Command |
+|-------|---------------|---------------|
+| **Zig Development** | Working with .zig files, build.zig, comptime code, Zig project setup | `/zig-dev` |
+| **Modal Serverless** | Modal app deployment, GPU workloads, serverless functions, web endpoints | `/modal-dev` |
+| **TUI Development** | Terminal apps, CLI with interactive UI, dashboards in terminal | `/tui-development` |
+| **Secure Networking** | VPN setup, mTLS, secure connectivity, NAT traversal, network security | `/secure-networking` |
+| **iOS Native Dev** | iOS apps, SwiftUI, UIKit, Xcode projects, Apple platforms | `/ios-native-dev` |
+| **Beads Context** | Beads issue tracking, multi-session tasks, context management, complex workflows | `/beads-context` |
+
+### Automatic Activation
+
+Skills auto-activate when:
+- Working with files in their domain (.zig → /zig-dev)
+- Using domain-specific tools (bd commands → /beads-context)
+- Discussing domain topics (GPU selection → /modal-dev)
+
+### Skill Composition
+
+Multiple skills can work together:
+
+```
+Examples:
+- /zig-dev + /secure-networking → Zig-based VPN client
+- /modal-dev + /secure-networking → Secure Modal endpoints with mTLS
+- /tui-development + /secure-networking → mosh-like terminal application
+- /modal-dev + /beads-context → Long-running Modal jobs with issue tracking
+```
+
+### Skill Decision Tree
+
+```
+Starting specialized work?
+    ↓
+Is there a skill for this domain?
+    ├─ Yes → ACTIVATE skill at start
+    ↓
+    └─ No → Proceed with standard guidelines
+         ↓
+         Discover domain-specific challenge?
+             ↓
+             Check if skill exists
+                 ├─ Yes → ACTIVATE skill immediately
+                 └─ No → Apply general principles
+```
+
+### When NOT to Use Skills
+
+- General Python/TypeScript work (no skill needed)
+- Basic git operations (covered in this doc)
+- Simple frontend without specific frameworks (covered in Section 8)
+- General debugging (unless tool-specific)
+
+### Skills Quick Reference
+
+**Zig** (`/zig-dev`):
+- Project setup, build.zig configuration
+- Memory management patterns (allocators, defer)
+- Testing organization
+- Cross-compilation
+- Comptime programming
+- C interop
+
+**Modal** (`/modal-dev`):
+- Function decorators and app structure
+- GPU/CPU resource selection
+- Image building strategies (uv_pip_install recommended)
+- Volume and secret management
+- Web endpoint setup (FastAPI)
+- Scheduled jobs (Cron, Period)
+- Cost optimization
+
+**TUI** (`/tui-development`):
+- Charm.sh ecosystem (Go): Bubble Tea, Lip Gloss, Bubbles
+- Ratatui (Rust): Widget system, layouts
+- Architecture patterns (MVC, message passing)
+- State management
+- Cross-platform compatibility
+
+**Secure Networking** (`/secure-networking`):
+- Tailscale setup and configuration
+- mosh for resilient connections
+- mTLS implementation
+- Certificate management
+- NAT traversal techniques
+- Zero-trust architectures
+
+**iOS** (`/ios-native-dev`):
+- SwiftUI 5.0+ patterns
+- Swift 6.0 concurrency
+- MVVM architecture with Observation
+- SwiftData persistence
+- NavigationStack patterns
+- UIKit integration when needed
+
+**Beads Context** (`/beads-context`):
+- bd CLI commands and workflows
+- Dependency management (blocks, related, parent-child, discovered-from)
+- Context preservation strategies (/context)
+- Context compression strategies (/compact)
+- Long-horizon task management
+- Multi-session state persistence
+
+---
+
+## 10. Anti-Patterns & Violations
+
+### Critical Violations (Will Waste Significant Time)
+
+```
+❌ NEVER: Run tests before committing changes
+   → Causes: Hours of debugging stale code
+
+❌ NEVER: Run tests in background while changing code
+   → Causes: Invalid results, wasted debugging time
+
+❌ NEVER: Report test results without verifying timestamps
+   → Causes: False positives/negatives, confusion
+
+❌ NEVER: Leave TODO, mocks, or stubs
+   → Instead: Implement now OR create Beads issue
+
+❌ NEVER: Commit directly to main for features
+   → Instead: Use feature branches + PRs
+
+❌ NEVER: Force push to main or shared branches
+   → Causes: Lost work, broken history
+
+❌ NEVER: Accept vague requirements without pushback
+   → Causes: Rework, missed requirements
+```
+
+### Moderate Violations (Reduce Quality)
+
+```
+❌ Don't assume tech stack without confirmation
+❌ Don't skip shadcn blocks exploration
+❌ Don't restructure shadcn components
+❌ Don't use pip/poetry instead of uv
+❌ Don't skip loading/error states
+❌ Don't deploy without environment config
+❌ Don't agree reflexively without analysis
+❌ Don't leave cloud resources running (dev/test)
+❌ Don't start specialized work without skill activation
+```
+
+### Violation Severity Matrix
+
+| Severity | Impact | Examples |
+|----------|--------|----------|
+| 🔴 Critical | Hours wasted | Test before commit, background tests, stale results |
+| 🟡 High | Quality issues | No pushback, skip blocks, wrong package manager |
+| 🟢 Medium | Tech debt | Missing error states, unoptimized resources |
+
+### Recovery from Violations
+
+**If you realize you violated a critical rule:**
+
+1. **STOP** immediately
+2. **ASSESS** the damage (what's invalid now?)
+3. **RESET** to last known good state
+4. **FOLLOW** the correct procedure from start
+5. **DOCUMENT** what went wrong to prevent recurrence
+
+---
 
 ## 11. Quick Reference
 
-**Languages:** Python (uv), Zig (/zig-dev), Rust (cargo), Go (/tui-development), Swift (/ios-native-dev), C/C++ (CMake), TS (strict), Lean 4
+### Language Quick Commands
 
-**Cloud:** Modal (/modal-dev), Workers/Cloudflare, Cloud Run (containers), WorkOS (auth), Resend (email)
-  - Modal details: `docs/MODAL_REFERENCE.md`
+```bash
+# Python
+uv init project && cd project && uv add pkg && uv run script.py
 
-**Networking:** Tailscale, mosh, mTLS, WireGuard (/secure-networking for comprehensive guide)
+# Zig (activate /zig-dev)
+zig init && zig build && zig build test
 
-**UI:** shadcn blocks → shadcn components → custom (permission only), theme colors from https://ui.shadcn.com/themes
+# Rust
+cargo new project && cargo add anyhow tokio && cargo build
 
-**Git:** Branches for features, PRs for review, keep `main` clean, sync daily
+# Go
+go mod init project && go get package && go run .
 
-**Workflow:** Requirements → Confirm → Map flows → shadcn blocks → Implement
+# TypeScript
+pnpm create vite@latest && pnpm install && pnpm dev
+```
 
-**Skills:** Use slash commands (e.g., `/modal-dev`) to activate specialized knowledge - see Section 12
+### Cloud Quick Commands
 
-**When in doubt:** Ask questions, check shadcn blocks, test edge cases, activate relevant skill
+```bash
+# Modal (activate /modal-dev)
+modal app deploy && modal app stop [name]
 
-## 12. Skills Reference
+# Cloudflare Workers
+wrangler dev && wrangler deploy
 
-**Specialized knowledge domains available via slash commands** - These skills provide comprehensive, expert-level guidance for specific technologies and workflows. Activate them when working in their respective domains.
+# AWS Lambda
+aws lambda create-function && aws lambda invoke
+```
 
-### `/zig-dev` - Zig Development Expert
+### Git Quick Commands
 
-**When to use:** Zig projects, build.zig, testing, package management, comptime, ZLS
+```bash
+# Start work
+git checkout -b feature/name
 
-**Capabilities:**
-- Project setup and build configuration (build.zig, build.zig.zon)
-- Testing patterns and test organization
-- Package management and dependency handling
-- Cross-compilation for multiple targets
-- Memory management patterns (allocators, defer, errdefer)
-- Comptime programming and generic functions
-- C library integration and FFI
-- ZLS configuration and editor integration
-- Performance profiling and optimization
-- Common troubleshooting and debugging
+# Commit
+git add . && git commit -m "message"
 
-**Use when:** Creating Zig projects, configuring build systems, writing Zig code, managing dependencies, cross-compiling, or troubleshooting Zig-specific issues.
+# Push
+git push -u origin feature/name
 
-### `/modal-dev` - Modal.com Serverless Platform
+# Create PR
+gh pr create --title "Title" --body "Description"
 
-**When to use:** Modal apps, GPU workloads, serverless functions, web endpoints, scheduled jobs
+# Clean up
+git branch -d feature/name
+```
 
-**Capabilities:**
-- Modal app structure and function decorators
-- GPU selection and optimization (T4, A10G, A100, H100, L40S)
-- Image building with pip_install, apt_install, uv_pip_install
-- Volume management for persistent storage
-- Secret management and environment variables
-- Web endpoints (ASGI, WSGI, FastAPI integration)
-- Scheduled jobs (Cron, Period)
-- Parallel execution with .map() and .starmap()
-- Resource management and cost optimization
-- Deployment workflows and CLI commands
-- Troubleshooting common issues
+### Beads Quick Commands
 
-**Use when:** Deploying ML models, building serverless APIs, running GPU workloads, creating scheduled jobs, or any Modal.com development.
+```bash
+# Session start
+go install github.com/steveyegge/beads/cmd/bd@latest
+bd import -i .beads/issues.jsonl
+bd ready --json --limit 5
 
-### `/tui-development` - Terminal User Interfaces
+# During work
+bd create "Task" -t bug -p 1 --json
+bd dep add bd-5 bd-3 --type blocks
+bd update bd-5 --status in_progress --json
 
-**When to use:** Terminal apps, CLI tools with interactive UIs, dashboards, TUI development
+# Session end
+bd close bd-5 --reason "Complete" --json
+bd export -o .beads/issues.jsonl
+git add .beads/issues.jsonl && git commit -m "Update issues"
+```
 
-**Capabilities:**
-- **Go + Charm.sh ecosystem:**
-  - Bubble Tea (Elm-inspired framework)
-  - Lip Gloss (styling and layout)
-  - Bubbles (pre-built components)
-  - Harmonica (animations)
-  - Glamour (markdown rendering)
-- **Rust + Ratatui:**
-  - Widget-based UI construction
-  - Layout system with constraints
-  - Event handling and input
-  - Stateful widgets
-  - Crossterm/termion backends
-- Architecture patterns (MVC, message passing)
-- State management and navigation
-- Performance optimization
-- Cross-platform compatibility
-- Testing strategies
+### Testing Quick Commands
 
-**Use when:** Building terminal applications, interactive CLIs, monitoring dashboards, file managers, or any text-based user interface.
+```bash
+# Correct flow
+git add . && git commit -m "Changes"
+git log -1 --oneline  # Verify commit
+pkill -f "test"       # Kill old tests
+./run_tests.sh > /tmp/test_$(date +%Y%m%d_%H%M%S).log 2>&1 &
+```
 
-### `/secure-networking` - Secure & Resilient Networking
+### UI Quick Reference
 
-**When to use:** VPNs, mTLS, secure connectivity, NAT traversal, network security
+```bash
+# Browse blocks
+open https://ui.shadcn.com/blocks
 
-**Capabilities:**
-- **VPN & Overlay Networks:**
-  - Tailscale (WireGuard mesh VPN)
-  - WireGuard configuration
-  - Zero-config networking
-- **Resilient Connectivity:**
-  - mosh (Mobile Shell) for unstable networks
-  - Connection resilience patterns
-  - SSH alternatives
-- **Service Security:**
-  - Mutual TLS (mTLS) implementation
-  - Certificate management (cert-manager, cfssl, step-ca)
-  - Zero-trust architectures
-- **NAT Traversal:**
-  - STUN/TURN protocols
-  - Hole punching techniques
-  - Peer-to-peer connectivity
-- Security best practices and threat modeling
-- Network resilience patterns (retries, circuit breakers)
-- Implementation across languages (Go, Python, Rust, Node.js)
+# Install component
+npx shadcn@latest add button
 
-**Use when:** Setting up VPNs, implementing mTLS, building resilient networked services, NAT traversal, or any secure networking task.
+# Get theme
+open https://ui.shadcn.com/themes
+```
 
-### `/ios-native-dev` - iOS Native Development
+---
 
-**When to use:** iOS apps, SwiftUI, UIKit, Xcode projects, Apple platforms
+## Decision Framework Summary
 
-**Capabilities:**
-- **Modern iOS development (iOS 17+, Xcode 15+):**
-  - SwiftUI 5.0+ (primary UI framework)
-  - Swift 6.0+ with strict concurrency
-  - UIKit integration when needed
-- **Architecture & Patterns:**
-  - MVVM with Observation framework
-  - State management (@State, @Observable, @Environment)
-  - Dependency injection patterns
-- **Modern Features:**
-  - NavigationStack for type-safe navigation
-  - SwiftData for persistence
-  - Swift Charts for visualization
-  - Async/await and structured concurrency
-- **Integration:**
-  - UIKit wrapping (UIViewRepresentable)
-  - SwiftUI in UIKit (UIHostingController)
-  - Third-party library integration
-- Testing (Swift Testing, XCTest, UI tests)
-- Performance optimization
-- App architecture and project structure
-- Common patterns and best practices
+### Master Decision Tree
 
-**Use when:** Building iOS apps, working with SwiftUI or UIKit, implementing iOS features, architecting iOS solutions, or iOS-specific development.
+```
+New request received
+    ↓
+Is domain specialized?
+    ├─ Yes → Activate relevant skill(s)
+    ↓
+Requirements clear?
+    ├─ No → ASK for clarification
+    ↓
+Tech stack confirmed?
+    ├─ No → CONFIRM with user
+    ↓
+Edge cases considered?
+    ├─ No → CHALLENGE and FLAG
+    ↓
+Testing strategy?
+    ├─ None → PLAN tests first
+    ↓
+Cloud resources needed?
+    ├─ Yes → PLAN shutdown strategy
+    ↓
+Using Beads?
+    ├─ Yes → Follow Beads workflow
+    ↓
+Making changes?
+    ├─ Yes → Use feature branch
+    ↓
+Need to validate?
+    ├─ Yes → Follow testing protocol
+    ↓
+Session ending?
+    ├─ Yes → Export state, commit, clean up
+    ↓
+All checks passed
+    ↓
+Execute with confidence
+```
 
-## How to Use Skills
+---
 
-### Explicit Activation
-When you encounter a task that matches a skill's domain, mention it:
-- "I need to set up a Zig project" → I'll use `/zig-dev`
-- "Help me deploy this to Modal" → I'll use `/modal-dev`
-- "Build a terminal dashboard" → I'll use `/tui-development`
+## Enforcement Checklist
 
-### Auto-Detection
-Skills are automatically activated when working with relevant files or technologies:
-- Working with `.zig` files → `/zig-dev` activates
-- Working with Modal code → `/modal-dev` activates
-- Building terminal UIs → `/tui-development` activates
+Before completing ANY task, verify:
 
-### Skill Composition
-Multiple skills can work together:
-- `/zig-dev` + `/secure-networking` for a Zig-based VPN client
-- `/modal-dev` + `/secure-networking` for secure Modal endpoints
-- `/tui-development` + `/secure-networking` for a mosh-like terminal application
+```
+[ ] Used appropriate skill for specialized work
+[ ] Challenged vague requirements
+[ ] Confirmed tech stack and deployment
+[ ] Followed correct package manager (uv, cargo, etc.)
+[ ] Used shadcn blocks before custom components
+[ ] Planned loading/error states
+[ ] Used feature branch (not direct to main)
+[ ] Followed testing protocol (commit first!)
+[ ] Managed context with /context or /compact
+[ ] Cleaned up cloud resources
+[ ] Exported Beads state (if using bd)
+[ ] Committed and pushed changes
+```
 
-### Best Practice
-**Always activate the relevant skill at the start of specialized work** to ensure comprehensive, expert-level guidance throughout the task.
+**If ANY checkbox is unchecked, stop and address it before continuing.**
+
+---
+
+## Conclusion
+
+These guidelines exist to prevent common pitfalls that waste hours:
+
+1. **Testing violations** → Hours debugging stale code
+2. **Vague requirements** → Rework and missed features
+3. **Wrong tools** → Dependency hell and conflicts
+4. **Skipped skills** → Reinventing solved problems
+5. **Direct to main** → Broken builds and lost work
+6. **Running cloud resources** → Unexpected bills
+7. **Missing context** → Lost state across sessions
+
+**Follow the decision trees. Activate the skills. Challenge assumptions. Commit before testing. Clean up resources.**
+
+The reward is high-quality, maintainable code delivered efficiently.

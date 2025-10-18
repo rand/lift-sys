@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..ir.models import IntermediateRepresentation
+from ..validation.ir_interpreter import IRInterpreter
 from .execution_validator import ExecutionValidator, ValidationResult
 from .models import GeneratedCode
 from .test_generator import TestCaseGenerator
@@ -57,6 +58,7 @@ class ValidatedCodeGenerator:
         test_generator: TestCaseGenerator | None = None,
         validator: ExecutionValidator | None = None,
         max_attempts: int = 3,
+        skip_ir_validation: bool = False,
     ):
         """
         Initialize validated code generator.
@@ -66,11 +68,19 @@ class ValidatedCodeGenerator:
             test_generator: Test case generator (creates default if None)
             validator: Execution validator (creates default if None)
             max_attempts: Maximum regeneration attempts (default: 3)
+            skip_ir_validation: If True, skip IR semantic validation (default: False)
         """
         self.base_generator = base_generator
         self.test_generator = test_generator or TestCaseGenerator()
         self.validator = validator or ExecutionValidator(timeout_seconds=1.0)
         self.max_attempts = max_attempts
+        self.skip_ir_validation = skip_ir_validation
+        self.ir_interpreter = IRInterpreter()
+
+        # Telemetry tracking
+        self.irs_validated = 0
+        self.irs_rejected = 0
+        self.rejection_categories: dict[str, int] = {}
 
     async def generate(
         self,
@@ -82,6 +92,7 @@ class ValidatedCodeGenerator:
         Generate code with validation-regeneration loop.
 
         Algorithm:
+        0. Validate IR semantics (new Phase 5 step)
         1. Generate test cases from IR
         2. For attempt in 1..max_attempts:
            a. Generate code (increase temperature for diversity)
@@ -98,6 +109,57 @@ class ValidatedCodeGenerator:
         Returns:
             GeneratedCode with validated implementation or best attempt
         """
+        # Step 0: Validate IR semantics before code generation (Phase 5)
+        if not self.skip_ir_validation:
+            self.irs_validated += 1
+            interpretation = self.ir_interpreter.interpret(ir)
+
+            if interpretation.has_errors():
+                # IR validation failed - reject and don't generate code
+                self.irs_rejected += 1
+
+                # Track error categories
+                for error in interpretation.errors:
+                    self.rejection_categories[error.category] = (
+                        self.rejection_categories.get(error.category, 0) + 1
+                    )
+
+                print(
+                    f"  ⚠️  IR validation failed with {len(interpretation.errors)} error(s). "
+                    f"Skipping code generation."
+                )
+                for error in interpretation.errors[:3]:  # Show first 3 errors
+                    print(f"     • [{error.category}] {error.message}")
+
+                # Return error stub explaining why generation was skipped
+                return GeneratedCode(
+                    source_code=f"# IR Validation Failed - Code generation skipped\n"
+                    f"# Function: {ir.signature.name}\n"
+                    f"# Errors detected: {len(interpretation.errors)}\n"
+                    f"#\n"
+                    + "\n".join(f"# - {e.message}" for e in interpretation.errors[:5])
+                    + "\n\n"
+                    f"def {ir.signature.name}({', '.join(p.name for p in ir.signature.parameters)}):\n"
+                    f'    raise NotImplementedError("IR validation failed - see comments above")\n',
+                    language="python",
+                    metadata={
+                        "ir_origin": ir.metadata.origin,
+                        "generator": "validated_ir_rejected",
+                        "ir_validation_errors": len(interpretation.errors),
+                        "error_categories": [e.category for e in interpretation.errors],
+                    },
+                    warnings=[
+                        f"IR semantic validation failed with {len(interpretation.errors)} error(s)",
+                        *[f"[{e.category}] {e.message}" for e in interpretation.errors[:3]],
+                    ],
+                )
+
+            # Log warnings but continue (non-blocking)
+            if interpretation.has_warnings():
+                print(f"  ℹ️  IR validation passed with {len(interpretation.warnings)} warning(s)")
+                for warning in interpretation.warnings[:2]:
+                    print(f"     • [{warning.category}] {warning.message}")
+
         # Step 1: Generate test cases from IR
         test_cases = self.test_generator.generate_test_cases(ir)
 
@@ -292,6 +354,48 @@ class ValidatedCodeGenerator:
         parts.append("=" * 60 + "\n")
 
         return "\n".join(parts)
+
+    def get_ir_validation_stats(self) -> dict[str, int | dict[str, int]]:
+        """
+        Get IR validation telemetry statistics.
+
+        Returns:
+            Dictionary with validation statistics including:
+            - irs_validated: Total IRs validated
+            - irs_rejected: IRs rejected due to errors
+            - rejection_rate: Percentage of IRs rejected
+            - rejection_categories: Count per error category
+        """
+        rejection_rate = (
+            (self.irs_rejected / self.irs_validated * 100) if self.irs_validated > 0 else 0.0
+        )
+
+        return {
+            "irs_validated": self.irs_validated,
+            "irs_rejected": self.irs_rejected,
+            "rejection_rate": round(rejection_rate, 2),
+            "rejection_categories": dict(self.rejection_categories),
+        }
+
+    def print_ir_validation_report(self) -> None:
+        """Print a formatted IR validation statistics report."""
+        stats = self.get_ir_validation_stats()
+
+        print("\n" + "=" * 60)
+        print("IR Validation Statistics")
+        print("=" * 60)
+        print(f"Total IRs validated:    {stats['irs_validated']}")
+        print(f"IRs rejected:           {stats['irs_rejected']}")
+        print(f"Rejection rate:         {stats['rejection_rate']:.1f}%")
+
+        if stats["rejection_categories"]:
+            print("\nRejection categories:")
+            for category, count in sorted(
+                stats["rejection_categories"].items(), key=lambda x: x[1], reverse=True
+            ):
+                print(f"  • {category}: {count}")
+
+        print("=" * 60 + "\n")
 
 
 __all__ = ["ValidatedCodeGenerator", "GenerationAttempt"]

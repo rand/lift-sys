@@ -115,6 +115,30 @@ class XGrammarCodeGenerator:
                     f"IR contains unresolved holes that could not be cleared: {', '.join(h.identifier for h in remaining_holes)}"
                 )
 
+        # Phase 3.1: Filter non-applicable constraints (before validation)
+        if ir.constraints:
+            from lift_sys.validation.constraint_filter import filter_applicable_constraints
+
+            original_count = len(ir.constraints)
+            filtered_constraints = filter_applicable_constraints(ir, ir.constraints)
+            filtered_count = len(filtered_constraints)
+
+            if filtered_count < original_count:
+                print(
+                    f"  🔧 Filtered constraints: {original_count} → {filtered_count} "
+                    f"({original_count - filtered_count} non-applicable)"
+                )
+
+                # Create a modified IR with filtered constraints for code generation
+                ir = IntermediateRepresentation(
+                    intent=ir.intent,
+                    signature=ir.signature,
+                    effects=ir.effects,
+                    assertions=ir.assertions,
+                    metadata=ir.metadata,
+                    constraints=filtered_constraints,
+                )
+
         # Phase 5: IR Semantic Validation (before code generation)
         # Interpret IR to detect semantic logic errors
         interpretation = self.ir_interpreter.interpret(ir)

@@ -348,10 +348,29 @@ Important guidelines:
 
 **CRITICAL: Effects must be EXPLICIT about implementation details:**
 
-1. **Explicit Return Statements**:
+1. **Explicit Return Statements - MANDATORY**:
    - Effects MUST specify ALL return paths, including error/not-found cases
    - Example: "After loop completes without finding value, explicitly return -1"
    - Never allow implicit None returns - always specify the return value
+
+   **Return Value Examples** (ALWAYS include return effect if function returns value):
+
+   GOOD (Explicit Return):
+   - Effect 1: "Split the string by spaces"
+   - Effect 2: "Count the words in the list"
+   - Effect 3: "Return the count as an integer" ✓
+
+   BAD (Missing Return):
+   - Effect 1: "Split the string by spaces"
+   - Effect 2: "Count the words in the list"
+   - (No return effect - WRONG!) ✗
+
+   **Return Effect Patterns** (Match return type from signature):
+   - If signature returns int: "Return the count (int)"
+   - If signature returns str: "Return the result string (str)"
+   - If signature returns bool: "Return True if found, False otherwise (bool)"
+   - If signature returns list[T]: "Return the filtered list (list[T])"
+   - If signature returns Optional[T]: "Return the value if found, None otherwise (Optional[T])"
 
 2. **Literal Values**:
    - When user says "return exactly 'X'", effects must emphasize literal return
@@ -363,10 +382,47 @@ Important guidelines:
    - Effects must handle all branches: "If condition, return X, else return Y"
    - Be explicit about what happens at boundaries
 
-4. **Loop Patterns**:
-   - Specify exact iteration method: "Use enumerate(lst) starting from 0"
-   - Specify when to return: "Return immediately when condition met (inside loop)"
-   - Specify fallback: "After loop ends, if not found, return [value]"
+4. **Loop Patterns - CRITICAL for Search Operations**:
+
+   **Pattern 1: FIRST_MATCH (Early Termination)**
+   Use when: Finding first occurrence, any/all checks, existence checks
+
+   Example (find_index):
+   - Effect 1: "Iterate through list with enumerate starting at index 0"
+   - Effect 2: "Check if current item matches condition"
+   - Effect 3: "If match found, IMMEDIATELY return the index (inside loop)" ✓
+   - Effect 4: "After loop completes without match, return -1" ✓
+
+   Keywords indicating FIRST_MATCH:
+   - "find first", "search for", "locate", "index of"
+   - "any element", "exists", "contains"
+   - "stop when", "return when found"
+
+   **Pattern 2: LAST_MATCH (Full Iteration)**
+   Use when: Finding last occurrence, accumulating, filtering
+
+   Example (find_last_index):
+   - Effect 1: "Iterate through entire list"
+   - Effect 2: "Track the last matching index"
+   - Effect 3: "After loop completes, return tracked index or -1"
+
+   Keywords indicating LAST_MATCH:
+   - "find last", "count all", "filter", "sum"
+   - "accumulate", "collect all", "maximum", "minimum"
+
+   **Pattern 3: ALL_MATCHES (Transform/Filter)**
+   Use when: Building new collection, transforming all elements
+
+   Example (filter_positive):
+   - Effect 1: "Initialize empty result list"
+   - Effect 2: "Iterate through all elements"
+   - Effect 3: "Append matching elements to result"
+   - Effect 4: "After loop completes, return result list"
+
+   **Loop Termination Clarity**:
+   - ALWAYS specify: "when found", "until condition", "for each element"
+   - Early returns: "return X immediately when Y" or "break loop when Z"
+   - Full iteration: "after processing all elements" or "when loop completes"
 
 5. **Control Flow**:
    - Be explicit about if/elif/else structure

@@ -311,6 +311,79 @@ class PositionConstraint(Constraint):
                     f"Elements {self.elements} must be at most {self.max_distance} characters apart"
                 )
 
+    def is_semantically_applicable(self, ir: Any) -> tuple[bool, str | None]:
+        """
+        Determine if this position constraint is semantically applicable.
+
+        Position constraints only make sense for operations that manipulate strings/lists
+        where character/element positions matter. Constraints referencing parameter names
+        (like 'num1', 'num2') for arithmetic functions are spurious false positives.
+
+        Args:
+            ir: The IntermediateRepresentation to check against
+
+        Returns:
+            Tuple of (is_applicable, reason)
+            - is_applicable: True if constraint should be validated
+            - reason: Explanation if not applicable (None if applicable)
+        """
+        # Check if all elements are special characters (like '@', '.', '(', ')')
+        # These are legitimate position constraints for string validation
+        special_chars = set("@.()[]{}!?#$%^&*+-=/\\<>")
+        all_special = all(len(elem) == 1 and elem in special_chars for elem in self.elements)
+
+        if all_special:
+            # Constraints on special characters are always applicable
+            return (True, None)
+
+        # Check if elements appear to be parameter names
+        # Heuristic: alphanumeric identifiers that match function parameters
+        param_names = {p.name for p in ir.signature.parameters}
+        elements_are_params = all(elem in param_names for elem in self.elements)
+
+        if elements_are_params:
+            # Position constraints on parameter names are only meaningful for
+            # string/list operations where element ordering matters
+
+            # Check if function operates on strings/lists based on:
+            # 1. Return type (str, list)
+            # 2. Parameter types (str, list)
+            # 3. Intent/effects mentioning position/order/sequence
+
+            intent_text = f"{ir.intent.summary} {ir.intent.rationale or ''}".lower()
+            effects_text = " ".join(effect.description.lower() for effect in ir.effects)
+            combined = f"{intent_text} {effects_text}"
+
+            # Check for string/list operations in return type
+            returns_string_or_list = ir.signature.returns in (
+                "str",
+                "list",
+                "list[str]",
+                "list[int]",
+            )
+
+            # Check for string/list operations in parameters
+            has_string_or_list_param = any(
+                param.type_hint in ("str", "list", "list[str]", "list[int]")
+                for param in ir.signature.parameters
+            )
+
+            # Check for position-related keywords in intent/effects
+            position_keywords = ["position", "order", "sequence", "adjacent", "distance", "between"]
+            mentions_position = any(keyword in combined for keyword in position_keywords)
+
+            # If this is purely arithmetic/logic (no string/list ops, no position mentions),
+            # the position constraint is spurious
+            if not (returns_string_or_list or has_string_or_list_param or mentions_position):
+                reason = (
+                    f"Position constraint on parameters {self.elements} not applicable: "
+                    f"function performs arithmetic/logic operations, not string/list manipulation"
+                )
+                return (False, reason)
+
+        # Constraint is applicable
+        return (True, None)
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         result = super().to_dict()

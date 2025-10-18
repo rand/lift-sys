@@ -93,7 +93,7 @@ class ConstraintValidator:
 
         # Validate each constraint
         for constraint in ir.constraints:
-            constraint_violations = self._validate_constraint(constraint, func_def, code)
+            constraint_violations = self._validate_constraint(constraint, func_def, code, ir)
             violations.extend(constraint_violations)
 
         return violations
@@ -106,7 +106,11 @@ class ConstraintValidator:
         return None
 
     def _validate_constraint(
-        self, constraint: Constraint, func_def: ast.FunctionDef, code: str
+        self,
+        constraint: Constraint,
+        func_def: ast.FunctionDef,
+        code: str,
+        ir: IntermediateRepresentation,
     ) -> list[ConstraintViolation]:
         """Validate a single constraint against function AST."""
         from lift_sys.ir.constraints import (
@@ -120,7 +124,7 @@ class ConstraintValidator:
         elif isinstance(constraint, LoopBehaviorConstraint):
             return self._validate_loop_constraint(constraint, func_def)
         elif isinstance(constraint, PositionConstraint):
-            return self._validate_position_constraint(constraint, func_def, code)
+            return self._validate_position_constraint(constraint, func_def, code, ir)
         else:
             # Unknown constraint type - skip validation
             return []
@@ -263,7 +267,11 @@ class ConstraintValidator:
         return violations
 
     def _validate_position_constraint(
-        self, constraint: PositionConstraint, func_def: ast.FunctionDef, code: str
+        self,
+        constraint: PositionConstraint,
+        func_def: ast.FunctionDef,
+        code: str,
+        ir: IntermediateRepresentation,
     ) -> list[ConstraintViolation]:
         """
         Validate PositionConstraint: Check element position requirements.
@@ -276,6 +284,14 @@ class ConstraintValidator:
         from lift_sys.ir.constraints import PositionRequirement
 
         violations: list[ConstraintViolation] = []
+
+        # Check semantic applicability - skip validation for nonsensical constraints
+        # (e.g., position constraints on parameter names in arithmetic functions)
+        is_applicable, reason = constraint.is_semantically_applicable(ir)
+        if not is_applicable:
+            # Constraint is not semantically applicable - skip validation
+            # (Don't report as violation since the constraint itself is spurious)
+            return violations
 
         # For now, do basic heuristic checking
         # A more sophisticated validator would trace data flow

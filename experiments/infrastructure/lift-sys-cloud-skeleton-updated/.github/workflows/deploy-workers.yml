@@ -1,0 +1,19 @@
+name: deploy-workers
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "cloudflare/worker/**"
+      - ".github/workflows/deploy-workers.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: cloudflare/worker
+          command: publish

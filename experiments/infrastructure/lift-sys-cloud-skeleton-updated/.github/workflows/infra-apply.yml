@@ -1,0 +1,36 @@
+name: infra-apply
+on:
+  workflow_dispatch:
+    inputs:
+      tf_action:
+        description: 'plan or apply'
+        required: true
+        default: 'plan'
+
+jobs:
+  tf:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform plan/apply
+        working-directory: infra/terraform
+        run: |
+          if [ "${{ github.event.inputs.tf_action }}" = "apply" ]; then
+            terraform apply -auto-approve
+          else
+            terraform plan
+          fi

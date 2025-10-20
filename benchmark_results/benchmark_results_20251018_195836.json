@@ -1,0 +1,1347 @@
+{
+  "summary": {
+    "total_runs": 10,
+    "successful_runs": 10,
+    "failed_runs": 0,
+    "nlp_to_ir_mean": 9486.888158298098,
+    "nlp_to_ir_median": 9155.870479065925,
+    "nlp_to_ir_std": 2203.331039821414,
+    "ir_to_code_mean": 28734.09442093689,
+    "ir_to_code_median": 20235.989791923203,
+    "ir_to_code_std": 32423.737736139912,
+    "e2e_mean": 38220.98257923499,
+    "e2e_median": 33471.15925035905,
+    "e2e_std": 32478.123823414946,
+    "total_cost_usd": 0.06470163763205831,
+    "cost_per_request_mean": 0.006470163763205831,
+    "memory_mean": 0.5669608116149902,
+    "memory_peak": 0.6166038513183594
+  },
+  "results": [
+    {
+      "test_name": "fizzbuzz",
+      "prompt": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+      "timestamp": "2025-10-18T19:52:14.460751",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 14614.534457912669,
+        "memory_mb": 0.2744016647338867,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+              "rationale": "To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "fizz_buzz",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "Return 'Fizz' if the number is a multiple of 3",
+                "severity": "error",
+                "value_name": "Fizz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return 'Buzz' if the number is a multiple of 5",
+                "severity": "error",
+                "value_name": "Buzz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return 'FizzBuzz' if the number is a multiple of both 3 and 5",
+                "severity": "error",
+                "value_name": "FizzBuzz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return the number as a string if it is not a multiple of 3 or 5",
+                "severity": "error",
+                "value_name": "str(number)",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 18464.154541958123,
+        "memory_mb": 0.28319740295410156,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def fizz_buzz(number: int) -> str:\n    \"\"\"Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise.\n    \n    To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.\n    \n    Args:\n        number: Parameter value\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function checks if the input number is a multiple of 3, 5, or both. It returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number itself (as a string) otherwise.\n\n    # Check if the number is a multiple of both 3 and 5\n    if number % 3 == 0 and number % 5 == 0:\n        # Return 'FizzBuzz' if the number is a multiple of both 3 and 5\n        return 'FizzBuzz'\n    # Check if the number is a multiple of 3\n    elif number % 3 == 0:\n        # Return 'Fizz' if the number is a multiple of 3\n        return 'Fizz'\n    # Check if the number is a multiple of 5\n    elif number % 5 == 0:\n        # Return 'Buzz' if the number is a multiple of 5\n        return 'Buzz'\n    # Return the number as a string if it is not a multiple of 3 or 5\n    return str(number)",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 33078.68899987079,
+      "total_memory_mb": 0.5575990676879883,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.005613114833311799,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+          "rationale": "To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.",
+          "holes": []
+        },
+        "signature": {
+          "name": "fizz_buzz",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": null
+            }
+          ],
+          "returns": "str",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "Return 'Fizz' if the number is a multiple of 3",
+            "severity": "error",
+            "value_name": "Fizz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return 'Buzz' if the number is a multiple of 5",
+            "severity": "error",
+            "value_name": "Buzz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return 'FizzBuzz' if the number is a multiple of both 3 and 5",
+            "severity": "error",
+            "value_name": "FizzBuzz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return the number as a string if it is not a multiple of 3 or 5",
+            "severity": "error",
+            "value_name": "str(number)",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "factorial",
+      "prompt": "Create a function that calculates the factorial of a number",
+      "timestamp": "2025-10-18T19:52:47.539524",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9384.981999872252,
+        "memory_mb": 0.2738637924194336,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that calculates the factorial of a number",
+              "rationale": "The factorial of a number is a common mathematical operation that multiplies a number by every number below it until 1. This function will allow for the calculation of such a value.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "calculate_factorial",
+              "parameters": [
+                {
+                  "name": "n",
+                  "type_hint": "int",
+                  "description": "The number to calculate the factorial of. Must be a non-negative integer.",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should only accept non-negative integers as input.",
+                "severity": "error",
+                "elements": [
+                  "n"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 28841.630541952327,
+        "memory_mb": 0.29949474334716797,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def calculate_factorial(n: int) -> int:\n    \"\"\"Create a function that calculates the factorial of a number.\n    \n    The factorial of a number is a common mathematical operation that multiplies a number by every number below it until 1. This function will allow for the calculation of such a value.\n    \n    Args:\n        n: The number to calculate the factorial of. Must be a non-negative integer.\n    \n    Returns:\n        int\n    \"\"\"\n    if n < 0:\n        return -1\n    result = 1\n    for i in range(1, n + 1):\n        result *= i\n    return result",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 2,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 38226.61254182458,
+      "total_memory_mb": 0.5733585357666016,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.006471102090304097,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that calculates the factorial of a number",
+          "rationale": "The factorial of a number is a common mathematical operation that multiplies a number by every number below it until 1. This function will allow for the calculation of such a value.",
+          "holes": []
+        },
+        "signature": {
+          "name": "calculate_factorial",
+          "parameters": [
+            {
+              "name": "n",
+              "type_hint": "int",
+              "description": "The number to calculate the factorial of. Must be a non-negative integer."
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should only accept non-negative integers as input.",
+            "severity": "error",
+            "elements": [
+              "n"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "fibonacci",
+      "prompt": "Create a function that returns the nth Fibonacci number",
+      "timestamp": "2025-10-18T19:53:25.766315",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9459.49454093352,
+        "memory_mb": 0.2719755172729492,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns the nth Fibonacci number",
+              "rationale": "The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "get_nth_fibonacci",
+              "parameters": [
+                {
+                  "name": "n",
+                  "type_hint": "int",
+                  "description": "The position in the Fibonacci sequence to compute (0-based index)",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should return the nth Fibonacci number where n is a non-negative integer.",
+                "severity": "error",
+                "elements": [
+                  "n"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 114680.91275007464,
+        "memory_mb": 0.34462833404541016,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def get_nth_fibonacci(n: int) -> int:\n    \"\"\"Create a function that returns the nth Fibonacci number.\n    \n    The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.\n    \n    Args:\n        n: The position in the Fibonacci sequence to compute (0-based index)\n    \n    Returns:\n        int\n    \"\"\"\n    if n < 0:\n        return -1\n    if n == 0:\n        return 0\n    if n == 1:\n        return 1\n    a, b = (0, 1)\n    for _ in range(2, n + 1):\n        a, b = (b, a + b)\n    return b",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 5,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 124140.40729100816,
+      "total_memory_mb": 0.6166038513183594,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.02079006788183469,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns the nth Fibonacci number",
+          "rationale": "The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.",
+          "holes": []
+        },
+        "signature": {
+          "name": "get_nth_fibonacci",
+          "parameters": [
+            {
+              "name": "n",
+              "type_hint": "int",
+              "description": "The position in the Fibonacci sequence to compute (0-based index)"
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should return the nth Fibonacci number where n is a non-negative integer.",
+            "severity": "error",
+            "elements": [
+              "n"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "is_palindrome",
+      "prompt": "Create a function that checks if a string is a palindrome",
+      "timestamp": "2025-10-18T19:55:29.906520",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 7751.287459162995,
+        "memory_mb": 0.27223682403564453,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that checks if a string is a palindrome",
+              "rationale": "A palindrome is a string that reads the same forward and backward, ignoring spaces, punctuation, and capitalization.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "is_palindrome",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "bool",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should ignore spaces, punctuation, and capitalization when checking for palindromes.",
+                "severity": "error",
+                "elements": [
+                  "input_string"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 8213.54104205966,
+        "memory_mb": 0.2812986373901367,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def is_palindrome(input_string: str) -> bool:\n    \"\"\"Create a function that checks if a string is a palindrome.\n    \n    A palindrome is a string that reads the same forward and backward, ignoring spaces, punctuation, and capitalization.\n    \n    Args:\n        input_string: Parameter value\n    \n    Returns:\n        bool\n    \"\"\"\n    # Algorithm: The algorithm first cleans the input string by converting it to lowercase and removing spaces. It then checks if the cleaned string is equal to its reverse to determine if it is a palindrome.\n\n    # Convert the string to lowercase and remove spaces to ensure the palindrome check is case-insensitive and ignores spaces.\n    cleaned_string = input_string.lower().replace(' ', '')\n    # Check if the cleaned string is equal to its reverse. If it is, the string is a palindrome.\n    return cleaned_string == cleaned_string[::-1]",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 15964.828501222655,
+      "total_memory_mb": 0.5535354614257812,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002760804750203776,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that checks if a string is a palindrome",
+          "rationale": "A palindrome is a string that reads the same forward and backward, ignoring spaces, punctuation, and capitalization.",
+          "holes": []
+        },
+        "signature": {
+          "name": "is_palindrome",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": null
+            }
+          ],
+          "returns": "bool",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should ignore spaces, punctuation, and capitalization when checking for palindromes.",
+            "severity": "error",
+            "elements": [
+              "input_string"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "reverse_string",
+      "prompt": "Create a function that reverses a string",
+      "timestamp": "2025-10-18T19:55:45.871619",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9295.056458096951,
+        "memory_mb": 0.2723503112792969,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that reverses a string",
+              "rationale": "The function will take a string as input and return the reversed version of that string.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "reverse_string",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should take exactly one argument, which is a string.",
+                "severity": "error",
+                "elements": [
+                  "input_string"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return a string.",
+                "severity": "error",
+                "value_name": "reversed_string",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4924.524124944583,
+        "memory_mb": 0.2830190658569336,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def reverse_string(input_string: str) -> str:\n    \"\"\"Create a function that reverses a string.\n    \n    The function will take a string as input and return the reversed version of that string.\n    \n    Args:\n        input_string: Parameter value\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function uses Python's slicing feature to reverse the string. Slicing with a step of -1 starts from the end of the string and moves backwards, effectively reversing the string.\n\n    # Reverses the string using slicing\n    return input_string[::-1]",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 14219.580583041534,
+      "total_memory_mb": 0.5553693771362305,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0024699300971735886,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that reverses a string",
+          "rationale": "The function will take a string as input and return the reversed version of that string.",
+          "holes": []
+        },
+        "signature": {
+          "name": "reverse_string",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": null
+            }
+          ],
+          "returns": "str",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should take exactly one argument, which is a string.",
+            "severity": "error",
+            "elements": [
+              "input_string"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return a string.",
+            "severity": "error",
+            "value_name": "reversed_string",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "find_max",
+      "prompt": "Create a function that finds the maximum value in a list",
+      "timestamp": "2025-10-18T19:56:00.091482",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 8107.369458070025,
+        "memory_mb": 0.2725944519042969,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that finds the maximum value in a list",
+              "rationale": "The function is needed to determine the largest number in a list of integers.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "find_maximum_value",
+              "parameters": [
+                {
+                  "name": "numbers",
+                  "type_hint": "list[int]",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "loop_constraint",
+                "description": "The function should iterate over the list to find the maximum value.",
+                "severity": "error",
+                "search_type": "FIRST_MATCH",
+                "requirement": "EARLY_RETURN",
+                "loop_variable": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return the maximum value found in the list.",
+                "severity": "error",
+                "value_name": "max_value",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 43653.27216614969,
+        "memory_mb": 0.32289600372314453,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def find_maximum_value(numbers: list[int]) -> int:\n    \"\"\"Create a function that finds the maximum value in a list.\n    \n    The function is needed to determine the largest number in a list of integers.\n    \n    Args:\n        numbers: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: Iterate through the list, compare each element with the current maximum, and update the maximum if a larger element is found. Return the maximum value at the end of the iteration.\n\n    # Check if the list is empty to handle the edge case\n    if not numbers:\n        # Return None if the list is empty, as there is no maximum value\n        return None\n    # Initialize the max_value with the first element of the list\n    max_value = numbers[0]\n    # Iterate over each number in the list to find the maximum\n    for number in numbers:\n        # Check if the current number is greater than the current max_value\n        if number > max_value:\n            # Update the max_value if the current number is greater\n            max_value = number\n    # Return the maximum value found in the list\n    return max_value",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 3,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 51760.641624219716,
+      "total_memory_mb": 0.5954904556274414,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.008726773604036618,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that finds the maximum value in a list",
+          "rationale": "The function is needed to determine the largest number in a list of integers.",
+          "holes": []
+        },
+        "signature": {
+          "name": "find_maximum_value",
+          "parameters": [
+            {
+              "name": "numbers",
+              "type_hint": "list[int]",
+              "description": null
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "loop_constraint",
+            "description": "The function should iterate over the list to find the maximum value.",
+            "severity": "error",
+            "search_type": "FIRST_MATCH",
+            "requirement": "EARLY_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return the maximum value found in the list.",
+            "severity": "error",
+            "value_name": "max_value",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "count_vowels",
+      "prompt": "Create a function that counts the number of vowels in a string",
+      "timestamp": "2025-10-18T19:56:51.852211",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 7410.194041905925,
+        "memory_mb": 0.2721281051635742,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that counts the number of vowels in a string",
+              "rationale": "The function will iterate over each character in the string and count how many of them are vowels.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "count_vowels",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "The function should return an integer representing the number of vowels in the input string.",
+                "severity": "error",
+                "value_name": "vowel_count",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 13874.423625180498,
+        "memory_mb": 0.27967166900634766,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def count_vowels(input_string: str) -> int:\n    \"\"\"Create a function that counts the number of vowels in a string.\n    \n    The function will iterate over each character in the string and count how many of them are vowels.\n    \n    Args:\n        input_string: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The algorithm iterates over each character in the input string, checks if it is a vowel by looking it up in a set of vowels, and increments a counter if it is. The final count is returned.\n\n    # Create a set of vowels for quick lookup\n    vowels = set('aeiouAEIOU')\n    # Initialize a counter for vowels\n    vowel_count = 0\n    # Iterate over each character in the input string\n    for char in input_string:\n        # Check if the character is a vowel\n        if char in vowels:\n            # Increment the vowel count if the character is a vowel\n            vowel_count += 1\n    # Return the total count of vowels\n    return vowel_count",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 21284.617667086422,
+      "total_memory_mb": 0.5517997741699219,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.003647436277847737,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that counts the number of vowels in a string",
+          "rationale": "The function will iterate over each character in the string and count how many of them are vowels.",
+          "holes": []
+        },
+        "signature": {
+          "name": "count_vowels",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": null
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "The function should return an integer representing the number of vowels in the input string.",
+            "severity": "error",
+            "value_name": "vowel_count",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "is_prime",
+      "prompt": "Create a function that checks if a number is prime",
+      "timestamp": "2025-10-18T19:57:13.137015",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 7973.474208032712,
+        "memory_mb": 0.2720317840576172,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that checks if a number is prime",
+              "rationale": "Prime number checking is a common task in programming, often used in cryptography and number theory.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "is_prime",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": "The number to check for primality",
+                  "provenance": null
+                }
+              ],
+              "returns": "bool",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should return True if the number is prime, and False otherwise.",
+                "severity": "error",
+                "elements": [
+                  "number"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 25971.43075009808,
+        "memory_mb": 0.28348731994628906,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def is_prime(number: int) -> bool:\n    \"\"\"Create a function that checks if a number is prime.\n    \n    Prime number checking is a common task in programming, often used in cryptography and number theory.\n    \n    Args:\n        number: The number to check for primality\n    \n    Returns:\n        bool\n    \"\"\"\n    # Algorithm: The function first handles small numbers and eliminates multiples of 2 and 3. It then checks divisibility from 5 upwards, skipping even numbers and multiples of 3, by incrementing by 6 each time. This is efficient because it only checks potential factors up to the square root of the number.\n\n    # Numbers less than or equal to 1 are not prime\n    if number <= 1:\n        # Return False for numbers less than or equal to 1\n        return False\n    # Numbers 2 and 3 are prime\n    if number <= 3:\n        # Return True for numbers 2 and 3\n        return True\n    # Eliminate multiples of 2 and 3\n    if number % 2 == 0 or number % 3 == 0:\n        # Return False for multiples of 2 and 3\n        return False\n    # Start checking from 5\n    i = 5\n    # Check divisibility up to the square root of the number\n    while i * i <= number:\n        # Check divisibility by i and i + 2\n        if number % i == 0 or number % (i + 2) == 0:\n            # Return False if divisible by i or i + 2\n            return False\n        # Increment i by 6 to check the next potential factors\n        i += 6\n        # Return True if no divisors found\n        return True",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 33944.90495813079,
+      "total_memory_mb": 0.5555191040039062,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.005757484159688466,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that checks if a number is prime",
+          "rationale": "Prime number checking is a common task in programming, often used in cryptography and number theory.",
+          "holes": []
+        },
+        "signature": {
+          "name": "is_prime",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": "The number to check for primality"
+            }
+          ],
+          "returns": "bool",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should return True if the number is prime, and False otherwise.",
+            "severity": "error",
+            "elements": [
+              "number"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "letter_grade",
+      "prompt": "Create a function that converts a numeric score to a letter grade",
+      "timestamp": "2025-10-18T19:57:47.082092",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 11855.804458959028,
+        "memory_mb": 0.2718477249145508,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that converts a numeric score to a letter grade",
+              "rationale": "The function will map numeric scores to letter grades based on predefined thresholds.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "convert_score_to_grade",
+              "parameters": [
+                {
+                  "name": "score",
+                  "type_hint": "int",
+                  "description": "The numeric score to be converted to a letter grade",
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "loop_constraint",
+                "description": "The function should iterate over the grade_mapping to find the correct letter grade for the given score",
+                "severity": "error",
+                "search_type": "FIRST_MATCH",
+                "requirement": "EARLY_RETURN",
+                "loop_variable": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return the letter grade as a string",
+                "severity": "error",
+                "value_name": "grade",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 22007.82504188828,
+        "memory_mb": 0.283538818359375,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def convert_score_to_grade(score: int) -> str:\n    \"\"\"Create a function that converts a numeric score to a letter grade.\n    \n    The function will map numeric scores to letter grades based on predefined thresholds.\n    \n    Args:\n        score: The numeric score to be converted to a letter grade\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function checks the score against a series of thresholds to determine the corresponding letter grade. It starts with the highest grade (A) and works its way down to the lowest (F). If the score meets or exceeds a threshold, it returns the corresponding grade. If no thresholds are met, it defaults to 'F'.\n\n    # Check if the score is 90 or above for an A grade\n    if score >= 90:\n        # Return 'A' if the score is 90 or above\n        return 'A'\n    # Check if the score is 80 or above for a B grade\n    elif score >= 80:\n        # Return 'B' if the score is 80 or above\n        return 'B'\n    # Check if the score is 70 or above for a C grade\n    elif score >= 70:\n        # Return 'C' if the score is 70 or above\n        return 'C'\n    # Check if the score is 60 or above for a D grade\n    elif score >= 60:\n        # Return 'D' if the score is 60 or above\n        return 'D'\n    # Return 'F' if the score is below 60\n    return 'F'",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 33863.62950084731,
+      "total_memory_mb": 0.5553865432739258,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.005743938250141218,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that converts a numeric score to a letter grade",
+          "rationale": "The function will map numeric scores to letter grades based on predefined thresholds.",
+          "holes": []
+        },
+        "signature": {
+          "name": "convert_score_to_grade",
+          "parameters": [
+            {
+              "name": "score",
+              "type_hint": "int",
+              "description": "The numeric score to be converted to a letter grade"
+            }
+          ],
+          "returns": "str",
+          "holes": [
+            {
+              "identifier": "grade_mapping",
+              "type_hint": "dict[int, str]",
+              "description": "A dictionary mapping score ranges to letter grades",
+              "constraints": {},
+              "kind": "intent"
+            }
+          ]
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "loop_constraint",
+            "description": "The function should iterate over the grade_mapping to find the correct letter grade for the given score",
+            "severity": "error",
+            "search_type": "FIRST_MATCH",
+            "requirement": "EARLY_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return the letter grade as a string",
+            "severity": "error",
+            "value_name": "grade",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "celsius_to_fahrenheit",
+      "prompt": "Create a function that converts Celsius to Fahrenheit",
+      "timestamp": "2025-10-18T19:58:20.946740",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9016.684500034899,
+        "memory_mb": 0.27535343170166016,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that converts Celsius to Fahrenheit",
+              "rationale": "The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "celsius_to_fahrenheit",
+              "parameters": [
+                {
+                  "name": "celsius",
+                  "type_hint": "float",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "float",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "loop_constraint",
+                "description": "The function should not use any loops as the conversion is a simple formula application.",
+                "severity": "error",
+                "search_type": "FIRST_MATCH",
+                "requirement": "EARLY_RETURN",
+                "loop_variable": null
+              },
+              {
+                "type": "loop_constraint",
+                "description": "The function should not use any conditional statements as the conversion is a direct formula application.",
+                "severity": "error",
+                "search_type": "FIRST_MATCH",
+                "requirement": "EARLY_RETURN",
+                "loop_variable": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 6709.229625063017,
+        "memory_mb": 0.27959251403808594,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def celsius_to_fahrenheit(celsius: float) -> float:\n    \"\"\"Create a function that converts Celsius to Fahrenheit.\n    \n    The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.\n    \n    Args:\n        celsius: Parameter value\n    \n    Returns:\n        float\n    \"\"\"\n    # Algorithm: Convert the input Celsius temperature to Fahrenheit using the standard conversion formula and return the result.\n\n    # Convert Celsius to Fahrenheit using the formula F = C * 9/5 + 32\n    fahrenheit = celsius * 9/5 + 32\n    # Return the calculated Fahrenheit value\n    return fahrenheit",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 15725.914125097916,
+      "total_memory_mb": 0.5549459457397461,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002720985687516319,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that converts Celsius to Fahrenheit",
+          "rationale": "The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.",
+          "holes": []
+        },
+        "signature": {
+          "name": "celsius_to_fahrenheit",
+          "parameters": [
+            {
+              "name": "celsius",
+              "type_hint": "float",
+              "description": null
+            }
+          ],
+          "returns": "float",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "loop_constraint",
+            "description": "The function should not use any loops as the conversion is a simple formula application.",
+            "severity": "error",
+            "search_type": "FIRST_MATCH",
+            "requirement": "EARLY_RETURN"
+          },
+          {
+            "type": "loop_constraint",
+            "description": "The function should not use any conditional statements as the conversion is a direct formula application.",
+            "severity": "error",
+            "search_type": "FIRST_MATCH",
+            "requirement": "EARLY_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    }
+  ]
+}

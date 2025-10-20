@@ -1,0 +1,44 @@
+name: deploy-ecs
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-ecs.yml"
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION != '' && secrets.AWS_REGION || 'us-east-2' }}
+      ECR_REPO: lift-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        run: |
+          IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}"
+          docker build -t "$IMAGE" backend
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Create SOCI index (best-effort)
+        run: |
+          aws ecr put-image-scanning-configuration --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true || true
+          aws ecr-scan-soci create-index --image "$IMAGE" || true
+
+      - name: Force ECS service deploy
+        run: |
+          aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ secrets.ECS_SERVICE_NAME }}" --force-new-deployment

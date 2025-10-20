@@ -1,0 +1,852 @@
+{
+  "mode": "parallel",
+  "summary": {
+    "total_runs": 10,
+    "successful_runs": 5,
+    "failed_runs": 5,
+    "nlp_to_ir_mean": 36292.37884161994,
+    "nlp_to_ir_median": 43252.51016695984,
+    "nlp_to_ir_std": 14794.753014094604,
+    "ir_to_code_mean": 113354.31695040315,
+    "ir_to_code_median": 138930.8487919625,
+    "ir_to_code_std": 68526.26144321261,
+    "e2e_mean": 149646.6957920231,
+    "e2e_median": 165750.30033406802,
+    "e2e_std": 74790.17864492109,
+    "total_cost_usd": 0.1535337557712337,
+    "cost_per_request_mean": 0.01535337557712337,
+    "memory_mean": 0.21174583435058594,
+    "memory_peak": 0.5908050537109375
+  },
+  "results": [
+    {
+      "test_name": "fizzbuzz",
+      "prompt": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+      "timestamp": "2025-10-18T10:27:20.698054",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 14990.203832974657,
+        "memory_mb": 0.4034738540649414,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+              "rationale": "To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "fizz_buzz",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "Return 'Fizz' if the number is a multiple of 3",
+                "severity": "error",
+                "value_name": "Fizz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return 'Buzz' if the number is a multiple of 5",
+                "severity": "error",
+                "value_name": "Buzz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return 'FizzBuzz' if the number is a multiple of both 3 and 5",
+                "severity": "error",
+                "value_name": "FizzBuzz",
+                "requirement": "MUST_RETURN"
+              },
+              {
+                "type": "return_constraint",
+                "description": "Return the number as a string if it is not a multiple of 3 or 5",
+                "severity": "error",
+                "value_name": "str(number)",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 46693.7076668255,
+        "memory_mb": 0.0,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def fizz_buzz(number: int) -> str:\n    \"\"\"Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise.\n    \n    To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.\n    \n    Args:\n        number: Parameter value\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function checks if the input number is a multiple of 3, 5, or both. It returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number itself as a string otherwise.\n\n    # Check if the number is a multiple of both 3 and 5\n    if number % 3 == 0 and number % 5 == 0:\n        # Return 'FizzBuzz' if the number is a multiple of both 3 and 5\n        return 'FizzBuzz'\n    # Check if the number is a multiple of 3\n    elif number % 3 == 0:\n        # Return 'Fizz' if the number is a multiple of 3\n        return 'Fizz'\n    # Check if the number is a multiple of 5\n    elif number % 5 == 0:\n        # Return 'Buzz' if the number is a multiple of 5\n        return 'Buzz'\n    # Return the number as a string if it is not a multiple of 3 or 5\n    return str(number)",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 61683.91149980016,
+      "total_memory_mb": 0.4034738540649414,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.010380651916633359,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and the number otherwise",
+          "rationale": "To implement a function that adheres to the FizzBuzz problem, which is a common coding interview question. It tests basic control flow and understanding of arithmetic operations.",
+          "holes": []
+        },
+        "signature": {
+          "name": "fizz_buzz",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": null
+            }
+          ],
+          "returns": "str",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "Return 'Fizz' if the number is a multiple of 3",
+            "severity": "error",
+            "value_name": "Fizz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return 'Buzz' if the number is a multiple of 5",
+            "severity": "error",
+            "value_name": "Buzz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return 'FizzBuzz' if the number is a multiple of both 3 and 5",
+            "severity": "error",
+            "value_name": "FizzBuzz",
+            "requirement": "MUST_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "Return the number as a string if it is not a multiple of 3 or 5",
+            "severity": "error",
+            "value_name": "str(number)",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "factorial",
+      "prompt": "Create a function that calculates the factorial of a number",
+      "timestamp": "2025-10-18T10:27:20.699080",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 43251.4152911026,
+        "memory_mb": 0.30281925201416016,
+        "success": false,
+        "error": "Modal API error (HTTP 408): Missing request, possibly due to expiry or cancellation",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 43251.4152911026,
+      "total_memory_mb": 0.30281925201416016,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.0073085692151837675,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null,
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "fibonacci",
+      "prompt": "Create a function that returns the nth Fibonacci number",
+      "timestamp": "2025-10-18T10:27:20.699854",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 43252.51016695984,
+        "memory_mb": -0.041316986083984375,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns the nth Fibonacci number",
+              "rationale": "The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "get_nth_fibonacci",
+              "parameters": [
+                {
+                  "name": "n",
+                  "type_hint": "int",
+                  "description": "The position in the Fibonacci sequence to compute (0-based index)",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should return the nth Fibonacci number where n is a non-negative integer.",
+                "severity": "error",
+                "elements": [
+                  "n"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 175912.6867922023,
+        "memory_mb": 0.0,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def get_nth_fibonacci(n: int) -> int:\n    \"\"\"Create a function that returns the nth Fibonacci number.\n    \n    The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.\n    \n    Args:\n        n: The position in the Fibonacci sequence to compute (0-based index)\n    \n    Returns:\n        int\n    \"\"\"\n    if n < 0:\n        return -1\n    if n == 0:\n        return 0\n    if n == 1:\n        return 1\n    a, b = (0, 1)\n    for _ in range(2, n + 1):\n        a, b = (b, a + b)\n    return b",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 4,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 219165.19695916213,
+      "total_memory_mb": -0.041316986083984375,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.036627532826527025,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns the nth Fibonacci number",
+          "rationale": "The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. This function will compute the nth number in this sequence.",
+          "holes": []
+        },
+        "signature": {
+          "name": "get_nth_fibonacci",
+          "parameters": [
+            {
+              "name": "n",
+              "type_hint": "int",
+              "description": "The position in the Fibonacci sequence to compute (0-based index)"
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should return the nth Fibonacci number where n is a non-negative integer.",
+            "severity": "error",
+            "elements": [
+              "n"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "is_palindrome",
+      "prompt": "Create a function that checks if a string is a palindrome",
+      "timestamp": "2025-10-18T10:27:20.700602",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 43256.64712511934,
+        "memory_mb": 0.21685314178466797,
+        "success": false,
+        "error": "Modal API error (HTTP 408): Missing request, possibly due to expiry or cancellation",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 43256.64712511934,
+      "total_memory_mb": 0.21685314178466797,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.007309441187519891,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null,
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "reverse_string",
+      "prompt": "Create a function that reverses a string",
+      "timestamp": "2025-10-18T10:30:59.864480",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 26819.451542105526,
+        "memory_mb": 0.0,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that reverses a string",
+              "rationale": "The function will take a string as input and return the reversed version of that string.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "reverse_string",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should take exactly one argument, which is a string.",
+                "severity": "error",
+                "elements": [
+                  "input_string"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return a string.",
+                "severity": "error",
+                "value_name": "reversed_string",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 138930.8487919625,
+        "memory_mb": 0.0,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def reverse_string(input_string: str) -> str:\n    \"\"\"Create a function that reverses a string.\n    \n    The function will take a string as input and return the reversed version of that string.\n    \n    Args:\n        input_string: Parameter value\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function takes a string as input and returns the reversed string by using Python's slicing feature. Slicing is a fast and efficient way to reverse a string without the need for additional data structures or loops.\n\n    # Reversing the string using slicing is a simple and efficient way to reverse a string in Python.\n    return input_string[::-1]",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 5,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 165750.30033406802,
+      "total_memory_mb": 0.0,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.027725050055678,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that reverses a string",
+          "rationale": "The function will take a string as input and return the reversed version of that string.",
+          "holes": []
+        },
+        "signature": {
+          "name": "reverse_string",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": null
+            }
+          ],
+          "returns": "str",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should take exactly one argument, which is a string.",
+            "severity": "error",
+            "elements": [
+              "input_string"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return a string.",
+            "severity": "error",
+            "value_name": "reversed_string",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "find_max",
+      "prompt": "Create a function that finds the maximum value in a list",
+      "timestamp": "2025-10-18T10:30:59.865345",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 26817.401584004983,
+        "memory_mb": 0.3787851333618164,
+        "success": false,
+        "error": "Modal API error (HTTP 408): Missing request, possibly due to expiry or cancellation",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 26817.401584004983,
+      "total_memory_mb": 0.3787851333618164,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.004569566930667498,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null,
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "count_vowels",
+      "prompt": "Create a function that counts the number of vowels in a string",
+      "timestamp": "2025-10-18T10:30:59.866085",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 26817.395749967545,
+        "memory_mb": -0.038848876953125,
+        "success": false,
+        "error": "Modal API error (HTTP 408): Missing request, possibly due to expiry or cancellation",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 26817.395749967545,
+      "total_memory_mb": -0.038848876953125,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.004569565958327924,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null,
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "is_prime",
+      "prompt": "Create a function that checks if a number is prime",
+      "timestamp": "2025-10-18T10:30:59.866801",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 26826.195917092264,
+        "memory_mb": 0.21625423431396484,
+        "success": false,
+        "error": "Modal API error (HTTP 408): Missing request, possibly due to expiry or cancellation",
+        "metadata": {
+          "result": null
+        }
+      },
+      "ir_to_code": null,
+      "total_latency_ms": 26826.195917092264,
+      "total_memory_mb": 0.21625423431396484,
+      "end_to_end_success": false,
+      "estimated_cost_usd": 0.004571032652848711,
+      "provider_type": "modal",
+      "ir_output": null,
+      "code_output": null,
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "letter_grade",
+      "prompt": "Create a function that converts a numeric score to a letter grade",
+      "timestamp": "2025-10-18T10:33:45.614499",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 48201.55979110859,
+        "memory_mb": 0.08863353729248047,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that converts a numeric score to a letter grade",
+              "rationale": "The function will map numeric scores to letter grades based on predefined thresholds.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "convert_score_to_grade",
+              "parameters": [
+                {
+                  "name": "score",
+                  "type_hint": "int",
+                  "description": "The numeric score to be converted to a letter grade",
+                  "provenance": null
+                }
+              ],
+              "returns": "str",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "loop_constraint",
+                "description": "The function should iterate over the grade_mapping to find the correct letter grade for the given score",
+                "severity": "error",
+                "search_type": "FIRST_MATCH",
+                "requirement": "EARLY_RETURN",
+                "loop_variable": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return the letter grade as a string",
+                "severity": "error",
+                "value_name": "grade",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 171687.69979197532,
+        "memory_mb": 0.0,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def convert_score_to_grade(score: int) -> str:\n    \"\"\"Create a function that converts a numeric score to a letter grade.\n    \n    The function will map numeric scores to letter grades based on predefined thresholds.\n    \n    Args:\n        score: The numeric score to be converted to a letter grade\n    \n    Returns:\n        str\n    \"\"\"\n    # Algorithm: The function uses a series of if-elif-else statements to determine the letter grade based on the score. It starts with the highest grade (A) and works its way down to the lowest (F). The function returns the first grade that the score meets or exceeds, following a FIRST_MATCH pattern.\n\n    # Check if the score is 90 or above to assign an A grade\n    if score >= 90:\n        # Return 'A' if the condition is met\n        return 'A'\n    # Check if the score is 80 or above to assign a B grade\n    elif score >= 80:\n        # Return 'B' if the condition is met\n        return 'B'\n    # Check if the score is 70 or above to assign a C grade\n    elif score >= 70:\n        # Return 'C' if the condition is met\n        return 'C'\n    # Check if the score is 60 or above to assign a D grade\n    elif score >= 60:\n        # Return 'D' if the condition is met\n        return 'D'\n    # Return 'F' for any score below 60\n    return 'F'",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 5,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 219889.2595830839,
+      "total_memory_mb": 0.08863353729248047,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.03674820993051399,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that converts a numeric score to a letter grade",
+          "rationale": "The function will map numeric scores to letter grades based on predefined thresholds.",
+          "holes": []
+        },
+        "signature": {
+          "name": "convert_score_to_grade",
+          "parameters": [
+            {
+              "name": "score",
+              "type_hint": "int",
+              "description": "The numeric score to be converted to a letter grade"
+            }
+          ],
+          "returns": "str",
+          "holes": [
+            {
+              "identifier": "grade_mapping",
+              "type_hint": "dict[int, str]",
+              "description": "A dictionary mapping score ranges to letter grades",
+              "constraints": {},
+              "kind": "intent"
+            }
+          ]
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "loop_constraint",
+            "description": "The function should iterate over the grade_mapping to find the correct letter grade for the given score",
+            "severity": "error",
+            "search_type": "FIRST_MATCH",
+            "requirement": "EARLY_RETURN"
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return the letter grade as a string",
+            "severity": "error",
+            "value_name": "grade",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "celsius_to_fahrenheit",
+      "prompt": "Create a function that converts Celsius to Fahrenheit",
+      "timestamp": "2025-10-18T10:33:45.616775",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 48198.16887495108,
+        "memory_mb": 0.2933216094970703,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that converts Celsius to Fahrenheit",
+              "rationale": "The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "celsius_to_fahrenheit",
+              "parameters": [
+                {
+                  "name": "celsius",
+                  "type_hint": "float",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "float",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should take exactly one argument, which is the temperature in Celsius.",
+                "severity": "error",
+                "elements": [
+                  "celsius"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return a float value representing the temperature in Fahrenheit.",
+                "severity": "error",
+                "value_name": "fahrenheit",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 33546.64170905016,
+        "memory_mb": 0.2974834442138672,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def celsius_to_fahrenheit(celsius: float) -> float:\n    \"\"\"Create a function that converts Celsius to Fahrenheit.\n    \n    The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.\n    \n    Args:\n        celsius: Parameter value\n    \n    Returns:\n        float\n    \"\"\"\n    # Algorithm: Convert the input Celsius temperature to Fahrenheit using the standard conversion formula and return the result.\n\n    # Convert the Celsius temperature to Fahrenheit using the formula F = C * 9/5 + 32\n    fahrenheit = celsius * 9/5 + 32\n    # Return the calculated Fahrenheit temperature\n    return fahrenheit",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 81744.81058400124,
+      "total_memory_mb": 0.5908050537109375,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.013724135097333539,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that converts Celsius to Fahrenheit",
+          "rationale": "The function is needed to perform temperature conversion from Celsius to Fahrenheit, which is a common requirement in various applications such as weather forecasting, cooking, and scientific research.",
+          "holes": []
+        },
+        "signature": {
+          "name": "celsius_to_fahrenheit",
+          "parameters": [
+            {
+              "name": "celsius",
+              "type_hint": "float",
+              "description": null
+            }
+          ],
+          "returns": "float",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should take exactly one argument, which is the temperature in Celsius.",
+            "severity": "error",
+            "elements": [
+              "celsius"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return a float value representing the temperature in Fahrenheit.",
+            "severity": "error",
+            "value_name": "fahrenheit",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    }
+  ]
+}

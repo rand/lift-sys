@@ -1,0 +1,24 @@
+name = "lift-api"
+main = "src/index.ts"
+compatibility_date = "2025-10-19"
+workers_dev = false
+
+[vars]
+ENV = "staging"
+FARGATE_HOST = "CHANGE_ME_ALB_HOSTNAME"
+MODAL_URL = "https://CHANGE_ME.modal.run/solve"
+
+[[hyperdrive]]
+binding = "PG"
+id = "CHANGE_ME_HYPERDRIVE_ID"
+
+[[queues.producers]]
+binding = "JOB_QUEUE"
+queue = "lift-jobs"
+
+[[r2_buckets]]
+binding = "R2_PUBLIC"
+bucket_name = "lift-public"
+
+[durable_objects]
+bindings = [{ name = "SESSION_DO", class_name = "SessionDO" }]

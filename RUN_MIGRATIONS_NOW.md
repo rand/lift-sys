@@ -108,6 +108,45 @@ echo ".env.local" >> .gitignore
 
 ## ❌ Troubleshooting
 
+### ⚠️ CRITICAL: DNS Resolution Failure (Current Issue)
+
+If you get: `could not translate host name "db.bqokcxjusdkywfgfqhzo.supabase.co" to address`
+
+**This means your Supabase project is not fully provisioned yet.**
+
+**Steps to resolve**:
+
+1. **Check project status in Supabase Dashboard**:
+   - Go to https://supabase.com/dashboard
+   - Click your `lift-sys` project
+   - Look for status indicator (should say "Active", not "Setting up" or "Provisioning")
+
+2. **Get the CORRECT connection string from the UI**:
+   - In dashboard, go to **Project Settings** → **Database**
+   - Scroll to **"Connection string"** section
+   - Try **BOTH tabs**:
+     - **"Connection Pooling"** (recommended) - port 6543
+     - **"Direct connection"** - port 5432
+   - Click **"URI"** mode
+   - **COPY THE EXACT STRING SHOWN** - don't trust the one in this doc if DNS is failing
+   - Replace `[YOUR-PASSWORD]` with: `sgVOFNCgIWk585q8`
+
+3. **Test the new connection string**:
+   ```bash
+   # Replace with your ACTUAL connection string from step 2
+   export DATABASE_URL="postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-0-REGION.pooler.supabase.com:6543/postgres"
+
+   # Test with psql
+   psql "$DATABASE_URL" -c "SELECT 1;"
+   ```
+
+4. **If still failing after 15 minutes**:
+   - DNS propagation can take time for new projects
+   - Check Supabase status page: https://status.supabase.com
+   - Contact Supabase support if project shows "Active" but DNS doesn't resolve
+
+---
+
 ### If migrations fail with "already exists" errors
 
 This means tables already exist. You can either:

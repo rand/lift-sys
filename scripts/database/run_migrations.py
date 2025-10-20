@@ -68,7 +68,8 @@ def main():
         sys.exit(1)
 
     # Migration files in order
-    migrations_dir = Path(__file__).parent / "migrations"
+    # Navigate to repo root, then to migrations/
+    migrations_dir = Path(__file__).parent.parent.parent / "migrations"
     migration_files = [
         "001_create_sessions_table.sql",
         "002_create_revisions_table.sql",

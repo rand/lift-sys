@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Navigate to repository root
+cd "$(dirname "$0")/../.."
+
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'

@@ -10,9 +10,9 @@ from lift_sys.providers.modal_provider import ModalProvider
 async def main():
     """Test a single IR generation with temperature=0.8."""
 
-    print("="*70)
+    print("=" * 70)
     print("Testing Best-of-N with temperature=0.8")
-    print("="*70)
+    print("=" * 70)
 
     # Initialize provider
     provider = ModalProvider(endpoint_url="https://rand--generate.modal.run")
@@ -20,19 +20,15 @@ async def main():
     print("\n✓ Provider initialized")
 
     # Create Best-of-N translator with temp=0.8
-    translator = BestOfNIRTranslator(
-        provider=provider,
-        n_candidates=3,
-        temperature=0.8
-    )
-    print(f"✓ Best-of-N translator created (n=3, temp=0.8)")
+    translator = BestOfNIRTranslator(provider=provider, n_candidates=3, temperature=0.8)
+    print("✓ Best-of-N translator created (n=3, temp=0.8)")
 
     # Simple test prompt
     prompt = "Create a function that takes a list and a value, uses enumerate to find the value, and returns its index or -1 if not found"
 
-    print(f"\n[Testing prompt]")
+    print("\n[Testing prompt]")
     print(f"{prompt}")
-    print("-"*70)
+    print("-" * 70)
 
     # Generate IR
     ir = await translator.translate(prompt)
@@ -45,9 +41,9 @@ async def main():
     for i, effect in enumerate(ir.effects, 1):
         print(f"  {i}. {effect.description}")
 
-    print("\n"+ "="*70)
+    print("\n" + "=" * 70)
     print("Test complete!")
-    print("="*70)
+    print("=" * 70)
 
 
 if __name__ == "__main__":

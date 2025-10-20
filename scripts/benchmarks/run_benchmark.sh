@@ -21,7 +21,8 @@ echo ""
 echo "Starting benchmark..."
 echo ""
 
-# Run the benchmark
+# Navigate to repo root and run the benchmark
+cd "$(dirname "$0")/../.."
 uv run python performance_benchmark.py
 
 echo ""

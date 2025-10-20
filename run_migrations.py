@@ -17,9 +17,7 @@ except ImportError:
     import psycopg2
 
 # Your Supabase credentials
-DATABASE_URL = (
-    "postgresql://postgres:sgVOFNCgIWk585q8@db.bqokcxjusdkywfgfqhzo.supabase.co:5432/postgres"
-)
+DATABASE_URL = "postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
 
 # Colors for output
 GREEN = "\033[0;32m"

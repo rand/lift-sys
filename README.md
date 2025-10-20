@@ -17,40 +17,52 @@ Two complementary modes:
 
 Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
-## ✅ Current Status (Updated October 15, 2025)
+## ✅ Current Status (Updated October 19, 2025)
 
-**Forward Mode**: **PROVEN END-TO-END** 🎉
-We have successfully demonstrated the complete NLP → IR → Code pipeline with real LLMs (no mocks):
+**Forward Mode**: **PRODUCTION READY** 🎉
 - ✅ Natural language → Formal IR specification (10.8s median latency)
 - ✅ Formal IR → Executable Python code (4.3s median latency)
 - ✅ Generated code compiles (80% success) and executes correctly (60% success)
 - ✅ **Total E2E latency: ~16 seconds median** (validated with execution testing)
-- ✅ Return statement bug fixed on Day 2 (improved from ~30% to 60% real success)
-- ⚠️  Known issue: Control flow (if/else) may have indentation bugs (~20% failure rate, tracked in lift-sys-69)
+- ✅ Return statement bug fixed (improved from ~30% to 60% real success)
+- ✅ Best-of-N sampling for improved IR quality
+- ⚠️  Known issue: Control flow (if/else) may have indentation bugs (~20% failure rate)
 
-**Performance Metrics**: See `PERFORMANCE_METRICS.md` for comprehensive benchmarks.
-**Test Results**: See `E2E_TEST_RESULTS.md` and `test_forward_mode_e2e.py` for initial proof.
+**Infrastructure**: **FULLY OPERATIONAL** ✨
+- ✅ Modal.com deployment (L40S GPU, vLLM + XGrammar + Qwen2.5-Coder-7B)
+- ✅ Supabase database with full session storage (PostgreSQL + RLS + Auth)
+- ✅ Session management with revision tracking and hole resolution
+- ✅ Multi-provider support (Anthropic, OpenAI, Google, Modal)
+- ✅ OAuth system with encrypted tokens
+- ✅ Honeycomb observability integration planned
+
+**Database & Storage**:
+- ✅ Supabase integration complete (setup, migrations, RLS policies)
+- ✅ SupabaseSessionStore implementation with full CRUD operations
+- ✅ Session revision tracking and draft management
+- ✅ Typed hole resolution storage
+- ✅ Row-Level Security for multi-user isolation
+
+**Performance** (Modal - L40S GPU):
+- ✅ 80% compilation success, 60% execution success
+- ✅ 75% execution success among compiled code
+- ✅ 16s median E2E latency (10.8s IR gen + 4.3s code gen)
+- ✅ $0.0029 per request (cost-effective)
+- ✅ Parallel benchmark execution with per-test isolation
 
 **Reverse Mode**: **INFRASTRUCTURE COMPLETE**
 - ✅ Whole-project analysis (100+ files)
 - ✅ Static analysis (AST parsing, type extraction)
 - ✅ Security analysis (CodeQL integration)
-- ⚠️  End-to-end reverse mode quality needs validation (tracked in lift-sys-65)
+- ⚠️  End-to-end reverse mode quality validation in progress
 
-**Infrastructure**:
-- ✅ Modal deployment (vLLM + XGrammar + Qwen2.5-Coder-7B)
-- ✅ OAuth system with encrypted tokens
-- ✅ Multi-provider support (Anthropic, OpenAI, Google, Modal)
-- ✅ 93.75% test pass rate (15/16 xgrammar tests passing)
+**What's Next**:
+- Honeycomb observability integration (planned)
+- Conjecturing feature implementation (in progress)
+- Performance optimization and scaling
+- Enhanced IR validation and constraint propagation
 
-**Performance** (Modal - A10G GPU):
-- ✅ 80% compilation success, 60% execution success (validated)
-- ✅ 75% execution success among compiled code (shows pipeline quality)
-- ✅ 16s median E2E latency (10.8s IR gen + 4.3s code gen)
-- ✅ $0.0029 per request (affordable for development)
-- ⚠️ 20% failure on control flow due to indentation bug (P1 for Day 3)
-
-**What's Next**: Fix indentation bug, expand test coverage, prepare demo (Week 3).
+See [`SEMANTIC_IR_ROADMAP.md`](SEMANTIC_IR_ROADMAP.md) for complete product roadmap.
 
 ## Key Features
 
@@ -80,24 +92,33 @@ See [Workflow Guides](docs/WORKFLOW_GUIDES.md) for detailed examples across all 
 
 ## Getting Started
 
-1. Install [`uv`](https://github.com/astral-sh/uv).
-2. Create the virtual environment and install dependencies:
+### Prerequisites
 
-```bash
-uv sync
-```
+1. **Install [`uv`](https://github.com/astral-sh/uv)** - Python package manager (NEVER use pip/poetry)
+2. **Install Node.js 18+** - For frontend development (if using web UI)
+3. **Clone the repository**:
+   ```bash
+   git clone https://github.com/rand/lift-sys.git
+   cd lift-sys
+   ```
 
-3. Start both the backend and frontend:
+### Quick Start
 
-```bash
-./start.sh
-```
+1. **Install dependencies**:
+   ```bash
+   uv sync
+   ```
 
-This will launch:
-- **Backend API**: http://localhost:8000 (API docs at http://localhost:8000/docs)
-- **Frontend**: http://localhost:5173
+2. **Start development servers**:
+   ```bash
+   ./scripts/setup/start.sh
+   ```
 
-Alternatively, you can run services individually:
+   This launches:
+   - **Backend API**: http://localhost:8000 (API docs at http://localhost:8000/docs)
+   - **Frontend**: http://localhost:5173
+
+### Alternative: Run Services Individually
 
 **Backend only:**
 ```bash
@@ -113,6 +134,37 @@ cd frontend && npm run dev
 ```bash
 uv run python -m lift_sys.main
 ```
+
+### Database Setup (Optional - for persistence)
+
+If using Supabase for session storage:
+
+1. **Set up Supabase** (see [`docs/supabase/SUPABASE_QUICK_START.md`](docs/supabase/SUPABASE_QUICK_START.md))
+2. **Run migrations**:
+   ```bash
+   python scripts/database/run_migrations.py
+   ```
+3. **Configure environment** (create `.env.local`):
+   ```bash
+   SUPABASE_URL=<your-url>
+   SUPABASE_ANON_KEY=<your-anon-key>
+   SUPABASE_SERVICE_KEY=<your-service-key>
+   ```
+
+### Running Tests
+
+```bash
+# Run full test suite
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=lift_sys
+
+# Run specific test file
+uv run pytest tests/test_ir.py
+```
+
+**See [`CLAUDE.md`](CLAUDE.md) for complete development guidelines.**
 
 ## Quick Start: Session Management
 
@@ -307,14 +359,54 @@ For more details, see:
 
 ## Project Structure
 
-- `lift_sys/`: Core backend, IR, verification, planning, and workflow modules.
-- `frontend/`: Web client built with Vite + React following the shadcn-inspired design system.
-- `design/`: Experience mapping, affordance inventory, and design system documentation.
-- `tests/`: Automated tests for critical subsystems.
-- `lift_sys/providers`: Provider adapters for Anthropic, OpenAI, Google Gemini, and the local vLLM runtime.
-- `lift_sys/services`: Hybrid orchestration, reasoning, generation, and verification services.
-- `lift_sys/auth`: OAuth and encrypted token storage utilities.
-- `lift_sys/infrastructure`: Modal deployment configuration helpers.
+```
+lift-sys/
+├── lift_sys/              # Core Python package
+│   ├── ir/               # Intermediate Representation definitions
+│   ├── forward_mode/     # NLP → IR → Code pipeline
+│   ├── reverse_mode/     # Code → IR recovery
+│   ├── validation/       # IR and code validation
+│   ├── providers/        # LLM provider integrations (Modal, Anthropic, OpenAI, Google)
+│   ├── api/              # FastAPI backend server
+│   ├── storage/          # Session storage (InMemory, Supabase)
+│   ├── services/         # Hybrid orchestration and verification
+│   ├── auth/             # OAuth and encrypted token storage
+│   └── infrastructure/   # Modal deployment configuration
+│
+├── frontend/              # Web UI (Vite + React + shadcn/ui)
+├── design/                # Design system and UX documentation
+├── tests/                 # Test suite
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   ├── e2e/              # End-to-end tests
+│   └── archive/          # Deprecated tests
+│
+├── docs/                  # Documentation (organized by category)
+│   ├── supabase/         # Database setup and migrations
+│   ├── observability/    # Monitoring and telemetry
+│   ├── conjecturing/     # Conjecturing feature docs
+│   ├── benchmarks/       # Performance testing results
+│   ├── phases/           # Phase completion reports
+│   ├── planning/         # Project planning documents
+│   ├── fixes/            # Bug fix summaries
+│   └── archive/          # Deprecated documentation
+│
+├── scripts/               # Utility scripts (organized by purpose)
+│   ├── benchmarks/       # Performance testing scripts
+│   ├── database/         # Database utilities and migrations
+│   ├── setup/            # Project setup scripts
+│   └── website/          # Website maintenance
+│
+├── migrations/            # Supabase database migrations (ordered SQL files)
+├── debug/                 # Debug data and test artifacts
+│
+├── CLAUDE.md             # Project-specific development guidelines
+├── REPOSITORY_ORGANIZATION.md  # File organization rules
+├── SEMANTIC_IR_ROADMAP.md      # Product roadmap
+└── KNOWN_ISSUES.md       # Current bugs and limitations
+```
+
+**See [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md) for complete structure guidelines.**
 
 ## Modal Hybrid Deployment
 
@@ -363,10 +455,91 @@ The configuration view now includes a provider selector that surfaces provider c
 quick OAuth initiation. Administrators can choose the primary provider and configure hybrid failover policies directly
 from the UI.
 
-## Development
+## Development Workflow
 
-Run tests with:
+### Repository Organization
+
+This repository follows strict organization rules to maintain cleanliness and discoverability:
+
+- **Documentation**: All `.md` files go to `docs/{category}/` subdirectories
+- **Scripts**: All utility scripts go to `scripts/{category}/` subdirectories
+- **Debug Data**: All debug files go to `debug/` directory
+- **Root Directory**: Only core project files (README, LICENSE, config files)
+
+**See [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md) for complete rules.**
+
+### Development Guidelines
+
+**Project-specific guidelines**: [`CLAUDE.md`](CLAUDE.md) - Development practices, testing protocols, security rules
+
+**Key rules:**
+- **ALWAYS use `uv`** for Python package management (never pip/poetry)
+- **NEVER commit before testing** - Critical: Commit first, then test to avoid stale results
+- **NEVER commit secrets** - Use environment variables or Modal secrets
+- **Use Beads** for task tracking - All agentic work uses the Beads framework
+- **Organize files** - No loose files in root directory
+
+### Running Tests
 
 ```bash
+# Run full test suite
 uv run pytest
+
+# Run with coverage
+uv run pytest --cov=lift_sys
+
+# Run specific category
+uv run pytest tests/unit/
+uv run pytest tests/integration/
+
+# Run benchmarks
+./scripts/benchmarks/run_benchmark.sh
 ```
+
+### Utility Scripts
+
+```bash
+# Start development servers (backend + frontend)
+./scripts/setup/start.sh
+
+# Run database migrations
+python scripts/database/run_migrations.py
+
+# Verify Supabase connection
+./scripts/database/verify_supabase_connection.sh
+
+# Run performance benchmarks
+./scripts/benchmarks/run_benchmark.sh
+
+# Update website plan page
+./scripts/website/update-plan-page.sh
+```
+
+See [`scripts/README.md`](scripts/README.md) for complete script documentation.
+
+### Contributing
+
+1. **Read the guidelines**: [`CLAUDE.md`](CLAUDE.md) and [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
+2. **Create feature branch**: `git checkout -b feature/your-feature`
+3. **Follow organization rules**: Put files in correct directories
+4. **Write tests**: Add tests for new functionality
+5. **Update documentation**: Document new features in `docs/{category}/`
+6. **Create PR**: Use `gh pr create` with descriptive title and body
+
+### Documentation
+
+All documentation is organized in the `docs/` directory:
+
+- **Supabase**: [`docs/supabase/`](docs/supabase/) - Database setup, migrations, schema
+- **Observability**: [`docs/observability/`](docs/observability/) - Monitoring and telemetry
+- **Benchmarks**: [`docs/benchmarks/`](docs/benchmarks/) - Performance results
+- **Planning**: [`docs/planning/`](docs/planning/) - Project planning and assessments
+- **Phases**: [`docs/phases/`](docs/phases/) - Phase completion reports
+
+### Key Resources
+
+- **Development Guidelines**: [`CLAUDE.md`](CLAUDE.md)
+- **Organization Rules**: [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
+- **Product Roadmap**: [`SEMANTIC_IR_ROADMAP.md`](SEMANTIC_IR_ROADMAP.md)
+- **Known Issues**: [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)
+- **Release Notes**: [`RELEASE_NOTES.md`](RELEASE_NOTES.md)

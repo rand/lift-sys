@@ -78,10 +78,11 @@ After migrations complete:
 Once migrations are complete, configure Modal:
 
 ```bash
+# Get service_role key from: https://supabase.com/dashboard/project/bqokcxjusdkywfgfqhzo/settings/api
 modal secret create supabase \
   SUPABASE_URL="https://bqokcxjusdkywfgfqhzo.supabase.co" \
   SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ" \
-  SUPABASE_SERVICE_KEY="***REMOVED***"
+  SUPABASE_SERVICE_KEY="<your-service-role-key-from-dashboard>"
 
 # Verify secret exists
 modal secret list | grep supabase
@@ -92,12 +93,16 @@ modal secret list | grep supabase
 ## ✅ Create .env.local (for local development)
 
 ```bash
+# Get keys from: https://supabase.com/dashboard/project/bqokcxjusdkywfgfqhzo/settings/api
 cat > .env.local <<'EOF'
-# Supabase credentials (DO NOT COMMIT TO GIT)
+# Supabase credentials
 SUPABASE_URL=https://bqokcxjusdkywfgfqhzo.supabase.co
+# Anon key (safe to expose publicly)
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ
-SUPABASE_SERVICE_KEY=***REMOVED***
-DATABASE_URL=postgresql://postgres:sgVOFNCgIWk585q8@db.bqokcxjusdkywfgfqhzo.supabase.co:5432/postgres
+# Service role key (DO NOT COMMIT - keep secret)
+SUPABASE_SERVICE_KEY=<your-service-role-key-from-dashboard>
+# Database URL with password (DO NOT COMMIT - keep secret)
+DATABASE_URL=<your-database-url-from-dashboard>
 EOF
 
 # Ensure it's in .gitignore

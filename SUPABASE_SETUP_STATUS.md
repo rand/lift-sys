@@ -133,10 +133,11 @@ This will automatically run all 7 migrations and verify the schema.
 
 2. **Configure Modal Secrets** (for production):
    ```bash
+   # Get service_role key from dashboard
    modal secret create supabase \
      SUPABASE_URL="https://bqokcxjusdkywfgfqhzo.supabase.co" \
      SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ" \
-     SUPABASE_SERVICE_KEY="***REMOVED***"
+     SUPABASE_SERVICE_KEY="<your-service-role-key>"
 
    # Verify
    modal secret list | grep supabase
@@ -145,11 +146,12 @@ This will automatically run all 7 migrations and verify the schema.
 3. **Create .env.local** (for local development):
    ```bash
    cat > .env.local <<'EOF'
-   # Supabase credentials (DO NOT COMMIT)
+   # Supabase credentials
    SUPABASE_URL=https://bqokcxjusdkywfgfqhzo.supabase.co
    SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ
-   SUPABASE_SERVICE_KEY=***REMOVED***
-   DATABASE_URL=postgresql://postgres:sgVOFNCgIWk585q8@db.bqokcxjusdkywfgfqhzo.supabase.co:5432/postgres
+   # Get from dashboard (DO NOT COMMIT)
+   SUPABASE_SERVICE_KEY=<your-service-role-key>
+   DATABASE_URL=<your-database-url>
    EOF
 
    # Ensure .gitignore includes it

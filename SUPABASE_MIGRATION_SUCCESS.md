@@ -111,10 +111,11 @@ All tables have 4 policies each:
 Since Modal CLI isn't available in this environment, you'll need to run:
 
 ```bash
+# Get service_role key from dashboard
 modal secret create supabase \
   SUPABASE_URL="https://bqokcxjusdkywfgfqhzo.supabase.co" \
   SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ" \
-  SUPABASE_SERVICE_KEY="***REMOVED***"
+  SUPABASE_SERVICE_KEY="<your-service-role-key>"
 
 # Verify
 modal secret list | grep supabase
@@ -124,11 +125,12 @@ modal secret list | grep supabase
 
 ```bash
 cat > .env.local <<'EOF'
-# Supabase credentials (DO NOT COMMIT TO GIT)
+# Supabase credentials
 SUPABASE_URL=https://bqokcxjusdkywfgfqhzo.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxb2tjeGp1c2RreXdmZ2ZxaHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODEzMjQsImV4cCI6MjA3NjQ1NzMyNH0.jn5ypmawIKs-5oyn3MfrYWe95jfyaQzWLHZpnHWPjBQ
-SUPABASE_SERVICE_KEY=***REMOVED***
-DATABASE_URL=postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+# Get from dashboard (DO NOT COMMIT)
+SUPABASE_SERVICE_KEY=<your-service-role-key>
+DATABASE_URL=<your-database-url>
 EOF
 
 # Ensure .gitignore includes it

@@ -80,8 +80,8 @@ class SupabaseSessionStore:
             "draft_count": len(session.ir_drafts),
             "hole_count": len(session.pending_resolutions),
             "metadata": session.metadata,
-            "created_at": session.created_at,
-            "updated_at": session.updated_at,
+            "created_at": self._normalize_timestamp(session.created_at),
+            "updated_at": self._normalize_timestamp(session.updated_at),
         }
 
         self.client.table("sessions").insert(session_data).execute()
@@ -198,11 +198,11 @@ class SupabaseSessionStore:
             "draft_count": len(session.ir_drafts),
             "hole_count": len(session.pending_resolutions),
             "metadata": session.metadata,
-            "updated_at": session.updated_at,
+            "updated_at": self._normalize_timestamp(session.updated_at),
         }
 
         if session.status == "finalized":
-            session_updates["finalized_at"] = session.updated_at
+            session_updates["finalized_at"] = self._normalize_timestamp(session.updated_at)
 
         self.client.table("sessions").update(session_updates).eq("id", session.session_id).execute()
 
@@ -300,6 +300,27 @@ class SupabaseSessionStore:
 
     # Helper methods for serialization/deserialization
 
+    def _normalize_timestamp(self, timestamp: str) -> str:
+        """Normalize timestamp to PostgreSQL-compatible format.
+
+        The models use datetime.now(UTC).isoformat() + "Z" which produces
+        timestamps like "2025-10-20T01:02:52.358909+00:00Z" (invalid).
+
+        This converts to either:
+        - "2025-10-20T01:02:52.358909+00:00" (ISO with timezone)
+        - "2025-10-20T01:02:52.358909Z" (ISO with Z suffix)
+
+        Args:
+            timestamp: Timestamp string from models
+
+        Returns:
+            PostgreSQL-compatible timestamp string
+        """
+        # Remove trailing Z if timestamp already has +00:00
+        if "+00:00Z" in timestamp:
+            return timestamp.replace("+00:00Z", "+00:00")
+        return timestamp
+
     def _get_original_input(self, session: PromptSession) -> str:
         """Extract original input from first revision or metadata."""
         if session.revisions:
@@ -323,7 +344,7 @@ class SupabaseSessionStore:
             "content": revision.content,
             "target_hole": revision.target_hole,
             "metadata": revision.metadata,
-            "created_at": revision.timestamp,
+            "created_at": self._normalize_timestamp(revision.timestamp),
         }
 
         self.client.table("session_revisions").insert(revision_data).execute()
@@ -338,7 +359,7 @@ class SupabaseSessionStore:
             "unresolved_holes": draft.ambiguities,
             "smt_results": draft.smt_results,
             "metadata": draft.metadata,
-            "created_at": draft.created_at,
+            "created_at": self._normalize_timestamp(draft.created_at),
         }
 
         self.client.table("session_drafts").insert(draft_data).execute()
@@ -356,7 +377,7 @@ class SupabaseSessionStore:
                 "applied": resolution.applied,
             },
             "metadata": resolution.metadata,
-            "created_at": resolution.timestamp,
+            "created_at": self._normalize_timestamp(resolution.timestamp),
         }
 
         self.client.table("hole_resolutions").insert(resolution_data).execute()

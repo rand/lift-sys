@@ -17,7 +17,11 @@ except ImportError:
     import psycopg2
 
 # Your Supabase credentials
-DATABASE_URL = "postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+# Get from environment or .env.local file
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
+)
 
 # Colors for output
 GREEN = "\033[0;32m"

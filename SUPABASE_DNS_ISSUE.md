@@ -89,7 +89,7 @@ NOTE: The hostname format may be DIFFERENT from what we tried:
 Once you have the correct connection string from step 2:
 
 ```bash
-# Replace [YOUR-PASSWORD] with: sgVOFNCgIWk585q8
+# Get password from Supabase dashboard
 export DATABASE_URL="<paste connection string here with password>"
 
 # Test connection
@@ -112,7 +112,7 @@ Once you have a working connection string, update `run_migrations.py`:
 
 ```python
 # Line 20 - Replace with your actual working connection string
-DATABASE_URL = "postgresql://postgres.PROJECT_REF:sgVOFNCgIWk585q8@aws-0-REGION.pooler.supabase.com:6543/postgres"
+DATABASE_URL = "postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres"
 ```
 
 ---

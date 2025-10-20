@@ -41,7 +41,7 @@ Successfully set up Supabase database with complete schema, deployed all migrati
 
 **Correct Connection String Discovered**:
 ```
-postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres
 ```
 
 **Key Discovery**: Hostname is `aws-1-us-east-1.pooler.supabase.com`, NOT `db.PROJECT_REF.supabase.co`

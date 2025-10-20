@@ -49,8 +49,8 @@ If you have PostgreSQL client tools installed:
 ```bash
 cd /Users/rand/src/lift-sys
 
-# Set your database URL
-export DATABASE_URL="postgresql://postgres:sgVOFNCgIWk585q8@db.bqokcxjusdkywfgfqhzo.supabase.co:5432/postgres"
+# Get database URL from: https://supabase.com/dashboard/project/bqokcxjusdkywfgfqhzo/settings/database
+export DATABASE_URL="<your-database-url-from-dashboard>"
 
 # Run migrations
 ./migrations/run_all_migrations.sh "$DATABASE_URL"
@@ -134,12 +134,12 @@ If you get: `could not translate host name "db.bqokcxjusdkywfgfqhzo.supabase.co"
      - **"Direct connection"** - port 5432
    - Click **"URI"** mode
    - **COPY THE EXACT STRING SHOWN** - don't trust the one in this doc if DNS is failing
-   - Replace `[YOUR-PASSWORD]` with: `sgVOFNCgIWk585q8`
+   - Get password from Supabase dashboard
 
 3. **Test the new connection string**:
    ```bash
    # Replace with your ACTUAL connection string from step 2
-   export DATABASE_URL="postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-0-REGION.pooler.supabase.com:6543/postgres"
+   export DATABASE_URL="<your-connection-pooling-url-from-dashboard>"
 
    # Test with psql
    psql "$DATABASE_URL" -c "SELECT 1;"
@@ -175,7 +175,7 @@ This means tables already exist. You can either:
 
 ### If password error
 
-Double-check password: `sgVOFNCgIWk585q8` (case-sensitive)
+Double-check password from Supabase dashboard (case-sensitive)
 
 ---
 

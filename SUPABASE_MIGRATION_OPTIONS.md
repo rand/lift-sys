@@ -110,7 +110,7 @@
    - Click **"Direct connection"** tab (NOT "Connection pooling")
    - Select "URI" mode
    - Copy the connection string
-   - Replace `[YOUR-PASSWORD]` with: `sgVOFNCgIWk585q8`
+   - Get password from Supabase dashboard
 
 2. **Test connection**:
    ```bash

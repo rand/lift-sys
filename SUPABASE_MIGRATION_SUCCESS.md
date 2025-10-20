@@ -31,10 +31,11 @@ Confirmed via database queries:
 
 ### ✅ Connection Details
 
-**Correct connection string**:
+**Connection string format**:
 ```
-postgresql://postgres.bqokcxjusdkywfgfqhzo:sgVOFNCgIWk585q8@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres
 ```
+Get your actual connection string from: https://supabase.com/dashboard/project/bqokcxjusdkywfgfqhzo/settings/database
 
 **Key discovery**: The hostname is `aws-1-us-east-1.pooler.supabase.com`, NOT `db.PROJECT_REF.supabase.co`
 

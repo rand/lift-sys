@@ -33,7 +33,7 @@ postgresql://postgres.bqokcxjusdkywfgfqhzo:[YOUR-PASSWORD]@aws-0-REGION.pooler.s
 - NOT `db.bqokcxjusdkywfgfqhzo.supabase.co` (that doesn't exist)
 - Region could be: us-east-1, us-west-1, eu-west-1, ap-southeast-1, etc.
 
-7. **Replace `[YOUR-PASSWORD]` with**: `sgVOFNCgIWk585q8`
+7. **Get password from Supabase dashboard**
 
 ---
 

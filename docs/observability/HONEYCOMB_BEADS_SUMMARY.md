@@ -446,12 +446,12 @@ After integration completion:
 - [HONEYCOMB_PLANNING_COMPLETE.md](./HONEYCOMB_PLANNING_COMPLETE.md) - Final checklist and sign-off
 
 **Supabase Integration** (parallel workstream):
-- [SUPABASE_INTEGRATION_PLAN.md](./SUPABASE_INTEGRATION_PLAN.md) - Database integration (lift-sys-259 through 264)
-- [SUPABASE_BEADS_SUMMARY.md](./SUPABASE_BEADS_SUMMARY.md) - Work breakdown
+- [SUPABASE_INTEGRATION_PLAN.md](../supabase/SUPABASE_INTEGRATION_PLAN.md) - Database integration (lift-sys-259 through 264)
+- [SUPABASE_BEADS_SUMMARY.md](../supabase/SUPABASE_BEADS_SUMMARY.md) - Work breakdown
 
 **Strategic Context**:
-- [INFRASTRUCTURE_RESEARCH_REPORT.md](./INFRASTRUCTURE_RESEARCH_REPORT.md) - Infrastructure strategy (Modal + Supabase recommended)
-- [SEMANTIC_IR_ROADMAP.md](./SEMANTIC_IR_ROADMAP.md) - Product roadmap
+- [INFRASTRUCTURE_RESEARCH_REPORT.md](../planning/INFRASTRUCTURE_RESEARCH_REPORT.md) - Infrastructure strategy (Modal + Supabase recommended)
+- [SEMANTIC_IR_ROADMAP.md](../../SEMANTIC_IR_ROADMAP.md) - Product roadmap
 
 ---
 

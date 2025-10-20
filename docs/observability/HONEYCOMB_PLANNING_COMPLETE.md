@@ -342,8 +342,8 @@ This integration is considered **complete** when all of the following are true:
 - [HONEYCOMB_INTEGRATION_PLAN.md](./HONEYCOMB_INTEGRATION_PLAN.md) - Comprehensive spec
 - [HONEYCOMB_QUICK_START.md](./HONEYCOMB_QUICK_START.md) - 30-minute setup
 - [HONEYCOMB_BEADS_SUMMARY.md](./HONEYCOMB_BEADS_SUMMARY.md) - Work breakdown
-- [SUPABASE_INTEGRATION_PLAN.md](./SUPABASE_INTEGRATION_PLAN.md) - Database integration
-- [INFRASTRUCTURE_RESEARCH_REPORT.md](./INFRASTRUCTURE_RESEARCH_REPORT.md) - Strategy
+- [SUPABASE_INTEGRATION_PLAN.md](../supabase/SUPABASE_INTEGRATION_PLAN.md) - Database integration
+- [INFRASTRUCTURE_RESEARCH_REPORT.md](../planning/INFRASTRUCTURE_RESEARCH_REPORT.md) - Strategy
 
 ### External Resources
 - Honeycomb Getting Started: https://docs.honeycomb.io/getting-started/

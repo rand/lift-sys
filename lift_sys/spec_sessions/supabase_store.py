@@ -325,7 +325,8 @@ class SupabaseSessionStore:
         """Extract original input from first revision or metadata."""
         if session.revisions:
             return session.revisions[0].content
-        return session.metadata.get("original_input", "")
+        # Default to a placeholder if no revisions yet
+        return session.metadata.get("original_input", "(no input provided)")
 
     def _serialize_current_draft(self, session: PromptSession) -> dict[str, Any] | None:
         """Serialize current draft IR to JSONB."""

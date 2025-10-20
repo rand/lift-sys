@@ -62,7 +62,7 @@ Together, these modes let teams move fluidly between building new systems and re
 - Performance optimization and scaling
 - Enhanced IR validation and constraint propagation
 
-See [`SEMANTIC_IR_ROADMAP.md`](SEMANTIC_IR_ROADMAP.md) for complete product roadmap.
+See [`docs/IR_SPECIFICATION.md`](docs/IR_SPECIFICATION.md) for the complete IR design specification (PRD + RFC + Reference Spec).
 
 ## Key Features
 
@@ -540,6 +540,6 @@ All documentation is organized in the `docs/` directory:
 
 - **Development Guidelines**: [`CLAUDE.md`](CLAUDE.md)
 - **Organization Rules**: [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
-- **Product Roadmap**: [`SEMANTIC_IR_ROADMAP.md`](SEMANTIC_IR_ROADMAP.md)
+- **IR Design Specification**: [`docs/IR_SPECIFICATION.md`](docs/IR_SPECIFICATION.md) - Complete PRD, RFC, and reference spec
 - **Known Issues**: [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)
 - **Release Notes**: [`RELEASE_NOTES.md`](RELEASE_NOTES.md)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from .manager import SpecSessionManager
 from .models import HoleResolution, IRDraft, PromptRevision, PromptSession
 from .storage import InMemorySessionStore, SessionStore
+from .supabase_store import SupabaseSessionStore
 from .translator import PromptToIRTranslator
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "HoleResolution",
     "SessionStore",
     "InMemorySessionStore",
+    "SupabaseSessionStore",
     "PromptToIRTranslator",
     "SpecSessionManager",
 ]

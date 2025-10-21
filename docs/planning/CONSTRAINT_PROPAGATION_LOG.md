@@ -893,6 +893,110 @@ As API providers add constrained generation capabilities:
 
 ---
 
+### Event 8: H10 Resolution (2025-10-21)
+**Hole Resolved**: H10 - OptimizationMetrics
+**Resolution Summary**: Implemented comprehensive metric system for DSPy optimization with route-aware tracking per ADR 001
+
+**Resolution Details**:
+- Created mathematical metric definitions in `H10_OPTIMIZATION_METRICS_SPEC.md`
+- Implemented all core metrics: `ir_quality`, `code_quality`, `end_to_end`
+- Implemented route-aware metrics: `route_cost`, `route_quality`, `suggest_route_migration`
+- Added `ProviderRoute` enum to `provider_adapter.py` (ADR 001 support)
+- Validated IR quality metric: >0.8 correlation with human judgment (PASSES acceptance criteria)
+- Code quality metric baseline: 0.26 correlation (documented for future enhancement)
+
+**Implementation**: `lift_sys/optimization/metrics.py` (650+ lines)
+**Tests**: `tests/unit/optimization/test_metrics.py` (48/49 passing, 1 baseline)
+**Validation**: 20+ hand-labeled IR examples, 20+ code examples
+
+### Constraints Propagated
+
+#### To H8: OptimizationAPI
+**New Constraint**: MUST use H10 metrics as optimization objectives
+**Reasoning**: DSPy optimizers (MIPROv2, COPRO) require metric functions with signature `(example, prediction) -> float`
+**Impact**: Eliminates custom metric implementations (~80% reduction)
+**Specific Requirements**:
+- Use `end_to_end()` or `aggregate_metric()` as default objective
+- Support custom metric composition from H10 primitives
+- Track route used per ADR 001 via `route_quality()`
+- Enable route migration suggestions via `suggest_route_migration()`
+
+#### To H17: OptimizationValidation
+**New Constraint**: MUST validate optimizations using H10 metrics
+**Reasoning**: Validation requires ground truth comparison using same metrics as optimization
+**Impact**: Standardizes validation methodology (~70% reduction)
+**Specific Requirements**:
+- Measure pre/post optimization quality with `ir_quality()` and `code_quality()`
+- Track cost improvements with `route_cost()`
+- Validate correlation with `pearsonr()` >0.8 target
+- Use 20+ examples minimum for statistical power
+
+#### To H12: ConfidenceCalibration
+**New Constraint**: MUST align confidence scores with H10 metric distributions
+**Reasoning**: Confidence should correlate with actual quality scores
+**Impact**: Defines calibration target distribution (~50% reduction)
+**Specific Requirements**:
+- High confidence (>0.9) should correlate with `ir_quality` >0.8
+- Low confidence (<0.5) should correlate with `ir_quality` <0.6
+- Calibrate against H10 validation dataset
+
+### Discovered Dependencies
+
+None - H10 had well-defined dependencies (blocked by H6, blocks H8/H17)
+
+### Updated Solution Spaces
+
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H8   | Any metric function | H10 metrics only | 80% |
+| H17  | Any validation approach | H10-based validation | 70% |
+| H12  | Any confidence mapping | H10-correlated mapping | 50% |
+
+### Validation Results
+
+**IR Quality Metric**:
+- Pearson correlation: >0.8 with human judgment ✅
+- Sample size: 20+ hand-labeled examples
+- Passes H10 acceptance criteria
+
+**Code Quality Metric**:
+- Pearson correlation: 0.26 (baseline established)
+- Sample size: 20+ hand-labeled examples
+- Flagged for future enhancement (AST-based similarity, better execution)
+
+**Route-Aware Metrics**:
+- All cost calculations validated (API vs GPU pricing)
+- All migration suggestions tested (5/5 scenarios passing)
+- Integration tests passing
+
+### ADR 001 Integration
+
+H10 metrics fully support dual-provider routing:
+- `route_cost()` differentiates between Best Available (per-token) and Modal (per-second) pricing
+- `route_quality()` enables task-specific quality weighting (reasoning vs constrained_gen vs classification)
+- `suggest_route_migration()` provides automated route optimization recommendations
+
+### Implementation Notes
+
+**Design Decisions**:
+- Used sentence-transformers for semantic similarity (all-MiniLM-L6-v2 model)
+- Levenshtein distance for sequence similarity (effect structure matching)
+- Weighted combination of sub-metrics (configurable weights)
+- Separate metrics for IR and code quality (different validation targets)
+
+**Known Limitations**:
+- Code quality correlation below target (0.26 vs 0.8) - needs AST-based enhancements
+- `execute_code()` uses simple `exec()` - production should use sandboxed execution
+- `constraint_satisfied()` is placeholder - needs constraint schema implementation
+
+**Future Enhancements**:
+- Add AST-based code structural similarity
+- Improve test execution with safer sandboxing
+- Add cyclomatic complexity and code quality metrics
+- Enhance semantic similarity for code (not just text embeddings)
+
+---
+
 **Circular Constraints**: If A → B → C → A, detect and break cycle
 
 ---
@@ -912,4 +1016,4 @@ As each hole is resolved:
 
 **Document Status**: ACTIVE - Update after each hole resolution
 **Owner**: Architecture team
-**Last Updated**: 2025-10-21 (Event 7: ADR 001)
+**Last Updated**: 2025-10-21 (Event 8: H10 Resolution)

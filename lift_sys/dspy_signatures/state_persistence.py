@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from supabase import Client, create_client
 
 from .node_interface import RunContext
@@ -59,8 +59,7 @@ class GraphState(BaseModel):
         default_factory=lambda: datetime.now(UTC).isoformat(), description="State update time"
     )
 
-    class Config:
-        frozen = False  # Allow updates
+    model_config = ConfigDict(frozen=False)  # Allow updates
 
 
 class NodeOutput(BaseModel):

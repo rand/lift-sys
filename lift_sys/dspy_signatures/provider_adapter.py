@@ -190,8 +190,8 @@ class ProviderAdapter:
 
                 # Track tokens (estimate from text length)
                 if self.config.track_resources and self._resource_usage is not None:
-                    estimated_tokens = len(response_text.split()) * 1.3  # Rough estimate
-                    self._resource_usage.add_tokens(int(estimated_tokens))
+                    estimated_tokens = int(len(response_text.split()) * 1.3)
+                    self._resource_usage.add_tokens(estimated_tokens)
 
                 # Parse response and convert to dspy.Prediction
                 return self._text_to_prediction(response_text, signature)
@@ -199,7 +199,9 @@ class ProviderAdapter:
         except Exception as e:
             raise ValueError(f"Provider call failed: {e}") from e
 
-    def _dict_to_prediction(self, response: dict, signature: Any = None) -> dspy.Prediction:
+    def _dict_to_prediction(
+        self, response: dict[str, Any], signature: Any = None
+    ) -> dspy.Prediction:
         """
         Convert structured dict response to dspy.Prediction.
 
@@ -255,7 +257,7 @@ class ProviderAdapter:
         # Final fallback: generic "output" field
         return dspy.Prediction(output=response)
 
-    def _estimate_tokens(self, response: dict) -> int:
+    def _estimate_tokens(self, response: dict[str, Any]) -> int:
         """
         Estimate token count from structured dict response.
 

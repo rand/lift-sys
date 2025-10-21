@@ -29,7 +29,7 @@ from lift_sys.dspy_signatures.state_persistence import (
 # Test state models
 
 
-class TestState(BaseModel):
+class SimpleTestState(BaseModel):
     """Simple state for testing."""
 
     user_input: str = ""
@@ -52,9 +52,9 @@ class ComplexState(BaseModel):
 
 
 @pytest.fixture
-def simple_state() -> TestState:
+def simple_state() -> SimpleTestState:
     """Create a simple test state."""
-    return TestState(
+    return SimpleTestState(
         user_input="test input",
         processed_output="test output",
         counter=42,
@@ -75,7 +75,7 @@ def complex_state() -> ComplexState:
 
 
 @pytest.fixture
-def run_context(simple_state: TestState) -> RunContext[TestState]:
+def run_context(simple_state: SimpleTestState) -> RunContext[SimpleTestState]:
     """Create a RunContext for testing."""
     ctx = RunContext(
         state=simple_state,
@@ -90,7 +90,7 @@ def run_context(simple_state: TestState) -> RunContext[TestState]:
 
 
 @pytest.fixture
-def graph_state(simple_state: TestState) -> GraphState:
+def graph_state(simple_state: SimpleTestState) -> GraphState:
     """Create a GraphState for testing."""
     return GraphState(
         execution_id=str(uuid4()),
@@ -111,22 +111,22 @@ def graph_state(simple_state: TestState) -> GraphState:
 # Test GraphState model
 
 
-def test_graph_state_creation(simple_state: TestState):
+def test_graph_state_creation(simple_state: SimpleTestState):
     """Test GraphState can be created with valid data."""
     state = GraphState(
         execution_id="exec-123",
         state_snapshot=simple_state.model_dump(),
-        state_type="test.TestState",
+        state_type="test.SimpleTestState",
     )
 
     assert state.execution_id == "exec-123"
     assert state.state_snapshot["user_input"] == "test input"
-    assert state.state_type == "test.TestState"
+    assert state.state_type == "test.SimpleTestState"
     assert state.provenance == []
     assert state.metadata == {}
 
 
-def test_graph_state_with_provenance(simple_state: TestState):
+def test_graph_state_with_provenance(simple_state: SimpleTestState):
     """Test GraphState preserves provenance chain."""
     provenance = [
         {"node": "Node1", "signature": "Sig1"},
@@ -136,7 +136,7 @@ def test_graph_state_with_provenance(simple_state: TestState):
     state = GraphState(
         execution_id="exec-123",
         state_snapshot=simple_state.model_dump(),
-        state_type="test.TestState",
+        state_type="test.SimpleTestState",
         provenance=provenance,
     )
 
@@ -169,7 +169,7 @@ def test_node_output_creation():
 # Test serialization helpers
 
 
-def test_serialize_run_context(run_context: RunContext[TestState]):
+def test_serialize_run_context(run_context: RunContext[SimpleTestState]):
     """Test RunContext serialization to GraphState."""
     graph_state = serialize_run_context(run_context)
 
@@ -182,7 +182,7 @@ def test_serialize_run_context(run_context: RunContext[TestState]):
 
 def test_deserialize_run_context(graph_state: GraphState):
     """Test GraphState deserialization to RunContext."""
-    ctx = deserialize_run_context(graph_state, TestState)
+    ctx = deserialize_run_context(graph_state, SimpleTestState)
 
     assert ctx.execution_id == graph_state.execution_id
     assert ctx.user_id == graph_state.user_id
@@ -192,13 +192,13 @@ def test_deserialize_run_context(graph_state: GraphState):
     assert ctx.metadata == graph_state.metadata
 
 
-def test_round_trip_serialization(run_context: RunContext[TestState]):
+def test_round_trip_serialization(run_context: RunContext[SimpleTestState]):
     """Test RunContext → GraphState → RunContext preserves data."""
     # Serialize
     graph_state = serialize_run_context(run_context)
 
     # Deserialize
-    restored_ctx = deserialize_run_context(graph_state, TestState)
+    restored_ctx = deserialize_run_context(graph_state, SimpleTestState)
 
     # Verify all fields preserved
     assert restored_ctx.execution_id == run_context.execution_id
@@ -216,12 +216,17 @@ class MockSupabaseClient:
 
     def __init__(self):
         self.storage = {}
+        self._last_operation = None
 
     def table(self, name: str):
         return self
 
     def insert(self, data: dict):
+        # Enforce unique execution_id constraint
+        if data["execution_id"] in self.storage:
+            raise Exception("duplicate key value violates unique constraint")
         self.storage[data["execution_id"]] = data
+        self._last_operation = "insert"
         return self
 
     def select(self, fields: str):
@@ -240,12 +245,19 @@ class MockSupabaseClient:
     def update(self, data: dict):
         if self._query_value in self.storage:
             self.storage[self._query_value].update(data)
+        self._last_operation = "update"
         return self
 
     def delete(self):
+        self._last_operation = "delete"
         return self
 
     def execute(self):
+        if self._last_operation == "delete" and hasattr(self, "_query_value"):
+            # Delete the item if it exists
+            if self._query_value in self.storage:
+                del self.storage[self._query_value]
+
         if hasattr(self, "_query_value"):
             result = self.storage.get(self._query_value)
             data = [result] if result else []
@@ -260,7 +272,7 @@ class MockSupabaseClient:
 
 
 @pytest.fixture
-def mock_persistence(monkeypatch) -> StatePersistence[TestState]:
+def mock_persistence(monkeypatch) -> StatePersistence[SimpleTestState]:
     """Create StatePersistence with mocked Supabase client."""
     mock_client = MockSupabaseClient()
 
@@ -273,11 +285,13 @@ def mock_persistence(monkeypatch) -> StatePersistence[TestState]:
         "lift_sys.dspy_signatures.state_persistence.create_client", mock_create_client
     )
 
-    return StatePersistence[TestState]()
+    return StatePersistence[SimpleTestState]()
 
 
 @pytest.mark.asyncio
-async def test_save_state(mock_persistence: StatePersistence[TestState], graph_state: GraphState):
+async def test_save_state(
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
+):
     """Test saving graph state."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
 
@@ -288,7 +302,9 @@ async def test_save_state(mock_persistence: StatePersistence[TestState], graph_s
 
 
 @pytest.mark.asyncio
-async def test_load_state(mock_persistence: StatePersistence[TestState], graph_state: GraphState):
+async def test_load_state(
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
+):
     """Test loading graph state."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
 
@@ -300,7 +316,7 @@ async def test_load_state(mock_persistence: StatePersistence[TestState], graph_s
 
 
 @pytest.mark.asyncio
-async def test_load_nonexistent_state(mock_persistence: StatePersistence[TestState]):
+async def test_load_nonexistent_state(mock_persistence: StatePersistence[SimpleTestState]):
     """Test loading nonexistent state raises KeyError."""
     with pytest.raises(KeyError, match="No state found"):
         await mock_persistence.load("nonexistent-id")
@@ -308,7 +324,7 @@ async def test_load_nonexistent_state(mock_persistence: StatePersistence[TestSta
 
 @pytest.mark.asyncio
 async def test_update_node_output(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test updating node output."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
@@ -330,7 +346,7 @@ async def test_update_node_output(
 
 @pytest.mark.asyncio
 async def test_update_node_output_with_state_updates(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test updating node output with state changes."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
@@ -350,7 +366,9 @@ async def test_update_node_output_with_state_updates(
 
 
 @pytest.mark.asyncio
-async def test_delete_state(mock_persistence: StatePersistence[TestState], graph_state: GraphState):
+async def test_delete_state(
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
+):
     """Test deleting graph state."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
 
@@ -361,7 +379,7 @@ async def test_delete_state(mock_persistence: StatePersistence[TestState], graph
 
 
 @pytest.mark.asyncio
-async def test_list_states(mock_persistence: StatePersistence[TestState]):
+async def test_list_states(mock_persistence: StatePersistence[SimpleTestState]):
     """Test listing graph states."""
     # Create multiple states
     states = []
@@ -369,7 +387,7 @@ async def test_list_states(mock_persistence: StatePersistence[TestState]):
         state = GraphState(
             execution_id=f"exec-{i}",
             state_snapshot={"counter": i},
-            state_type="test.TestState",
+            state_type="test.SimpleTestState",
             user_id="test-user",
         )
         states.append(state)
@@ -385,7 +403,7 @@ async def test_list_states(mock_persistence: StatePersistence[TestState]):
 
 @pytest.mark.asyncio
 async def test_save_performance(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test save operation completes in <100ms."""
     start = time.perf_counter()
@@ -398,7 +416,7 @@ async def test_save_performance(
 
 @pytest.mark.asyncio
 async def test_load_performance(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test load operation completes in <100ms."""
     await mock_persistence.save(graph_state.execution_id, graph_state)
@@ -412,14 +430,16 @@ async def test_load_performance(
 
 
 @pytest.mark.asyncio
-async def test_100_consecutive_save_load_cycles(mock_persistence: StatePersistence[TestState]):
+async def test_100_consecutive_save_load_cycles(
+    mock_persistence: StatePersistence[SimpleTestState],
+):
     """Test 100 consecutive save/load cycles (acceptance criteria)."""
     for i in range(100):
         # Create unique state for each iteration
         state = GraphState(
             execution_id=f"exec-{i}",
             state_snapshot={"counter": i, "user_input": f"input-{i}"},
-            state_type="test.TestState",
+            state_type="test.SimpleTestState",
             user_id=f"user-{i % 10}",  # 10 different users
             provenance=[{"iteration": i}],
         )
@@ -466,7 +486,7 @@ async def test_complex_state_serialization(
 
 @pytest.mark.asyncio
 async def test_save_atomicity(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test save operation is atomic (fails completely or succeeds completely)."""
     # First save succeeds
@@ -485,12 +505,12 @@ async def test_save_atomicity(
 
 
 @pytest.mark.asyncio
-async def test_empty_provenance(mock_persistence: StatePersistence[TestState]):
+async def test_empty_provenance(mock_persistence: StatePersistence[SimpleTestState]):
     """Test state with empty provenance chain."""
     state = GraphState(
         execution_id="empty-prov",
         state_snapshot={"counter": 0},
-        state_type="test.TestState",
+        state_type="test.SimpleTestState",
         provenance=[],  # Empty
     )
 
@@ -501,7 +521,7 @@ async def test_empty_provenance(mock_persistence: StatePersistence[TestState]):
 
 
 @pytest.mark.asyncio
-async def test_large_state(mock_persistence: StatePersistence[TestState]):
+async def test_large_state(mock_persistence: StatePersistence[SimpleTestState]):
     """Test large state (many fields, large provenance)."""
     large_snapshot = {f"field_{i}": f"value_{i}" for i in range(1000)}
     large_provenance = [{"node": f"Node{i}", "data": "x" * 100} for i in range(100)]
@@ -509,7 +529,7 @@ async def test_large_state(mock_persistence: StatePersistence[TestState]):
     state = GraphState(
         execution_id="large-state",
         state_snapshot=large_snapshot,
-        state_type="test.TestState",
+        state_type="test.SimpleTestState",
         provenance=large_provenance,
     )
 
@@ -522,7 +542,7 @@ async def test_large_state(mock_persistence: StatePersistence[TestState]):
 
 @pytest.mark.asyncio
 async def test_concurrent_updates(
-    mock_persistence: StatePersistence[TestState], graph_state: GraphState
+    mock_persistence: StatePersistence[SimpleTestState], graph_state: GraphState
 ):
     """Test concurrent node output updates."""
     await mock_persistence.save(graph_state.execution_id, graph_state)

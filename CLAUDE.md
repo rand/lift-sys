@@ -1,20 +1,21 @@
 # lift-sys Development Guidelines
 
-**Last Updated**: 2025-10-19
+**Last Updated**: 2025-10-20
 
 > **Project-Specific Rules**: This file contains development guidelines specific to the lift-sys project. For global Claude development guidelines, see `~/.claude/CLAUDE.md`.
 
 ## Table of Contents
 1. [Project Overview](#1-project-overview)
-2. [Repository Organization](#2-repository-organization)
-3. [Tech Stack & Architecture](#3-tech-stack--architecture)
-4. [Development Workflow](#4-development-workflow)
-5. [Testing Strategy](#5-testing-strategy)
-6. [Infrastructure & Deployment](#6-infrastructure--deployment)
-7. [Security & Secrets](#7-security--secrets)
-8. [Code Quality Standards](#8-code-quality-standards)
-9. [Documentation Requirements](#9-documentation-requirements)
-10. [Anti-Patterns & Gotchas](#10-anti-patterns--gotchas)
+2. [Meta-Framework: Hole-Driven Development](#2-meta-framework-hole-driven-development)
+3. [Repository Organization](#3-repository-organization)
+4. [Tech Stack & Architecture](#4-tech-stack--architecture)
+5. [Development Workflow](#5-development-workflow)
+6. [Testing Strategy](#6-testing-strategy)
+7. [Infrastructure & Deployment](#7-infrastructure--deployment)
+8. [Security & Secrets](#8-security--secrets)
+9. [Code Quality Standards](#9-code-quality-standards)
+10. [Documentation Requirements](#10-documentation-requirements)
+11. [Anti-Patterns & Gotchas](#11-anti-patterns--gotchas)
 
 ---
 
@@ -46,12 +47,203 @@ lift_sys/
 - ✅ Modal.com deployment with GPU workers
 - ✅ Supabase database integration complete
 - ✅ Performance: ~16s median latency, 60% real success rate
+- 🔄 **Architecture Redesign: DSPy + Pydantic AI** (Phase 1 - 1/3 complete)
 - 🚧 Reverse mode in planning phase
 - 🚧 Honeycomb observability integration planned
 
 ---
 
-## 2. Repository Organization
+## 2. Meta-Framework: Hole-Driven Development
+
+### Overview
+
+**CRITICAL**: This project uses a **typed holes meta-framework** for systematic architecture redesign and implementation. This is NOT optional - it's the mandatory development methodology.
+
+**What is it**: We treat the DSPy + Pydantic AI architecture proposal as an "IR with typed holes" that we systematically resolve through constraint propagation.
+
+**Why it matters**: This approach ensures:
+- Resumable progress across sessions (AI or human)
+- Systematic constraint propagation
+- Clear dependencies and ordering
+- Gate-validated quality at each phase
+- Full provenance of all design decisions
+
+### Core Documents (MUST READ)
+
+**Before ANY development work, read these in order:**
+
+1. **`docs/planning/SESSION_BOOTSTRAP.md`** - 5-minute quick start guide
+2. **`docs/planning/SESSION_STATE.md`** - Current state and active hole
+3. **`docs/planning/HOLE_INVENTORY.md`** - All 19 holes and dependencies
+4. **`docs/planning/REIFICATION_SUMMARY.md`** - How the system works
+
+### Session Start Protocol (MANDATORY)
+
+```bash
+# 1. Read current state
+cat docs/planning/SESSION_STATE.md | head -50
+
+# 2. Check what's ready (optional - state doc tells you)
+python3 scripts/planning/track_holes.py ready --phase 1
+
+# 3. Read active hole details
+# See "Current Work Context" in SESSION_STATE.md
+
+# 4. Begin implementation following hole specification
+```
+
+### Hole Resolution Workflow
+
+**For EVERY hole you work on:**
+
+```
+1. READ hole specification from HOLE_INVENTORY.md
+   - Understand type signature required
+   - Note all constraints MUST satisfy
+   - Check what this blocks/blocked by
+
+2. IMPLEMENT following acceptance criteria
+   - Create files at specified paths
+   - Write comprehensive tests (pytest)
+   - Validate with mypy --strict
+
+3. COMMIT implementation before testing
+   git add . && git commit -m "Implement HX: HoleName"
+
+4. TEST implementation
+   pkill -f pytest  # Kill old tests
+   uv run pytest tests/... > /tmp/test_$(date +%Y%m%d_%H%M%S).log 2>&1 &
+   wait && tail -100 /tmp/test_*.log
+
+5. DOCUMENT constraint propagation
+   - Add Event N to CONSTRAINT_PROPAGATION_LOG.md
+   - Document constraints to ALL dependent holes
+   - Calculate solution space reduction
+
+6. UPDATE session state
+   - Mark hole as RESOLVED in SESSION_STATE.md
+   - Update phase progress
+   - Set next hole in "Current Work Context"
+
+7. COMMIT documentation
+   git add docs/planning/*.md
+   git commit -m "Document HX constraint propagation"
+```
+
+### Critical Rules
+
+**❌ NEVER:**
+- Start a new hole without reading SESSION_STATE.md
+- Skip constraint propagation documentation
+- Mark a hole resolved without all acceptance criteria passing
+- Implement a hole out of dependency order (check `blocked_by`)
+
+**✅ ALWAYS:**
+- Read SESSION_STATE.md at session start
+- Follow hole specification exactly (type signatures, constraints)
+- Document constraint propagation to dependent holes
+- Update SESSION_STATE.md after completing a hole
+- Commit changes following the hole resolution workflow
+
+### Phase Gates
+
+**Before moving to next phase:**
+
+1. All phase holes must be RESOLVED
+2. All gate criteria must PASS (see `PHASE_GATES_VALIDATION.md`)
+3. No failing tests
+4. Type checker passes (mypy --strict)
+5. All constraint propagation documented
+
+**Current Phase**: Phase 1 (Interface Completeness)
+- H6: ✅ RESOLVED
+- H9: ⏳ Next
+- H14: ⏳ Pending
+- Gate 1: 4/14 criteria satisfied (28%)
+
+### Constraint Propagation
+
+**When you resolve a hole, constraints propagate to dependent holes.**
+
+**Example from H6 resolution:**
+```
+H6: NodeSignatureInterface resolved with async design
+  ↓ Propagates to:
+  → H1: ProviderAdapter MUST support async DSPy calls
+  → H4: Parallelization MUST use asyncio.gather()
+  → H5: ErrorRecovery MUST handle ValueError
+```
+
+**Document in `CONSTRAINT_PROPAGATION_LOG.md`:**
+- Which hole was resolved
+- What constraints propagated where
+- How solution spaces narrowed (% reduction)
+- Design decisions locked in
+
+### Tools Available
+
+```bash
+# Check ready holes
+python3 scripts/planning/track_holes.py ready [--phase N]
+
+# Show hole details
+python3 scripts/planning/track_holes.py show H6
+
+# Mark hole resolved (script updates inventory)
+python3 scripts/planning/track_holes.py resolve H6 --resolution path/to/impl.py
+
+# Check phase status
+python3 scripts/planning/track_holes.py phase-status 1
+
+# Visualize dependencies
+python3 scripts/planning/track_holes.py visualize --output deps.dot
+```
+
+### Session Handoff Pattern
+
+**End of session:**
+```bash
+# Update state
+vim docs/planning/SESSION_STATE.md  # Mark progress, set next hole
+
+# Commit
+git add docs/planning/*.md
+git commit -m "Session N: Resolved HX, updated state"
+git push
+```
+
+**Start of next session:**
+```bash
+# Pull latest
+git pull
+
+# Read state
+cat docs/planning/SESSION_STATE.md | head -100
+
+# Continue from "Current Work Context"
+```
+
+### Mental Model
+
+```
+Architecture Proposal
+  ↓ (viewed as)
+IR with 19 Typed Holes
+  ↓ (resolve iteratively)
+Holes → Constraints → Propagation → Narrowing
+  ↓ (validate at each phase)
+7 Phase Gates
+  ↓ (result)
+Complete, Validated Architecture
+```
+
+**You are currently**: Filling in typed holes systematically
+**Timeline**: 7 weeks, 7 phases, 19 holes total
+**Current**: Phase 1, Week 1, Hole H9 next
+
+---
+
+## 3. Repository Organization
 
 ### Mandatory Structure
 
@@ -100,7 +292,7 @@ Does it belong in root? → Probably NOT!
 
 ---
 
-## 3. Tech Stack & Architecture
+## 4. Tech Stack & Architecture
 
 ### Core Technologies
 
@@ -171,7 +363,22 @@ modal app stop [app-name]
 
 ---
 
-## 4. Development Workflow
+### Architecture Redesign: DSPy + Pydantic AI
+
+**Active Initiative**: Replacing hardcoded prompts with declarative DSPy signatures and Pydantic AI graphs.
+
+**Core Technologies:**
+- **DSPy**: Declarative LLM programming with automatic optimization (MIPROv2, COPRO)
+- **Pydantic AI**: Type-safe agent framework with graph-based workflows
+- **Current IR**: Remains central, enhanced with DSPy-compatible fields
+
+**Key Implementations:**
+- `lift_sys/dspy_signatures/` - DSPy signature definitions and node interfaces
+- See `docs/planning/DSPY_PYDANTIC_AI_ARCHITECTURE_PROPOSAL.md` for complete design
+
+---
+
+## 5. Development Workflow
 
 ### Session Start Protocol
 
@@ -215,7 +422,13 @@ bd create "Task description" -t feature -p P0 --json
 
 ---
 
-## 5. Testing Strategy
+### Hole-Driven Development Workflow
+
+**When working on architecture holes, use the meta-framework workflow (Section 2).**
+
+**For other development:**
+
+## 6. Testing Strategy
 
 ### Critical Testing Protocol
 
@@ -256,7 +469,7 @@ tests/
 
 ---
 
-## 6. Infrastructure & Deployment
+## 7. Infrastructure & Deployment
 
 ### Modal.com Configuration
 
@@ -313,7 +526,7 @@ DATABASE_URL=<connection-string>
 
 ---
 
-## 7. Security & Secrets
+## 8. Security & Secrets
 
 ### Secret Management Rules
 
@@ -361,7 +574,7 @@ git push --force origin main
 
 ---
 
-## 8. Code Quality Standards
+## 9. Code Quality Standards
 
 ### Python Style
 
@@ -427,7 +640,7 @@ except ValidationError as e:
 
 ---
 
-## 9. Documentation Requirements
+## 10. Documentation Requirements
 
 ### When to Document
 
@@ -480,7 +693,7 @@ What comes after this
 
 ---
 
-## 10. Anti-Patterns & Gotchas
+## 11. Anti-Patterns & Gotchas
 
 ### Critical Violations (Will Break Things)
 

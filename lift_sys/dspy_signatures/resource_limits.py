@@ -229,6 +229,17 @@ class ResourceEnforcer:
                 message=f"{resource_type.value} usage: {current} (no limit)",
             )
 
+        # Handle zero limit (any usage exceeds)
+        if limit == 0:
+            return LimitCheckResult(
+                resource_type=resource_type,
+                status=LimitStatus.EXCEEDED,
+                current=current,
+                limit=limit,
+                percentage=100.0 if current > 0 else 0.0,
+                message=f"{resource_type.value} limit is 0, current usage: {current}",
+            )
+
         # Calculate percentage
         percentage = (current / limit) * 100
 

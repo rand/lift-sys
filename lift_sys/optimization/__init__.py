@@ -4,6 +4,8 @@ This module provides:
 - Quality metrics (IR, code, end-to-end)
 - Route-aware cost metrics (ADR 001)
 - Metric aggregation and validation
+- DSPy optimizer wrappers (MIPROv2, COPRO)
+- Route-aware optimization (multi-provider)
 """
 
 from lift_sys.optimization.metrics import (
@@ -31,6 +33,11 @@ from lift_sys.optimization.metrics import (
     suggest_route_migration,
     syntax_correctness,
 )
+from lift_sys.optimization.optimizer import DSPyOptimizer, OptimizationResult
+from lift_sys.optimization.route_optimizer import (
+    RouteAwareOptimizer,
+    RouteOptimizationResult,
+)
 
 __all__ = [
     # Core quality
@@ -56,4 +63,9 @@ __all__ = [
     "suggest_route_migration",
     # Aggregation
     "aggregate_metric",
+    # Optimizers (H8)
+    "DSPyOptimizer",
+    "OptimizationResult",
+    "RouteAwareOptimizer",
+    "RouteOptimizationResult",
 ]

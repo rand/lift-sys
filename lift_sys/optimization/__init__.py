@@ -11,6 +11,7 @@ from lift_sys.optimization.metrics import (
     aggregate_metric,
     # Code quality metrics
     code_quality,
+    code_test_pass_rate,
     constraint_match,
     # End-to-end metrics
     end_to_end,
@@ -29,7 +30,6 @@ from lift_sys.optimization.metrics import (
     style_conformance,
     suggest_route_migration,
     syntax_correctness,
-    test_pass_rate,
 )
 
 __all__ = [
@@ -42,7 +42,7 @@ __all__ = [
     # Code quality
     "code_quality",
     "syntax_correctness",
-    "test_pass_rate",
+    "code_test_pass_rate",
     "semantic_similarity",
     "style_conformance",
     # End-to-end

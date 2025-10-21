@@ -168,7 +168,7 @@ def code_quality(
 
     return (
         w1 * syntax_correctness(predicted)
-        + w2 * test_pass_rate(predicted, tests)
+        + w2 * code_test_pass_rate(predicted, tests)
         + w3 * semantic_similarity(predicted, expected)
         + w4 * style_conformance(predicted, expected)
     )
@@ -190,7 +190,7 @@ def syntax_correctness(code: str) -> float:
         return 0.0
 
 
-def test_pass_rate(code: str, tests: list[tuple[dict, Any]]) -> float:
+def code_test_pass_rate(code: str, tests: list[tuple[dict, Any]]) -> float:
     """Measure fraction of tests that pass.
 
     Args:
@@ -601,17 +601,12 @@ def execute_code(code: str, inputs: dict) -> Any:
 
     Raises:
         Exception: If execution fails
-
-    Note: This is a placeholder. Actual implementation should use
-    safe sandboxed execution.
     """
-    # TODO: Implement safe code execution
-    # See validation/code_validator.py for execution patterns
-    namespace = inputs.copy()
+    # Simple execution context - creates 'inputs' variable for code to use
+    namespace = {"inputs": inputs}
     exec(code, namespace)
 
-    # Assume code defines a function matching IR signature
-    # Return value of that function
+    # Code should set 'result' variable
     return namespace.get("result")
 
 

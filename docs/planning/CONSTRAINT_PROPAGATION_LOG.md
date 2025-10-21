@@ -296,6 +296,153 @@ None - H16 and H4 were already cataloged in dependency graph
 
 ---
 
+### Event 4: H1 Resolution (2025-10-21)
+**Hole Resolved**: H1 - ProviderAdapter
+**Resolution Summary**: Implemented async DSPy provider adapter wrapping ModalProvider with XGrammar schema preservation and resource tracking
+
+**Resolution Details**:
+- Created `ProviderAdapter` class wrapping ModalProvider for DSPy integration
+- Async `__call__()` method compatible with DSPy.LM interface
+- Dual generation modes: structured (XGrammar) and text generation
+- Resource tracking: token estimation and LLM call counting
+- `ProviderConfig` for max_tokens, temperature, top_p configuration
+- Signature field filtering for response parsing
+
+**Implementation**: `lift_sys/dspy_signatures/provider_adapter.py` (277 lines)
+**Tests**: `tests/unit/dspy_signatures/test_provider_adapter.py` (25/25 passing)
+**Type Safety**: ✅ `mypy --strict` passes
+
+### Constraints Propagated
+
+#### To H8: OptimizationAPI
+**New Constraint**: Must use ProviderAdapter for all DSPy signature executions during optimization
+**Reasoning**: ProviderAdapter standardizes the LLM call interface and tracks resources
+**Impact**: Optimization API can leverage resource tracking for cost control
+**Specific Requirements**:
+- Initialize DSPy optimizers with ProviderAdapter instance
+- Track optimization runs via ResourceUsage
+- Monitor token consumption during MIPROv2/COPRO runs
+- Respect ResourceLimits during multi-sample optimization
+
+#### To H10: OptimizationMetrics
+**New Constraint**: Must extract metrics from dspy.Prediction objects returned by adapter
+**Reasoning**: ProviderAdapter returns standardized dspy.Prediction format
+**Impact**: Metrics can assume consistent response structure
+**Specific Requirements**:
+- Parse dspy.Prediction.completions for output fields
+- Extract metadata from dspy.Prediction object
+- Handle both structured and text predictions
+- Support field-level accuracy metrics
+
+#### To H3: CachingStrategy
+**New Constraint**: Cache keys must account for ProviderConfig parameters
+**Reasoning**: Different temperature/top_p settings produce different outputs
+**Impact**: Cache invalidation strategy must consider provider configuration
+**Specific Requirements**:
+- Include ProviderConfig in cache key hash
+- Invalidate cache on configuration changes
+- Support schema-specific caching for XGrammar calls
+- Handle LLM call count accumulation for cached results
+
+### Discovered Dependencies
+None - all dependent holes were already cataloged
+
+### Updated Solution Spaces
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H8 (OptimizationAPI) | Any DSPy integration | ProviderAdapter-based | 65% |
+| H10 (OptimizationMetrics) | Any metrics extraction | dspy.Prediction-based | 40% |
+| H3 (CachingStrategy) | Any cache key strategy | Config-aware keys | 35% |
+
+### Design Decisions Locked In
+1. **Dual Generation Modes**: Structured (XGrammar) + text fallback
+2. **Resource Tracking**: Built-in token/call tracking via ResourceUsage
+3. **Async-Only**: No synchronous execution path (consistent with H6)
+4. **ProviderConfig**: Centralized configuration for LLM parameters
+5. **dspy.Prediction Format**: Standardized response format for all calls
+
+### Gate 2 Impact
+**Criterion F2.2**: ✅ PASS - Provider integration works (25/25 tests)
+
+**Progress**: 8/14 → 9/14 Gate criteria satisfied (64%)
+
+---
+
+### Event 5: H2 Resolution (2025-10-21)
+**Hole Resolved**: H2 - StatePersistence
+**Resolution Summary**: Implemented Pydantic state persistence with Supabase JSONB storage, atomic operations, and round-trip serialization guarantees
+
+**Resolution Details**:
+- Created `StatePersistence[StateT]` generic class for graph state save/restore
+- `GraphState` model capturing execution state, provenance, and node outputs
+- Helper functions for RunContext serialization/deserialization
+- Database schema: `graph_states` table with JSONB columns and indexes
+- Atomic save operations with unique execution_id constraints
+- Performance: <10ms for save/load operations (exceeds <100ms target)
+
+**Implementation**: `lift_sys/dspy_signatures/state_persistence.py` (427 lines)
+**Migration**: `migrations/008_create_graph_states_table.sql` (71 lines)
+**Tests**: `tests/unit/dspy_signatures/test_state_persistence.py` (21/21 passing)
+**Type Safety**: ✅ `mypy --strict` passes
+
+### Constraints Propagated
+
+#### To H11: ExecutionHistorySchema
+**New Constraint**: Must build on GraphState model for execution traces
+**Reasoning**: GraphState provides the foundation for historical execution storage
+**Impact**: ExecutionHistorySchema can reuse graph_states table structure
+**Specific Requirements**:
+- Extend GraphState with timing/performance metadata
+- Add indexes for time-series queries
+- Support efficient replay from stored states
+- Link provenance entries to node execution records
+
+#### To H4: ParallelizationImpl
+**New Constraint**: Must ensure atomic state updates during parallel execution
+**Reasoning**: Multiple concurrent nodes updating state requires atomicity
+**Impact**: Parallelization must use locking or copy-on-write semantics
+**Specific Requirements**:
+- Coordinate state updates across parallel branches
+- Use StatePersistence for checkpointing parallel execution
+- Handle merge conflicts when parallel nodes update same state
+- Preserve provenance chain ordering during parallel execution
+
+#### To H7: TraceVisualizationProtocol
+**New Constraint**: Must query graph_states table for visualization data
+**Reasoning**: Trace visualization needs access to persisted execution state
+**Impact**: Visualization can leverage JSONB indexes for efficient querying
+**Specific Requirements**:
+- Query by execution_id, user_id, timestamp ranges
+- Support filtering by node types via provenance JSONB queries
+- Real-time updates via Supabase subscriptions
+- Efficient pagination for large execution histories
+
+### Discovered Dependencies
+None - all dependent holes were already cataloged
+
+### Updated Solution Spaces
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H11 (ExecutionHistorySchema) | Any schema design | GraphState-based extension | 70% |
+| H4 (ParallelizationImpl) | Any state merge strategy | Atomic persistence-based | 50% |
+| H7 (TraceVisualizationProtocol) | Any data source | graph_states JSONB queries | 60% |
+
+### Design Decisions Locked In
+1. **JSONB Storage**: PostgreSQL JSONB for flexible state schema
+2. **Atomic Operations**: Unique constraint on execution_id prevents partial states
+3. **Type Preservation**: Store fully qualified type names for deserialization
+4. **Provenance Built-In**: Every state snapshot includes provenance chain
+5. **Generic StateT**: Full support for any Pydantic BaseModel subclass
+6. **Supabase Backend**: Leverage existing infrastructure with RLS support
+
+### Gate 2 Impact
+**Criterion F2.3**: ✅ PASS - State persistence handles all types (21/21 tests)
+**Criterion P2.2**: ✅ PASS - State persistence fast (<10ms, target <100ms)
+
+**Progress**: 9/14 → 11/14 Gate criteria satisfied (79%)
+
+---
+
 ## Propagation Rules
 
 ### Rule 1: Interface Resolution → Type Constraints

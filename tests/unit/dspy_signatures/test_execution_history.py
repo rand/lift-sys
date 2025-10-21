@@ -54,7 +54,14 @@ class MockSupabaseClient:
         return self
 
     def select(self, fields: str):
+        # Reset all query state for new query
         self._query_filters = {}
+        if hasattr(self, "_range"):
+            delattr(self, "_range")
+        if hasattr(self, "_order_field"):
+            delattr(self, "_order_field")
+        if hasattr(self, "_order_desc"):
+            delattr(self, "_order_desc")
         return self
 
     def eq(self, field: str, value: str):
@@ -648,7 +655,7 @@ async def test_replay_execution_not_implemented(
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
 ):
-    """Test replay with executor raises NotImplementedError (needs H4/H5)."""
+    """Test replay with executor raises ValueError wrapping NotImplementedError (needs H4/H5)."""
     exec_id = str(uuid4())
     await mock_store.save_execution(
         execution_id=exec_id,
@@ -662,7 +669,8 @@ async def test_replay_execution_not_implemented(
     class MockExecutor:
         pass
 
-    with pytest.raises(NotImplementedError, match="Replay execution requires"):
+    # Expect ValueError (wrapping NotImplementedError)
+    with pytest.raises(ValueError, match="Replay failed.*Replay execution requires"):
         await mock_store.replay_execution(exec_id, graph_executor=MockExecutor())
 
 

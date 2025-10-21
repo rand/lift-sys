@@ -156,6 +156,7 @@ class ProviderAdapter:
         # Extract parameters
         max_tokens = kwargs.get("max_tokens", self.config.max_tokens)
         temperature = kwargs.get("temperature", self.config.temperature)
+        top_p = kwargs.get("top_p", self.config.top_p)
         schema = kwargs.get("schema")
         signature = kwargs.get("signature")  # DSPy signature object
 
@@ -167,7 +168,7 @@ class ProviderAdapter:
                     schema=schema,
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    top_p=self.config.top_p,
+                    top_p=top_p,
                 )
 
                 # Track tokens (estimate from structured output)

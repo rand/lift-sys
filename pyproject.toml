@@ -29,6 +29,8 @@ dependencies = [
     "modal>=1.2.0",
     "psycopg2-binary>=2.9.11",
     "supabase>=2.22.0",
+    "dspy>=3.0.3",
+    "pydantic-ai>=1.1.0",
 ]
 
 [project.optional-dependencies]

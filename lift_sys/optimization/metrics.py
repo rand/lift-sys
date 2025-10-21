@@ -14,14 +14,16 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from lift_sys.dspy_signatures.provider_adapter import ProviderRoute
-from lift_sys.ir.ir import IR
+from lift_sys.ir import IntermediateRepresentation
 
 # ============================================================================
 # Core Quality Metrics
 # ============================================================================
 
 
-def ir_quality(predicted: IR, expected: IR) -> float:
+def ir_quality(
+    predicted: IntermediateRepresentation, expected: IntermediateRepresentation
+) -> float:
     """Compute IR quality score [0.0, 1.0].
 
     Args:
@@ -49,7 +51,9 @@ def ir_quality(predicted: IR, expected: IR) -> float:
     )
 
 
-def intent_match(predicted: IR, expected: IR) -> float:
+def intent_match(
+    predicted: IntermediateRepresentation, expected: IntermediateRepresentation
+) -> float:
     """Measure intent description similarity using embeddings.
 
     Args:
@@ -60,13 +64,15 @@ def intent_match(predicted: IR, expected: IR) -> float:
         Cosine similarity of intent descriptions [0.0, 1.0]
     """
     return semantic_similarity(
-        predicted.intent.description,
-        expected.intent.description,
+        predicted.intent.summary,
+        expected.intent.summary,
         model="sentence-transformers/all-MiniLM-L6-v2",
     )
 
 
-def signature_match(predicted: IR, expected: IR) -> float:
+def signature_match(
+    predicted: IntermediateRepresentation, expected: IntermediateRepresentation
+) -> float:
     """Measure function signature correctness.
 
     Args:
@@ -88,12 +94,14 @@ def signature_match(predicted: IR, expected: IR) -> float:
     scores.append(param_score)
 
     # Return type
-    scores.append(1.0 if predicted.signature.return_type == expected.signature.return_type else 0.5)
+    scores.append(1.0 if predicted.signature.returns == expected.signature.returns else 0.5)
 
     return sum(scores) / len(scores)
 
 
-def structure_match(predicted: IR, expected: IR) -> float:
+def structure_match(
+    predicted: IntermediateRepresentation, expected: IntermediateRepresentation
+) -> float:
     """Measure structural similarity of effects.
 
     Args:
@@ -103,13 +111,15 @@ def structure_match(predicted: IR, expected: IR) -> float:
     Returns:
         Sequence similarity using Levenshtein distance [0.0, 1.0]
     """
-    p_effects = [type(e).__name__ for e in predicted.effects]
-    e_effects = [type(e).__name__ for e in expected.effects]
+    p_effects = [e.description for e in predicted.effects]
+    e_effects = [e.description for e in expected.effects]
 
     return sequence_similarity(p_effects, e_effects)
 
 
-def constraint_match(predicted: IR, expected: IR) -> float:
+def constraint_match(
+    predicted: IntermediateRepresentation, expected: IntermediateRepresentation
+) -> float:
     """Measure constraint satisfaction.
 
     Args:
@@ -562,7 +572,7 @@ def sequence_similarity(seq1: list[str], seq2: list[str]) -> float:
     return 1.0 - (distance / max_len)
 
 
-def constraint_satisfied(ir: IR, constraint: Any) -> bool:
+def constraint_satisfied(ir: IntermediateRepresentation, constraint: Any) -> bool:
     """Check if IR satisfies a constraint.
 
     Args:

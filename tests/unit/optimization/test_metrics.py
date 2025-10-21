@@ -8,11 +8,16 @@ This test suite validates:
 """
 
 import pytest
-from lift_sys.ir.effects import ReadEffect, WriteEffect
-from lift_sys.ir.ir import IR, Intent, Parameter, Signature
 from scipy.stats import pearsonr
 
 from lift_sys.dspy_signatures.provider_adapter import ProviderRoute
+from lift_sys.ir import (
+    EffectClause,
+    IntentClause,
+    IntermediateRepresentation,
+    Parameter,
+    SigClause,
+)
 from lift_sys.optimization.metrics import (
     aggregate_metric,
     check_naming_conventions,
@@ -46,37 +51,35 @@ from lift_sys.optimization.metrics import (
 @pytest.fixture
 def sample_ir_simple():
     """Simple IR: read a file and return its contents."""
-    return IR(
-        intent=Intent(description="Read file contents"),
-        signature=Signature(
+    return IntermediateRepresentation(
+        intent=IntentClause(summary="Read file contents"),
+        signature=SigClause(
             name="read_file",
             parameters=[Parameter(name="path", type_hint="str")],
-            return_type="str",
+            returns="str",
         ),
-        effects=[ReadEffect(resource="file://path")],
-        constraints=[],
+        effects=[EffectClause(description="Read from file://path")],
     )
 
 
 @pytest.fixture
 def sample_ir_complex():
     """Complex IR: read multiple files and write summary."""
-    return IR(
-        intent=Intent(description="Read multiple files and summarize"),
-        signature=Signature(
+    return IntermediateRepresentation(
+        intent=IntentClause(summary="Read multiple files and summarize"),
+        signature=SigClause(
             name="summarize_files",
             parameters=[
                 Parameter(name="paths", type_hint="list[str]"),
                 Parameter(name="output_path", type_hint="str"),
             ],
-            return_type="None",
+            returns="None",
         ),
         effects=[
-            ReadEffect(resource="file://paths[0]"),
-            ReadEffect(resource="file://paths[1]"),
-            WriteEffect(resource="file://output_path"),
+            EffectClause(description="Read from file://paths[0]"),
+            EffectClause(description="Read from file://paths[1]"),
+            EffectClause(description="Write to file://output_path"),
         ],
-        constraints=[],
     )
 
 
@@ -95,22 +98,26 @@ class TestIRQuality:
 
     def test_ir_quality_different_intent(self, sample_ir_simple):
         """Different intent should reduce score."""
-        modified = sample_ir_simple.model_copy(
-            update={"intent": Intent(description="Write file contents")}
+        modified_intent = IntentClause(summary="Write file contents")
+        modified = IntermediateRepresentation(
+            intent=modified_intent,
+            signature=sample_ir_simple.signature,
+            effects=sample_ir_simple.effects,
         )
         score = ir_quality(sample_ir_simple, modified)
         assert score < 1.0
 
     def test_ir_quality_different_signature(self, sample_ir_simple):
         """Different signature should reduce score."""
-        modified = sample_ir_simple.model_copy(
-            update={
-                "signature": Signature(
-                    name="write_file",
-                    parameters=[Parameter(name="path", type_hint="str")],
-                    return_type="None",
-                )
-            }
+        modified_sig = SigClause(
+            name="write_file",
+            parameters=[Parameter(name="path", type_hint="str")],
+            returns="None",
+        )
+        modified = IntermediateRepresentation(
+            intent=sample_ir_simple.intent,
+            signature=modified_sig,
+            effects=sample_ir_simple.effects,
         )
         score = ir_quality(sample_ir_simple, modified)
         assert score < 0.8
@@ -127,14 +134,15 @@ class TestIRQuality:
 
     def test_signature_match_different_name(self, sample_ir_simple):
         """Different function name should reduce score."""
-        modified = sample_ir_simple.model_copy(
-            update={
-                "signature": Signature(
-                    name="different_name",
-                    parameters=sample_ir_simple.signature.parameters,
-                    return_type=sample_ir_simple.signature.return_type,
-                )
-            }
+        modified_sig = SigClause(
+            name="different_name",
+            parameters=sample_ir_simple.signature.parameters,
+            returns=sample_ir_simple.signature.returns,
+        )
+        modified = IntermediateRepresentation(
+            intent=sample_ir_simple.intent,
+            signature=modified_sig,
+            effects=sample_ir_simple.effects,
         )
         score = signature_match(sample_ir_simple, modified)
         assert score < 1.0
@@ -147,7 +155,11 @@ class TestIRQuality:
     def test_structure_match_different_order(self, sample_ir_complex):
         """Different effect order should reduce score."""
         effects_reversed = list(reversed(sample_ir_complex.effects))
-        modified = sample_ir_complex.model_copy(update={"effects": effects_reversed})
+        modified = IntermediateRepresentation(
+            intent=sample_ir_complex.intent,
+            signature=sample_ir_complex.signature,
+            effects=effects_reversed,
+        )
         score = structure_match(sample_ir_complex, modified)
         assert score < 1.0
 
@@ -505,105 +517,116 @@ class TestInterRaterReliability:
             # Intent changes (human score ~0.7)
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={"intent": Intent(description="Write file contents")}
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Write file contents"),
+                    signature=sample_ir_simple.signature,
+                    effects=sample_ir_simple.effects,
                 ),
                 0.7,
             ),
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(update={"intent": Intent(description="Delete file")}),
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Delete file"),
+                    signature=sample_ir_simple.signature,
+                    effects=sample_ir_simple.effects,
+                ),
                 0.6,
             ),
             # Signature changes (human score ~0.5-0.6)
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="write_file",
-                            parameters=[Parameter(name="path", type_hint="str")],
-                            return_type="None",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=SigClause(
+                        name="write_file",
+                        parameters=[Parameter(name="path", type_hint="str")],
+                        returns="None",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.5,
             ),
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="read_file",
-                            parameters=[
-                                Parameter(name="filepath", type_hint="str")
-                            ],  # Different param name
-                            return_type="str",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=SigClause(
+                        name="read_file",
+                        parameters=[
+                            Parameter(name="filepath", type_hint="str")
+                        ],  # Different param name
+                        returns="str",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.8,
             ),
             # Effect structure changes (human score ~0.6-0.8)
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={"effects": list(reversed(sample_ir_complex.effects))}
+                IntermediateRepresentation(
+                    intent=sample_ir_complex.intent,
+                    signature=sample_ir_complex.signature,
+                    effects=list(reversed(sample_ir_complex.effects)),
                 ),
                 0.7,
             ),
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={"effects": sample_ir_complex.effects[:2]}
-                ),  # Missing effect
+                IntermediateRepresentation(
+                    intent=sample_ir_complex.intent,
+                    signature=sample_ir_complex.signature,
+                    effects=sample_ir_complex.effects[:2],  # Missing effect
+                ),
                 0.6,
             ),
             # Additional examples for statistical power (20+ total)
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "intent": Intent(description="Read the contents of a file"),
-                        # Paraphrase
-                    }
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Read the contents of a file"),  # Paraphrase
+                    signature=sample_ir_simple.signature,
+                    effects=sample_ir_simple.effects,
                 ),
                 0.95,
             ),
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="read_file",
-                            parameters=[Parameter(name="path", type_hint="Path")],  # Different type
-                            return_type="str",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=SigClause(
+                        name="read_file",
+                        parameters=[Parameter(name="path", type_hint="Path")],  # Different type
+                        returns="str",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.7,
             ),
             # More diverse examples
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={"intent": Intent(description="Summarize content from multiple files")}
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Summarize content from multiple files"),
+                    signature=sample_ir_complex.signature,
+                    effects=sample_ir_complex.effects,
                 ),
                 0.9,
             ),
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="summarize_files",
-                            parameters=[
-                                Parameter(name="file_paths", type_hint="list[str]"),
-                                Parameter(name="output_path", type_hint="str"),
-                            ],
-                            return_type="None",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_complex.intent,
+                    signature=SigClause(
+                        name="summarize_files",
+                        parameters=[
+                            Parameter(name="file_paths", type_hint="list[str]"),
+                            Parameter(name="output_path", type_hint="str"),
+                        ],
+                        returns="None",
+                    ),
+                    effects=sample_ir_complex.effects,
                 ),
                 0.85,
             ),
@@ -621,86 +644,89 @@ class TestInterRaterReliability:
             # Edge cases
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="different_func",
-                            parameters=[Parameter(name="x", type_hint="int")],
-                            return_type="bool",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=SigClause(
+                        name="different_func",
+                        parameters=[Parameter(name="x", type_hint="int")],
+                        returns="bool",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.2,
             ),
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "intent": Intent(description="Completely unrelated operation"),
-                        "signature": Signature(
-                            name="other_func",
-                            parameters=[],
-                            return_type="None",
-                        ),
-                    }
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Completely unrelated operation"),
+                    signature=SigClause(
+                        name="other_func",
+                        parameters=[],
+                        returns="None",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.1,
             ),
             # Additional high-similarity examples
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={"intent": Intent(description="Read file data")}
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Read file data"),
+                    signature=sample_ir_simple.signature,
+                    effects=sample_ir_simple.effects,
                 ),
                 0.95,
             ),
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="read_file",
-                            parameters=[
-                                Parameter(name="path", type_hint="str"),
-                                Parameter(name="encoding", type_hint="str", default="utf-8"),
-                            ],
-                            return_type="str",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=SigClause(
+                        name="read_file",
+                        parameters=[
+                            Parameter(name="path", type_hint="str"),
+                            Parameter(name="encoding", type_hint="str"),
+                        ],
+                        returns="str",
+                    ),
+                    effects=sample_ir_simple.effects,
                 ),
                 0.75,
             ),
             # More medium-similarity examples
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={"intent": Intent(description="Process and write file summaries")}
+                IntermediateRepresentation(
+                    intent=IntentClause(summary="Process and write file summaries"),
+                    signature=sample_ir_complex.signature,
+                    effects=sample_ir_complex.effects,
                 ),
                 0.8,
             ),
             (
                 sample_ir_complex,
-                sample_ir_complex.model_copy(
-                    update={
-                        "signature": Signature(
-                            name="process_files",
-                            parameters=[
-                                Parameter(name="paths", type_hint="list[str]"),
-                                Parameter(name="output_path", type_hint="str"),
-                            ],
-                            return_type="None",
-                        )
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_complex.intent,
+                    signature=SigClause(
+                        name="process_files",
+                        parameters=[
+                            Parameter(name="paths", type_hint="list[str]"),
+                            Parameter(name="output_path", type_hint="str"),
+                        ],
+                        returns="None",
+                    ),
+                    effects=sample_ir_complex.effects,
                 ),
                 0.7,
             ),
             # Final examples to reach 20+
             (
                 sample_ir_simple,
-                sample_ir_simple.model_copy(
-                    update={
-                        "effects": [WriteEffect(resource="file://path")]  # Wrong effect type
-                    }
+                IntermediateRepresentation(
+                    intent=sample_ir_simple.intent,
+                    signature=sample_ir_simple.signature,
+                    effects=[EffectClause(description="Write to file://path")],  # Wrong effect type
                 ),
                 0.4,
             ),

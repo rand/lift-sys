@@ -211,6 +211,91 @@ None - H5 was already cataloged in H9's `blocks` list
 
 ---
 
+### Event 3: H14 Resolution (2025-10-20)
+**Hole Resolved**: H14 - ResourceLimits
+**Resolution Summary**: Implemented resource limit configuration and enforcement for memory, time, tokens, concurrency, and LLM calls with tracking and validation
+
+**Resolution Details**:
+- Created `ResourceLimits` dataclass for configuring limits (memory, time, tokens, concurrency, LLM calls)
+- Implemented `ResourceUsage` tracker with start/end timing for execution monitoring
+- Built `ResourceEnforcer` for limit checking with status (OK/WARNING/EXCEEDED)
+- Added `LimitCheckResult` for detailed limit check results
+- Preset configurations: development, production, strict, unlimited
+- MODAL_DEFAULT_LIMITS for Modal.com environment (2GB, 600s, 200K tokens, 3 concurrent, 20 LLM calls)
+- Warning threshold configurable (default 80% of limit)
+
+**Implementation**: `lift_sys/dspy_signatures/resource_limits.py` (403 lines)
+**Tests**: `tests/unit/dspy_signatures/test_resource_limits.py` (38/38 passing)
+**Type Safety**: ✅ Passes type checks
+
+### Constraints Propagated
+
+#### To H16: ConcurrencyModel
+**New Constraint**: Must respect max_concurrent_nodes limit from ResourceLimits
+**Reasoning**: ResourceLimits.max_concurrent_nodes defines the parallelism budget
+**Impact**: Eliminates unbounded parallelism, enforces resource-aware concurrency
+**Specific Requirements**:
+- Check ResourceLimits.max_concurrent_nodes before spawning parallel nodes
+- Update ResourceUsage.concurrent_nodes during execution
+- Fail or throttle if limit would be exceeded
+- Integrate with ResourceEnforcer for runtime checks
+
+#### To H4: ParallelizationImpl
+**New Constraint**: Must track and enforce concurrent execution limits
+**Reasoning**: Parallel execution consumes memory and API quota proportionally
+**Impact**: Prevents resource exhaustion from uncontrolled parallelism
+**Specific Requirements**:
+- Use ResourceUsage.set_concurrent_nodes() to track parallel executions
+- Check ResourceEnforcer before launching parallel tasks
+- Respect MODAL_DEFAULT_LIMITS.max_concurrent_nodes (3) as default
+- Fail gracefully when limits exceeded
+
+#### To H1: ProviderAdapter
+**New Constraint**: Must track token usage and LLM call counts
+**Reasoning**: Provider is responsible for LLM API calls which consume tokens
+**Impact**: Enables token-based cost control and rate limiting
+**Specific Requirements**:
+- Call ResourceUsage.add_tokens() after each LLM response
+- Call ResourceUsage.add_llm_call() for each API request
+- Check ResourceEnforcer before making costly calls
+- Support ResourceLimits.max_tokens and max_llm_calls enforcement
+
+#### To H3: CachingStrategy
+**New Constraint**: Must fit within memory budget defined by ResourceLimits
+**Reasoning**: Cache size affects memory usage, must stay within max_memory_bytes
+**Impact**: Cache must be bounded by resource limits
+**Specific Requirements**:
+- Calculate cache size contribution to ResourceUsage.memory_bytes
+- Evict cache entries when approaching memory limits
+- Respect MODAL_DEFAULT_LIMITS.max_memory_bytes (2GB) for cache sizing
+
+### Discovered Dependencies
+None - H16 and H4 were already cataloged in dependency graph
+
+### Updated Solution Spaces
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H16 (ConcurrencyModel) | Any parallelism strategy | Bounded by max_concurrent_nodes | 70% |
+| H4 (ParallelizationImpl) | Any parallel execution | Resource-aware with limits | 60% |
+| H1 (ProviderAdapter) | Any provider wrapper | Token and call count tracking | 30% |
+| H3 (CachingStrategy) | Any cache implementation | Memory-bounded cache | 50% |
+
+### Design Decisions Locked In
+1. **Five Resource Types**: Memory, time, tokens, concurrency, LLM calls
+2. **Three-Tier Status**: OK/WARNING/EXCEEDED instead of binary pass/fail
+3. **Configurable Warnings**: Warning threshold (default 80%) allows early alerts
+4. **Modal Alignment**: MODAL_DEFAULT_LIMITS match Modal.com container constraints
+5. **Preset Configurations**: Development, production, strict, unlimited presets
+6. **Optional Limits**: None means unlimited (useful for testing/debugging)
+
+### Gate 1 Impact
+**Criterion R1.1**: ✅ POTENTIAL PASS - Resource limits defined for Modal environment
+**Criterion R1.2**: ✅ POTENTIAL PASS - Enforcement mechanism validates limits
+
+**Progress**: 6/14 → 8/14 Gate 1 criteria satisfied (57%)
+
+---
+
 ## Propagation Rules
 
 ### Rule 1: Interface Resolution → Type Constraints

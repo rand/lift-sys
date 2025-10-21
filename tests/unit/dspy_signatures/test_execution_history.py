@@ -55,6 +55,7 @@ class MockSupabaseClient:
 
     def select(self, fields: str):
         # Reset all query state for new query
+        self._last_operation = "select"  # CRITICAL: Set operation type
         self._query_filters = {}
         if hasattr(self, "_range"):
             delattr(self, "_range")
@@ -150,10 +151,8 @@ def mock_store(monkeypatch) -> ExecutionHistoryStore[SimpleState]:
         mock_create_client,
     )
 
-    return ExecutionHistoryStore[SimpleState](
-        supabase_url="http://localhost:54321",
-        supabase_key="mock-key",
-    )
+    # Use env vars only (like H2 tests)
+    return ExecutionHistoryStore[SimpleState]()
 
 
 # Test data fixtures

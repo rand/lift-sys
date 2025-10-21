@@ -713,6 +713,190 @@ Extended GraphState (H2) with timing, performance metrics, and replay support. C
 
 ---
 
+## Event 7: Architectural Decision - Dual-Provider Routing (2025-10-21)
+
+**Decision**: ADR 001 - Dual-Provider LLM Routing Strategy
+**Decision Date**: 2025-10-21
+**Scope**: All LLM integration points (H1, H8, H10, future holes)
+**Status**: Accepted
+
+### Decision Summary
+
+Implemented dual-route LLM provider strategy to optimize for both quality and capability:
+
+1. **Route 1: Best Available** (Anthropic/OpenAI/Google)
+   - For: Standard tasks (reasoning, classification, generation)
+   - Priority: Highest quality model available
+   - No inference system access needed
+
+2. **Route 2: Modal Inference System** (SGLang on Modal)
+   - For: Constrained generation (XGrammar, llguidance, aici)
+   - Requires: Direct inference system access
+   - Enables: Schema-based output, custom sampling, speculative decoding
+
+### Routing Decision Criteria
+
+```
+Task requires:
+- XGrammar/Pydantic schema output? → Modal
+- llguidance grammar? → Modal
+- aici control? → Modal
+- Parallel speculative decoding? → Modal
+- Custom token-level sampling? → Modal
+- Otherwise → Best Available
+```
+
+### Architectural Impact
+
+**New Components Required**:
+- `BestAvailableProvider` class (Phase 3)
+- `ProviderRoute` enum
+- Routing logic in `ProviderAdapter._determine_route()`
+- Route tracking for metrics
+
+**Modified Components**:
+- `ProviderAdapter.__init__()`: Add `best_available_provider` parameter
+- `ProviderAdapter.__call__()`: Add routing decision
+- `ProviderConfig`: Add routing preferences
+
+### Constraints Propagated
+
+#### To H1: ProviderAdapter (Immediate Update)
+**New Constraint**: MUST implement dual-route provider selection per ADR 001
+**Reasoning**: Different tasks have different infrastructure requirements
+**Impact**: H1 becomes a routing layer, not just a Modal wrapper
+**Specific Requirements**:
+- Add `BestAvailableProvider` integration (Phase 3)
+- Implement `_determine_route()` method
+- Track route used for each call (for H10 metrics)
+- Ensure XGrammar tasks always use Modal route
+- Fallback logic if Best Available unavailable
+**Solution Space Reduction**: 70% (from "any provider integration" → "dual-route with ADR 001 logic")
+
+#### To H10: OptimizationMetrics
+**New Constraint**: MUST track and optimize across both provider routes
+**Reasoning**: Different routes have different cost/quality tradeoffs
+**Impact**: Optimization must consider route as a dimension
+**Specific Requirements**:
+- Track `provider_route` (best_available vs modal_inference) per execution
+- Measure quality metrics per route
+- Measure cost metrics per route (API costs vs Modal compute)
+- Identify opportunities to migrate tasks between routes
+- Optimize route selection based on task characteristics
+**Solution Space Reduction**: 45% (from "any metrics" → "route-aware metrics")
+
+#### To H8: OptimizationAPI
+**New Constraint**: MUST support route switching as optimization strategy
+**Reasoning**: Migrating tasks between routes can improve cost/quality
+**Impact**: Optimization can recommend route changes
+**Specific Requirements**:
+- Expose route selection in optimization API
+- Allow manual route override for experimentation
+- Suggest route changes based on H10 metrics
+- Handle route migration validation (ensure Modal-only features not used on Best Available)
+**Solution Space Reduction**: 40% (from "any optimization strategy" → "includes route optimization")
+
+#### To H3: CachingStrategy (Future)
+**New Constraint**: Cache keys must include provider route
+**Reasoning**: Same prompt may produce different outputs on different routes
+**Impact**: Cache misses if route changes for same prompt
+**Specific Requirements**:
+- Cache key format: `hash(prompt + route + schema + config)`
+- Separate cache namespaces per route
+- Cache invalidation when route strategy changes
+**Solution Space Reduction**: 30% (from "any cache key" → "route-aware keys")
+
+### Updated Solution Spaces
+
+| Hole | Before (Event 6) | After (Event 7) | Total Reduction |
+|------|------------------|-----------------|-----------------|
+| H1   | Any provider integration | Dual-route per ADR 001 | 70% |
+| H10  | Any metrics | Route-aware metrics | 45% |
+| H8   | Any optimization | Includes route optimization | 40% |
+| H3   | Any cache key | Route-aware keys | 30% |
+
+### Implementation Phases
+
+**Phase 2 (Current)**: Foundation
+- ✅ H1 with Modal provider
+- ✅ Resource tracking
+- ⏳ ADR 001 documented
+
+**Phase 3 (Week 3)**: Dual-Route Implementation
+- Add `BestAvailableProvider` class
+- Implement routing logic in H1
+- Update H10 to track routes
+- Update H8 to optimize routes
+
+**Phase 4+**: Optimization
+- Route migration based on metrics
+- Cost optimization across routes
+- Quality benchmarking per route
+
+### Configuration Strategy
+
+```yaml
+# config/providers.yaml
+routing:
+  default_route: best_available
+
+  best_available:
+    priority:
+      - anthropic_claude_3_5_sonnet
+      - openai_gpt_4_turbo
+      - google_gemini_1_5_pro
+    fallback_to_modal: false  # Fail if all unavailable
+
+  modal_inference:
+    model: llama_3_1_70b
+    gpu: L40S
+    enable_xgrammar: true
+    enable_llguidance: true
+
+task_overrides:
+  ir_generation: modal_inference  # Always XGrammar
+  reasoning: best_available  # Always Claude
+```
+
+### Migration Path
+
+As API providers add constrained generation capabilities:
+1. Anthropic adds grammar support → Migrate llguidance tasks to Best Available
+2. OpenAI structured output improves → Evaluate migration
+3. Modal route becomes experimental/research-only
+
+### Testing Impact
+
+**Test Coverage Required**:
+- Unit tests for routing logic (all decision criteria)
+- Integration tests for both routes
+- Mock both providers in tests
+- Route switching tests
+- Fallback logic tests
+
+### Documentation Created
+
+- `docs/planning/ADR_001_DUAL_PROVIDER_ROUTING.md` (comprehensive ADR)
+- Updated `HOLE_INVENTORY.md` H1 entry with routing requirements
+- This constraint propagation event
+
+### Risks and Mitigations
+
+**Risk**: Routing logic complexity
+**Mitigation**: Clear decision tree, extensive testing, configuration overrides
+
+**Risk**: Different outputs from different routes
+**Mitigation**: Quality benchmarking, A/B testing, route pinning for critical tasks
+
+**Risk**: Cost unpredictability
+**Mitigation**: Route usage monitoring, budget alerts, cost tracking in H10
+
+---
+
+**Circular Constraints**: If A → B → C → A, detect and break cycle
+
+---
+
 ## Next Steps
 
 As each hole is resolved:
@@ -728,4 +912,4 @@ As each hole is resolved:
 
 **Document Status**: ACTIVE - Update after each hole resolution
 **Owner**: Architecture team
-**Last Updated**: 2025-10-21
+**Last Updated**: 2025-10-21 (Event 7: ADR 001)

@@ -39,42 +39,87 @@ This document catalogs all typed holes in the DSPy + Pydantic AI architecture pr
 ### H1: ProviderAdapter
 **Type**: Implementation
 **Kind**: `DSPyProvider`
-**Status**: ⏳ Blocked by H6
+**Status**: ✅ RESOLVED (2025-10-21)
 
-**Description**: Integration layer between DSPy and Modal/SGLang providers
+**Description**: Dual-route integration layer between DSPy and LLM providers
+
+**Architectural Decision**: ADR 001 - Dual-Provider Routing Strategy
+- **Route 1**: Best Available (Anthropic/OpenAI/Google) for standard tasks
+- **Route 2**: Modal Inference System for constrained generation (XGrammar/llguidance/aici)
 
 **Type Signature**:
 ```python
+from enum import Enum
+
+class ProviderRoute(Enum):
+    BEST_AVAILABLE = "best_available"
+    MODAL_INFERENCE = "modal_inference"
+
 class ProviderAdapter:
-    def __init__(self, modal_provider: ModalProvider) -> None: ...
-    async def __call__(self, prompt: str, **kwargs) -> dspy.Prediction: ...
+    def __init__(
+        self,
+        modal_provider: ModalProvider,
+        best_available_provider: BestAvailableProvider | None = None,
+        config: ProviderConfig | None = None,
+    ) -> None: ...
+
+    async def __call__(
+        self,
+        prompt: str,
+        schema: BaseModel | None = None,
+        llguidance_grammar: str | None = None,
+        **kwargs
+    ) -> dspy.Prediction: ...
+
+    def _determine_route(self, **kwargs) -> ProviderRoute: ...
+
     @property
     def supports_xgrammar(self) -> bool: ...
 ```
 
 **Constraints**:
-- MUST preserve XGrammar constraints
-- MUST support async execution
+- MUST route to Modal when XGrammar/llguidance/aici required (ADR 001)
+- MUST route to Best Available for standard tasks (ADR 001)
+- MUST preserve XGrammar constraints on Modal route
+- MUST support async execution on both routes
 - MUST be compatible with DSPy.LM interface
 - SHOULD maintain current performance (<16s p50 latency)
+- MUST track which route was used (for H10 metrics)
+
+**Routing Decision Criteria**:
+- `schema` parameter present → Modal route (XGrammar)
+- `llguidance_grammar` present → Modal route
+- `aici_control` present → Modal route
+- `speculative_decode=True` → Modal route
+- Otherwise → Best Available route
 
 **Dependencies**:
-- **Blocks**: H8 (OptimizationAPI)
-- **Blocked by**: H6 (NodeSignatureInterface - needs to know how nodes call providers)
+- **Blocks**: H8 (OptimizationAPI), H10 (OptimizationMetrics)
+- **Blocked by**: H6 (NodeSignatureInterface - RESOLVED)
 
 **Acceptance Criteria**:
-- [ ] Can execute DSPy signature through Modal endpoint
-- [ ] XGrammar schema passed through correctly
-- [ ] Async execution works
-- [ ] Latency within 10% of current baseline
+- [x] Can execute DSPy signature through Modal endpoint
+- [x] XGrammar schema passed through correctly
+- [x] Async execution works
+- [x] Latency within 10% of current baseline
+- [x] Resource tracking integrated
+- [ ] Best Available provider integration (Phase 3)
+- [ ] Routing logic implements ADR 001
+- [ ] Route tracking for metrics
 
-**Resolution Ideas**:
-1. Direct DSPy.LM subclass wrapping ModalProvider
-2. Adapter pattern with protocol conversion
-3. Facade with caching layer
+**Current Implementation**: `lift_sys/dspy_signatures/provider_adapter.py` (277 lines)
+- ✅ Modal provider integration complete
+- ✅ Resource tracking complete
+- ⏳ Best Available provider pending (Phase 3)
+- ⏳ Routing logic update needed for ADR 001
 
-**Assigned To**: TBD
-**Target Phase**: Phase 2 (Week 2)
+**Resolution Notes**:
+- Phase 2 implementation: Modal provider only
+- Phase 3 update: Add Best Available provider and routing logic per ADR 001
+
+**Assigned To**: Phase 2 team
+**Resolved**: 2025-10-21
+**Target Phase**: Phase 2 (Week 2) - Initial, Phase 3 (Week 3) - Full routing
 
 ---
 
@@ -340,7 +385,9 @@ class TraceVisualizationProtocol(Protocol):
 **Kind**: `Protocol`
 **Status**: ⏳ Blocked by H10
 
-**Description**: Interface between pipeline and MIPROv2 optimizer
+**Description**: Interface between pipeline and MIPROv2 optimizer with route-aware optimization
+
+**Architectural Constraint**: ADR 001 - Must support route switching as optimization strategy
 
 **Type Signature**:
 ```python
@@ -350,8 +397,14 @@ class OptimizationAPI(Protocol):
         pipeline: dspy.Module,
         examples: list[dspy.Example],
         metric: Callable,
+        route_strategy: ProviderRoute | None = None,  # ADR 001
         **kwargs
     ) -> OptimizedPipeline: ...
+
+    def suggest_route_changes(
+        self,
+        metrics: OptimizationMetrics
+    ) -> dict[str, ProviderRoute]: ...  # ADR 001
 ```
 
 **Constraints**:
@@ -359,16 +412,22 @@ class OptimizationAPI(Protocol):
 - MUST accept custom metrics
 - MUST return optimized pipeline
 - SHOULD support continuous optimization
+- MUST support route switching as optimization strategy (ADR 001)
+- MUST allow manual route override for experimentation (ADR 001)
+- MUST validate route migrations (ensure Modal-only features not used on Best Available) (ADR 001)
 
 **Dependencies**:
 - **Blocks**: Optimization capability
-- **Blocked by**: H10 (OptimizationMetrics - needs metric definition), H1 (ProviderAdapter)
+- **Blocked by**: H10 (OptimizationMetrics - needs metric definition), H1 (ProviderAdapter - RESOLVED with routing pending)
 
 **Acceptance Criteria**:
 - [ ] MIPROv2 runs successfully
 - [ ] Custom metrics accepted
 - [ ] Optimized pipeline demonstrates improvement
 - [ ] Integration test with 20 examples
+- [ ] Route switching recommendations work (ADR 001)
+- [ ] Manual route override supported (ADR 001)
+- [ ] Route migration validation prevents errors (ADR 001)
 
 **Resolution Ideas**:
 1. Direct DSPy optimizer interface
@@ -426,13 +485,35 @@ class ValidationHooks(Protocol):
 **Kind**: `MetricDefinition`
 **Status**: ⏳ Blocked by H1
 
-**Description**: Exact metrics for evaluating pipeline quality
+**Description**: Route-aware metrics for evaluating pipeline quality and cost
+
+**Architectural Constraint**: ADR 001 - Must track and optimize across both provider routes
 
 **Type Signature**:
 ```python
+from lift_sys.dspy_signatures.provider_adapter import ProviderRoute
+
 def ir_quality(predicted: IR, expected: IR) -> float: ...
 def code_quality(predicted: str, expected: str, tests: list) -> float: ...
 def end_to_end(example: Example, prediction: Prediction) -> float: ...
+
+# ADR 001: Route-aware metrics
+def route_cost(
+    route: ProviderRoute,
+    tokens: int,
+    duration_ms: float
+) -> float: ...
+
+def route_quality(
+    route: ProviderRoute,
+    task_type: str,
+    metrics: dict[str, float]
+) -> float: ...
+
+def suggest_route_migration(
+    current_route: ProviderRoute,
+    task_metrics: dict[str, float]
+) -> ProviderRoute | None: ...
 ```
 
 **Constraints**:
@@ -440,16 +521,24 @@ def end_to_end(example: Example, prediction: Prediction) -> float: ...
 - MUST be differentiable (or at least smooth)
 - MUST correlate with user satisfaction
 - SHOULD be composable (sub-metrics)
+- MUST track provider_route per execution (ADR 001)
+- MUST measure quality metrics per route (ADR 001)
+- MUST measure cost metrics per route (API costs vs Modal compute) (ADR 001)
+- MUST identify opportunities to migrate tasks between routes (ADR 001)
 
 **Dependencies**:
 - **Blocks**: H8 (OptimizationAPI), H17 (OptimizationValidation)
-- **Blocked by**: H1 (ProviderAdapter - needs working pipeline to evaluate)
+- **Blocked by**: H1 (ProviderAdapter - RESOLVED, routing pending)
 
 **Acceptance Criteria**:
 - [ ] Metrics defined mathematically
 - [ ] Computed on 20 hand-labeled examples
 - [ ] Inter-rater reliability >0.8
 - [ ] Correlates with manual quality assessment
+- [ ] Route tracking implemented (ADR 001)
+- [ ] Cost metrics per route computed (ADR 001)
+- [ ] Quality metrics per route computed (ADR 001)
+- [ ] Route migration suggestions accurate (ADR 001)
 
 **Resolution Ideas**:
 1. **PREFERRED**: Weighted combination of intent, signature, code quality

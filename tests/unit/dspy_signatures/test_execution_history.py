@@ -27,8 +27,8 @@ from lift_sys.dspy_signatures.state_persistence import GraphState
 
 
 # Test state model
-class TestState(BaseModel):
-    """Simple state for testing."""
+class SimpleState(BaseModel):
+    """Simple state for testing (renamed to avoid pytest confusion)."""
 
     counter: int = 0
     message: str = ""
@@ -128,7 +128,7 @@ class MockSupabaseClient:
 
 
 @pytest.fixture
-def mock_store(monkeypatch) -> ExecutionHistoryStore[TestState]:
+def mock_store(monkeypatch) -> ExecutionHistoryStore[SimpleState]:
     """Create ExecutionHistoryStore with mocked Supabase client."""
     mock_client = MockSupabaseClient()
 
@@ -137,12 +137,13 @@ def mock_store(monkeypatch) -> ExecutionHistoryStore[TestState]:
 
     monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
     monkeypatch.setenv("SUPABASE_SERVICE_KEY", "mock-key")
+    # Patch create_client in state_persistence (not execution_history)
     monkeypatch.setattr(
-        "lift_sys.dspy_signatures.execution_history.create_client",
+        "lift_sys.dspy_signatures.state_persistence.create_client",
         mock_create_client,
     )
 
-    return ExecutionHistoryStore[TestState](
+    return ExecutionHistoryStore[SimpleState](
         supabase_url="http://localhost:54321",
         supabase_key="mock-key",
     )
@@ -181,7 +182,7 @@ def sample_state() -> GraphState:
     return GraphState(
         execution_id=str(uuid4()),
         state_snapshot={"counter": 42, "message": "test"},
-        state_type="test.TestState",
+        state_type="test.SimpleState",
         provenance=[{"node": "Node1", "output": "success"}],
         metadata={"test": "data"},
     )
@@ -245,7 +246,7 @@ def test_execution_history_creation(sample_timing, sample_performance):
     history = ExecutionHistory(
         execution_id="exec-123",
         state_snapshot={"counter": 10},
-        state_type="test.TestState",
+        state_type="test.SimpleState",
         graph_type="forward_mode",
         original_inputs={"prompt": "test prompt"},
         timing=sample_timing,
@@ -266,7 +267,7 @@ def test_execution_history_replay_fields():
     history = ExecutionHistory(
         execution_id="replay-456",
         state_snapshot={},
-        state_type="test.TestState",
+        state_type="test.SimpleState",
         is_replay=True,
         original_execution_id="exec-123",
     )
@@ -280,7 +281,7 @@ def test_execution_history_replay_fields():
 
 @pytest.mark.asyncio
 async def test_save_execution(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -308,7 +309,7 @@ async def test_save_execution(
 
 @pytest.mark.asyncio
 async def test_load_execution(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -335,7 +336,7 @@ async def test_load_execution(
 
 
 @pytest.mark.asyncio
-async def test_load_nonexistent_execution(mock_store: ExecutionHistoryStore[TestState]):
+async def test_load_nonexistent_execution(mock_store: ExecutionHistoryStore[SimpleState]):
     """Test loading nonexistent execution raises KeyError."""
     with pytest.raises(KeyError, match="No execution found"):
         await mock_store.load_execution("nonexistent-id")
@@ -343,7 +344,7 @@ async def test_load_nonexistent_execution(mock_store: ExecutionHistoryStore[Test
 
 @pytest.mark.asyncio
 async def test_save_duplicate_execution_id(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -376,7 +377,7 @@ async def test_save_duplicate_execution_id(
 
 @pytest.mark.asyncio
 async def test_list_executions_no_filters(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -405,7 +406,7 @@ async def test_list_executions_no_filters(
 
 @pytest.mark.asyncio
 async def test_list_executions_filter_by_user(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -445,7 +446,7 @@ async def test_list_executions_filter_by_user(
 
 @pytest.mark.asyncio
 async def test_list_executions_filter_by_graph_type(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -477,7 +478,7 @@ async def test_list_executions_filter_by_graph_type(
 
 @pytest.mark.asyncio
 async def test_list_executions_pagination(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -512,7 +513,7 @@ async def test_list_executions_pagination(
 
 @pytest.mark.asyncio
 async def test_get_slow_executions(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_performance: PerformanceMetrics,
 ):
@@ -547,7 +548,7 @@ async def test_get_slow_executions(
 
 @pytest.mark.asyncio
 async def test_get_statistics(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
 ):
     """Test aggregate statistics calculation."""
@@ -585,7 +586,7 @@ async def test_get_statistics(
 
 @pytest.mark.asyncio
 async def test_query_performance(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -617,7 +618,7 @@ async def test_query_performance(
 
 @pytest.mark.asyncio
 async def test_replay_execution_structure(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -642,7 +643,7 @@ async def test_replay_execution_structure(
 
 @pytest.mark.asyncio
 async def test_replay_execution_not_implemented(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -670,7 +671,7 @@ async def test_replay_execution_not_implemented(
 
 @pytest.mark.asyncio
 async def test_round_trip_with_all_metadata(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_timing: ExecutionTiming,
     sample_performance: PerformanceMetrics,
@@ -705,7 +706,7 @@ async def test_round_trip_with_all_metadata(
 
 @pytest.mark.asyncio
 async def test_multiple_executions_same_user(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
 ):
     """Test multiple executions for same user with different timings."""
@@ -736,12 +737,12 @@ async def test_multiple_executions_same_user(
 
 
 @pytest.mark.asyncio
-async def test_execution_with_minimal_metadata(mock_store: ExecutionHistoryStore[TestState]):
+async def test_execution_with_minimal_metadata(mock_store: ExecutionHistoryStore[SimpleState]):
     """Test execution with minimal required fields."""
     state = GraphState(
         execution_id=str(uuid4()),
         state_snapshot={},
-        state_type="test.TestState",
+        state_type="test.SimpleState",
     )
 
     timing = ExecutionTiming()  # All defaults
@@ -763,7 +764,7 @@ async def test_execution_with_minimal_metadata(mock_store: ExecutionHistoryStore
 
 @pytest.mark.asyncio
 async def test_execution_with_no_node_timings(
-    mock_store: ExecutionHistoryStore[TestState],
+    mock_store: ExecutionHistoryStore[SimpleState],
     sample_state: GraphState,
     sample_performance: PerformanceMetrics,
 ):
@@ -787,7 +788,7 @@ async def test_execution_with_no_node_timings(
 
 
 @pytest.mark.asyncio
-async def test_statistics_with_no_executions(mock_store: ExecutionHistoryStore[TestState]):
+async def test_statistics_with_no_executions(mock_store: ExecutionHistoryStore[SimpleState]):
     """Test get_statistics with no matching executions."""
     stats = await mock_store.get_statistics(user_id="nonexistent-user")
 

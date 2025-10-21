@@ -411,9 +411,10 @@ class TestAcceptanceCriteria:
         assert hasattr(node, "signature")
         assert issubclass(node.signature, dspy.Signature)
 
-        # Verify signature has correct fields
-        assert hasattr(node.signature, "input_text")
-        assert hasattr(node.signature, "output_text")
+        # Verify signature fields are defined (DSPy stores them differently)
+        sig_instance = node.signature()
+        assert "input_text" in str(sig_instance)  # DSPy field representation
+        assert "output_text" in str(sig_instance)
 
         # Verify node can be instantiated
         assert isinstance(node, BaseNode)

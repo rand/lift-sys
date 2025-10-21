@@ -29,12 +29,25 @@ Constraints from H14 (ResourceLimits):
 from __future__ import annotations
 
 import json
+from enum import Enum
 from typing import Any
 
 import dspy
 from pydantic import BaseModel, Field
 
 from lift_sys.providers.base import BaseProvider
+
+
+class ProviderRoute(Enum):
+    """Provider routing strategy (ADR 001: Dual-Provider Routing).
+
+    Routes LLM calls based on infrastructure requirements:
+    - BEST_AVAILABLE: Use best quality model (Anthropic/OpenAI/Google) for standard tasks
+    - MODAL_INFERENCE: Use Modal inference system for constrained generation (XGrammar/llguidance/aici)
+    """
+
+    BEST_AVAILABLE = "best_available"
+    MODAL_INFERENCE = "modal_inference"
 
 
 class ProviderConfig(BaseModel):
@@ -290,4 +303,4 @@ class ProviderAdapter:
         return []
 
 
-__all__ = ["ProviderAdapter", "ProviderConfig"]
+__all__ = ["ProviderAdapter", "ProviderConfig", "ProviderRoute"]

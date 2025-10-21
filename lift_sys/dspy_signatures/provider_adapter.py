@@ -185,7 +185,7 @@ class ProviderAdapter:
                     prompt=prompt,
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    top_p=self.config.top_p,
+                    top_p=top_p,
                 )
 
                 # Track tokens (estimate from text length)

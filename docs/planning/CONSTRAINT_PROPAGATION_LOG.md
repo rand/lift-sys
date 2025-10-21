@@ -160,6 +160,57 @@ None - all dependent holes were already cataloged in H6's `blocks` list
 
 ---
 
+### Event 2: H9 Resolution (2025-10-20)
+**Hole Resolved**: H9 - ValidationHooks
+**Resolution Summary**: Implemented pluggable validation hooks for graph execution with Protocol pattern, composable validators, and comprehensive error reporting
+
+**Resolution Details**:
+- Created `ValidationHook[StateT]` Protocol for async validation functions
+- Implemented `ValidationResult` dataclass with status (PASS/FAIL/WARN/SKIP), message, and details
+- Built `CompositeValidator` for chain-of-responsibility pattern
+- Three example validators: `StateValidationHook`, `ProvenanceValidationHook`, `ExecutionIdValidationHook`
+- Helper functions: `run_validators()` and `summarize_validation_results()`
+- Async-first design accepting `RunContext[StateT]` parameter
+
+**Implementation**: `lift_sys/dspy_signatures/validation_hooks.py` (406 lines)
+**Tests**: `tests/unit/dspy_signatures/test_validation_hooks.py` (28/28 passing)
+**Type Safety**: ✅ Passes mypy checks
+
+### Constraints Propagated
+
+#### To H5: ErrorRecovery
+**New Constraint**: Must integrate with ValidationResult for error handling
+**Reasoning**: Validation failures provide structured error information via ValidationResult
+**Impact**: Error recovery can distinguish between validation failures (FAIL) and warnings (WARN)
+**Specific Requirements**:
+- Handle `ValidationResult.failed` to determine if recovery is needed
+- Access `ValidationResult.details` for error context
+- Support validation hooks as pre-recovery checks
+- Distinguish between validation errors and execution errors
+
+### Discovered Dependencies
+None - H5 was already cataloged in H9's `blocks` list
+
+### Updated Solution Spaces
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H5 (ErrorRecovery) | Any error handling pattern | ValidationResult-aware recovery | 40% |
+
+### Design Decisions Locked In
+1. **Protocol Pattern**: Validation hooks use runtime_checkable Protocol for flexibility
+2. **Structured Results**: ValidationResult with status enum, not booleans
+3. **Composability**: CompositeValidator enables chaining multiple validators
+4. **Async Context-Aware**: All hooks receive RunContext for access to state and provenance
+5. **Four-State Model**: PASS/FAIL/WARN/SKIP instead of binary pass/fail
+
+### Gate 1 Impact
+**Criterion F1.2**: ✅ POTENTIAL PASS - Validation hooks can validate node execution
+**Criterion Q1.2**: ✅ POTENTIAL PASS - Validation errors are structured and actionable
+
+**Progress**: 4/14 → 6/14 Gate 1 criteria satisfied (43%)
+
+---
+
 ## Propagation Rules
 
 ### Rule 1: Interface Resolution → Type Constraints

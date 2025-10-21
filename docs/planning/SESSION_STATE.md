@@ -3,7 +3,7 @@
 **Last Updated**: 2025-10-20
 **Current Phase**: Phase 1 (In Progress)
 **Session**: 2
-**Status**: H6 COMPLETE - H9 OR H14 NEXT
+**Status**: H6 ✅ H9 ✅ - H14 NEXT
 
 ---
 
@@ -30,6 +30,13 @@
    - Constraints propagated to 6 dependent holes (H1, H2, H4, H5, H9, H10)
    - Gate 1: 4/14 criteria satisfied (28%)
 
+4. **H9: ValidationHooks** ✅ COMPLETE (Session 2)
+   - Implementation: `lift_sys/dspy_signatures/validation_hooks.py` (406 lines)
+   - Tests: 28/28 passing
+   - Type safety: mypy passes
+   - Constraints propagated to 1 dependent hole (H5)
+   - Gate 1: 6/14 criteria satisfied (43%)
+
 4. **Critical Path Progress**
    ```
    H6 ✅ → H1 🔒 → H10 🔒 → H17 🔒
@@ -37,16 +44,16 @@
    ```
 
 5. **Holes Ready to Work**
-   - H9: ValidationHooks (Phase 1 - READY)
-   - H14: ResourceLimits (Phase 1 - READY)
+   - H14: ResourceLimits (Phase 1 - READY - LAST IN PHASE 1)
 
 ### What's Next 🎯
 
 **Immediate**: Continue Phase 1 (Week 1)
 - ✅ H6 resolved
-- Resolve H9, H14
+- ✅ H9 resolved
+- Resolve H14
 - Pass Gate 1 validation
-- Document constraint propagation (H6 done, H9/H14 pending)
+- Document constraint propagation (H6 done, H9 done, H14 pending)
 
 **This Week's Goal**: Interface Completeness
 - ✅ Working prototype of graph node calling DSPy signature
@@ -138,41 +145,50 @@ See **Current Work Context** section below for specific guidance.
 
 ---
 
-### Next Hole: H9 - ValidationHooks
+### Recently Completed: H9 - ValidationHooks ✅
+
+**Status**: RESOLVED
+**Resolution**: `lift_sys/dspy_signatures/validation_hooks.py`
+**Tests**: 28/28 passing
+**Type Safety**: ✅ mypy passes
+
+**What Was Implemented**:
+- `ValidationHook[StateT]` Protocol for async validation functions
+- `ValidationResult` with status (PASS/FAIL/WARN/SKIP), message, details
+- `CompositeValidator` for chain-of-responsibility pattern
+- Example validators: StateValidationHook, ProvenanceValidationHook, ExecutionIdValidationHook
+- Helper functions: run_validators(), summarize_validation_results()
+
+**Constraints Propagated**:
+- ✅ H5: Must integrate with ValidationResult for error handling
+
+**Gate 1 Progress**: 6/14 criteria satisfied (43%)
+
+---
+
+### Next Hole: H14 - ResourceLimits
 
 **Status**: READY (no blockers)
 **Priority**: P1
 **Phase**: 1
-**Type**: Interface
+**Type**: Constraint
 
 **What This Is**:
-Hooks for validating graph state at key points (before node execution, after state updates, at graph completion)
-
-**Type Signature Required**:
-```python
-class ValidationHook(Protocol):
-    async def __call__(self, ctx: RunContext[StateT]) -> ValidationResult:
-        ...
-```
-
-**Constraints MUST Satisfy** (updated from H6):
-1. Accept `RunContext[StateT]` parameter (propagated from H6)
-2. Return structured `ValidationResult` (pass/fail + details)
-3. Support async execution
-4. Access to provenance chain via context
+Define and enforce resource limits for graph execution (memory, time, token count, concurrent nodes)
 
 **Blocks**:
-- H5: ErrorRecovery (needs validation framework)
+- H16: ConcurrencyModel (needs resource budget)
+- Multiple Phase 2+ holes (resource allocation decisions)
 
 **Acceptance Criteria**:
-- [ ] Hook executes at configurable points (before/after/complete)
-- [ ] Validation results captured in context
-- [ ] Example hooks: StateValidationHook, ProvenanceValidationHook
-- [ ] Tests validate hook execution order
+- [ ] Resource limit types defined (memory, time, tokens, concurrency)
+- [ ] Enforcement mechanism implemented
+- [ ] Integration with RunContext for tracking
+- [ ] Tests validate limits are enforced
 
 **Where to Implement**:
-- File: `lift_sys/dspy_signatures/validation_hooks.py`
-- Tests: `tests/unit/dspy_signatures/test_validation_hooks.py`
+- File: `lift_sys/dspy_signatures/resource_limits.py`
+- Tests: `tests/unit/dspy_signatures/test_resource_limits.py`
 
 ---
 
@@ -183,7 +199,7 @@ class ValidationHook(Protocol):
 | Phase | Status | Holes Resolved | Gate Passed | Week |
 |-------|--------|----------------|-------------|------|
 | Phase 0 | ✅ Complete | N/A (setup) | N/A | - |
-| Phase 1 | 🔄 In Progress | 1/3 (✅H6, H9, H14) | ⏳ Pending | 1 |
+| Phase 1 | 🔄 In Progress | 2/3 (✅H6, ✅H9, H14) | ⏳ Pending | 1 |
 | Phase 2 | 🔒 Blocked | 0/3 | ⏳ Pending | 2 |
 | Phase 3 | 🔒 Blocked | 0/3 | ⏳ Pending | 3 |
 | Phase 4 | 🔒 Blocked | 0/3 | ⏳ Pending | 4 |
@@ -195,14 +211,14 @@ class ValidationHook(Protocol):
 
 | ID | Name | Status | Phase | Blocks | Blocked By |
 |----|------|--------|-------|--------|------------|
-| H6 | NodeSignatureInterface | ✅ RESOLVED | 1 | 4 holes | None |
-| H9 | ValidationHooks | ✅ READY | 1 | 1 hole | None |
-| H14 | ResourceLimits | ✅ READY | 1 | 1 hole | None |
+| H6 | NodeSignatureInterface | ✅ RESOLVED | 1 | 6 holes | None |
+| H9 | ValidationHooks | ✅ RESOLVED | 1 | 1 hole | None |
+| H14 | ResourceLimits | ✅ READY | 1 | 2 holes | None |
 | H1 | ProviderAdapter | 🔒 Blocked | 2 | 1 hole | H6 (✅ resolved) |
 | H2 | StatePersistence | 🔒 Blocked | 2 | 1 hole | H6 (✅ resolved) |
 | ... | (see HOLE_INVENTORY.md for complete list) | | | | |
 
-**Total**: 1/19 holes resolved (5.3%)
+**Total**: 2/19 holes resolved (10.5%)
 
 ### Critical Path Progress
 

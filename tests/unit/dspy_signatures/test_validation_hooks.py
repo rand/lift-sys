@@ -292,8 +292,8 @@ class TestStateValidationHook:
 
         assert result.failed
         assert "mismatch" in result.message.lower()
-        assert "TestState" in result.message
-        assert "AlternateState" in result.message
+        assert "ValidatorTestState" in result.message
+        assert "AlternateValidatorState" in result.message
 
 
 class TestProvenanceValidationHook:

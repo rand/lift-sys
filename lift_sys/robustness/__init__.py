@@ -26,7 +26,18 @@ Usage:
     assert checker.ir_equivalent(ir1, ir2)
 """
 
-# Public API will be populated as components are implemented
-__all__ = []
+from lift_sys.robustness.equivalence_checker import EquivalenceChecker
+from lift_sys.robustness.ir_variant_generator import IRVariantGenerator
+from lift_sys.robustness.paraphrase_generator import ParaphraseGenerator
+from lift_sys.robustness.types import NamingStyle, ParaphraseStrategy
+
+# Public API
+__all__ = [
+    "EquivalenceChecker",
+    "IRVariantGenerator",
+    "NamingStyle",
+    "ParaphraseGenerator",
+    "ParaphraseStrategy",
+]
 
 __version__ = "0.1.0"

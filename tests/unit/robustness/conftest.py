@@ -2,7 +2,13 @@
 
 import pytest
 
-from lift_sys.ir.models import IR
+from lift_sys.ir.models import (
+    AssertClause,
+    IntentClause,
+    IntermediateRepresentation,
+    Parameter,
+    SigClause,
+)
 
 
 @pytest.fixture
@@ -14,15 +20,15 @@ def sample_prompt():
 @pytest.fixture
 def sample_ir():
     """Sample IR for testing."""
-    return IR(
-        intent="Sort numbers in ascending order",
-        signature={
-            "name": "sort_numbers",
-            "parameters": [{"name": "numbers", "type": "list[int | float]"}],
-            "return_type": "list[int | float]",
-        },
+    return IntermediateRepresentation(
+        intent=IntentClause(summary="Sort numbers in ascending order"),
+        signature=SigClause(
+            name="sort_numbers",
+            parameters=[Parameter(name="numbers", type_hint="list[int | float]")],
+            returns="list[int | float]",
+        ),
         effects=[],
-        assertions=[{"type": "sorted", "order": "ascending"}],
+        assertions=[AssertClause(predicate="result is sorted in ascending order")],
     )
 
 

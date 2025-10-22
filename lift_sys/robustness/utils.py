@@ -1,6 +1,9 @@
 """Utility functions for robustness testing."""
 
+import re
 from typing import Any
+
+from lift_sys.robustness.types import NamingStyle
 
 
 def cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
@@ -88,3 +91,58 @@ def deep_equal(obj1: Any, obj2: Any, ignore_keys: set[str] | None = None) -> boo
 
     else:
         return obj1 == obj2
+
+
+def parse_identifier(name: str) -> list[str]:
+    """
+    Parse identifier into words.
+
+    Handles snake_case, camelCase, PascalCase, and SCREAMING_SNAKE_CASE.
+
+    Args:
+        name: Identifier name
+
+    Returns:
+        List of words
+    """
+    # Handle snake_case and SCREAMING_SNAKE_CASE
+    if "_" in name:
+        return [word.lower() for word in name.split("_") if word]
+
+    # Handle camelCase and PascalCase
+    if any(c.isupper() for c in name):
+        words = re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z][a-z]|\d|\W|$)|\d+", name)
+        return [word.lower() for word in words if word]
+
+    # Single word
+    return [name.lower()]
+
+
+def convert_naming_style(name: str, target_style: NamingStyle) -> str:
+    """
+    Convert identifier to target naming style.
+
+    Args:
+        name: Identifier name
+        target_style: Target naming convention
+
+    Returns:
+        Identifier in target naming style
+    """
+    # Parse into words
+    words = parse_identifier(name)
+
+    if not words:
+        return name
+
+    # Convert to target style
+    if target_style == NamingStyle.SNAKE_CASE:
+        return "_".join(words)
+    elif target_style == NamingStyle.CAMEL_CASE:
+        return words[0] + "".join(w.capitalize() for w in words[1:])
+    elif target_style == NamingStyle.PASCAL_CASE:
+        return "".join(w.capitalize() for w in words)
+    elif target_style == NamingStyle.SCREAMING_SNAKE:
+        return "_".join(w.upper() for w in words)
+    else:
+        return name  # Unknown style, return as-is

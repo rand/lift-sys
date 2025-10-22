@@ -5,6 +5,16 @@ This module provides the interface between Pydantic AI graph nodes and DSPy sign
 enabling declarative LLM task specifications with automatic optimization.
 """
 
+from lift_sys.dspy_signatures.concurrency_model import (
+    ANTHROPIC_TIER1_LIMITS,
+    MODAL_GPU_LIMITS,
+    OPENAI_TIER1_LIMITS,
+    PROVIDER_LIMITS_REGISTRY,
+    ConcurrencyModel,
+    ProviderRateLimits,
+    ProviderType,
+    get_concurrency_model,
+)
 from lift_sys.dspy_signatures.node_interface import (
     BaseNode,
     End,
@@ -60,7 +70,7 @@ __all__ = [
     "ExecutionIdValidationHook",
     "run_validators",
     "summarize_validation_results",
-    # Resource limits
+    # Resource limits (H14)
     "ResourceLimits",
     "ResourceUsage",
     "ResourceType",
@@ -69,4 +79,13 @@ __all__ = [
     "LimitCheckResult",
     "ResourcePresets",
     "MODAL_DEFAULT_LIMITS",
+    # Concurrency model (H16)
+    "ConcurrencyModel",
+    "ProviderType",
+    "ProviderRateLimits",
+    "get_concurrency_model",
+    "ANTHROPIC_TIER1_LIMITS",
+    "OPENAI_TIER1_LIMITS",
+    "MODAL_GPU_LIMITS",
+    "PROVIDER_LIMITS_REGISTRY",
 ]

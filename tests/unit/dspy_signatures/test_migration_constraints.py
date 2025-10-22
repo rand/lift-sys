@@ -61,7 +61,7 @@ def sample_ir() -> IntermediateRepresentation:
             returns="dict[str, Any]",
         ),
         effects=[EffectClause(description="Extracts intent and confidence score from user prompt")],
-        metadata=Metadata(version="1.0"),
+        metadata=Metadata(),
     )
 
 

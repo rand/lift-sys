@@ -26,7 +26,7 @@ from typing import Literal
 import numpy as np
 from sklearn.isotonic import IsotonicRegression
 
-from lift_sys.ir import IR
+from lift_sys.ir import IntermediateRepresentation
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class ConfidenceCalibrator:
 
     def fit(
         self,
-        predictions: list[IR | str],
+        predictions: list[IntermediateRepresentation | str],
         ground_truth_scores: list[float],
         prediction_types: list[Literal["ir", "code"]],
     ):
@@ -158,7 +158,7 @@ class ConfidenceCalibrator:
 
     def estimate_confidence(
         self,
-        prediction: IR | str,
+        prediction: IntermediateRepresentation | str,
         prediction_type: Literal["ir", "code"],
         features: dict[str, float] | None = None,
     ) -> ConfidenceScore:
@@ -208,7 +208,7 @@ class ConfidenceCalibrator:
 
     def evaluate_calibration(
         self,
-        predictions: list[IR | str],
+        predictions: list[IntermediateRepresentation | str],
         ground_truth_scores: list[float],
         prediction_types: list[Literal["ir", "code"]],
         n_bins: int = 10,
@@ -258,20 +258,20 @@ class ConfidenceCalibrator:
         )
 
 
-def extract_ir_features(ir: IR) -> dict[str, float]:
+def extract_ir_features(ir: IntermediateRepresentation) -> dict[str, float]:
     """Extract features from IR for confidence estimation.
 
     Features:
         - effect_count: Number of effects (normalized by max 20)
-        - effect_complexity: Average nesting depth (normalized by max 5)
-        - signature_completeness: Fraction of signature fields populated
+        - effect_complexity: Text length of effects (normalized)
+        - signature_completeness: Signature field presence
         - constraint_count: Number of constraints (normalized by max 10)
-        - parameter_complexity: Number of parameters (normalized by max 10)
-        - has_loops: Boolean (0/1)
-        - has_conditions: Boolean (0/1)
+        - parameter_count: Number of parameters (normalized by max 10)
+        - assertion_count: Number of assertions (normalized by max 10)
+        - intent_length: Length of intent text (normalized)
 
     Args:
-        ir: IR instance
+        ir: IntermediateRepresentation instance
 
     Returns:
         Dictionary of feature_name -> normalized_value (0.0-1.0)
@@ -282,61 +282,46 @@ def extract_ir_features(ir: IR) -> dict[str, float]:
     effect_count = len(ir.effects) if ir.effects else 0
     features["effect_count"] = min(effect_count / 20.0, 1.0)
 
-    # Effect complexity (check for nested structures)
-    # Simple heuristic: count effects with dependencies
+    # Effect complexity (based on total text length of effect descriptions)
     if ir.effects:
-        complex_effects = sum(1 for eff in ir.effects if hasattr(eff, "dependencies"))
-        features["effect_complexity"] = min(complex_effects / len(ir.effects), 1.0)
+        total_effect_text = sum(len(str(eff)) for eff in ir.effects)
+        features["effect_complexity"] = min(
+            total_effect_text / 500.0, 1.0
+        )  # Normalize by 500 chars
     else:
         features["effect_complexity"] = 0.0
 
-    # Signature completeness (fraction of non-None fields)
+    # Signature completeness (check if signature has name and return type)
     if ir.signature:
-        total_fields = 5  # name, parameters, return_type, effects, constraints
-        populated = sum(
-            [
-                bool(ir.signature.name),
-                bool(ir.signature.parameters),
-                bool(ir.signature.return_type),
-                bool(ir.signature.effects),
-                bool(ir.signature.constraints),
-            ]
-        )
-        features["signature_completeness"] = populated / total_fields
+        # SigClause has: name (str), parameters (list[Parameter]), return_type (str), holes
+        has_name = bool(ir.signature.name)
+        has_return_type = bool(ir.signature.return_type)
+        has_parameters = bool(ir.signature.parameters)
+        populated = sum([has_name, has_return_type, has_parameters])
+        features["signature_completeness"] = populated / 3.0
     else:
         features["signature_completeness"] = 0.0
 
     # Constraint count (normalize by max 10)
-    constraint_count = 0
-    if ir.signature and ir.signature.constraints:
-        constraint_count = len(ir.signature.constraints)
+    constraint_count = len(ir.constraints) if ir.constraints else 0
     features["constraint_count"] = min(constraint_count / 10.0, 1.0)
 
-    # Parameter complexity (number of parameters)
+    # Parameter count (number of parameters in signature)
     param_count = 0
     if ir.signature and ir.signature.parameters:
         param_count = len(ir.signature.parameters)
-    features["parameter_complexity"] = min(param_count / 10.0, 1.0)
+    features["parameter_count"] = min(param_count / 10.0, 1.0)
 
-    # Has loops (check effect names for loop-related keywords)
-    has_loops = 0.0
-    if ir.effects:
-        loop_keywords = ["loop", "iterate", "for", "while"]
-        has_loops = any(any(kw in str(eff).lower() for kw in loop_keywords) for eff in ir.effects)
-        features["has_loops"] = 1.0 if has_loops else 0.0
-    else:
-        features["has_loops"] = 0.0
+    # Assertion count (normalize by max 10)
+    assertion_count = len(ir.assertions) if ir.assertions else 0
+    features["assertion_count"] = min(assertion_count / 10.0, 1.0)
 
-    # Has conditions (check for if/conditional effects)
-    has_conditions = 0.0
-    if ir.effects:
-        cond_keywords = ["if", "conditional", "branch", "condition"]
-        has_conditions = any(
-            any(kw in str(eff).lower() for kw in cond_keywords) for eff in ir.effects
-        )
-        features["has_conditions"] = 1.0 if has_conditions else 0.0
+    # Intent length (normalize by 500 chars)
+    if ir.intent:
+        intent_text = str(ir.intent)
+        features["intent_length"] = min(len(intent_text) / 500.0, 1.0)
     else:
-        features["has_conditions"] = 0.0
+        features["intent_length"] = 0.0
 
     return features
 
@@ -488,7 +473,7 @@ def compute_ece(
 
 
 def train_from_h10_dataset(
-    ir_examples: list[tuple[IR, float]],
+    ir_examples: list[tuple[IntermediateRepresentation, float]],
     code_examples: list[tuple[str, float]],
 ) -> ConfidenceCalibrator:
     """Train calibrator using H10 validation dataset.

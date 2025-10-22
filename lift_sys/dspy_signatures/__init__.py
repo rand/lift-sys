@@ -29,6 +29,11 @@ from lift_sys.dspy_signatures.error_recovery import (
     RecoveryAction,
     RetryConfig,
 )
+from lift_sys.dspy_signatures.feature_flags import (
+    FeatureFlag,
+    FeatureFlagConfig,
+    RolloutStrategy,
+)
 from lift_sys.dspy_signatures.node_interface import (
     BaseNode,
     End,
@@ -122,6 +127,10 @@ __all__ = [
     "RecoveryAction",
     "RetryConfig",
     "ErrorContext",
+    # Feature flags (H13)
+    "FeatureFlag",
+    "FeatureFlagConfig",
+    "RolloutStrategy",
     # Trace visualization (H7)
     "TraceVisualizationProtocol",
     "TraceVisualizationService",

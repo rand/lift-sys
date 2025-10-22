@@ -61,24 +61,20 @@ class TestRealIRGenerationRobustness:
 
     async def test_lexical_paraphrase_with_real_translator(
         self,
-        paraphrase_generator,
-        sensitivity_analyzer,
         real_ir_translator,
-        sample_prompts,
         warning_threshold,
     ):
         """Test lexical paraphrase robustness with real IR generation.
 
         Note: Uses warning_threshold instead of target since real generation
-        is more variable than mocks.
+        is more variable than mocks. Uses hardcoded paraphrases for reliability.
         """
-        prompt = sample_prompts[0]
-
-        # Generate lexical paraphrases
-        paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.LEXICAL)
-
-        if len(paraphrases) < 1:
-            pytest.skip("Not enough paraphrases generated (need at least 1)")
+        # Use hardcoded prompt and paraphrase for reliable testing
+        prompt = "Create a function that sorts a list of numbers"
+        paraphrases = [
+            "Build a function to sort a numeric list",
+            "Write a function that arranges numbers in order",
+        ]
 
         # Use real translator (async)
         async def generate_ir_async(p: str):
@@ -134,22 +130,19 @@ class TestRealIRGenerationRobustness:
 
     async def test_structural_paraphrase_with_real_translator(
         self,
-        paraphrase_generator,
         real_ir_translator,
-        sample_prompts,
         failure_threshold,
     ):
         """Test structural paraphrase robustness with real IR generation.
 
         Note: Uses failure_threshold since structural paraphrases are harder.
+        Uses hardcoded paraphrases for reliability.
         """
-        prompt = sample_prompts[1]
-
-        # Generate structural paraphrases
-        paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.STRUCTURAL)
-
-        if len(paraphrases) < 1:
-            pytest.skip("Not enough structural paraphrases generated (need at least 1)")
+        # Use hardcoded prompt and structural paraphrase
+        prompt = "Write a function to validate email addresses"
+        paraphrases = [
+            "To validate email addresses, write a function"  # Clause reordering
+        ]
 
         # Generate IRs
         all_prompts = [prompt, *paraphrases[:2]]  # Limit to 2 for speed
@@ -188,19 +181,19 @@ class TestRealIRGenerationRobustness:
 
     async def test_combined_paraphrase_with_real_translator(
         self,
-        paraphrase_generator,
         real_ir_translator,
-        sample_prompts,
         failure_threshold,
     ):
-        """Test combined paraphrase robustness with real IR generation."""
-        prompt = sample_prompts[2]
+        """Test combined paraphrase robustness with real IR generation.
 
-        # Generate all types of paraphrases
-        paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.ALL)
-
-        if len(paraphrases) < 1:
-            pytest.skip("Not enough combined paraphrases generated (need at least 1)")
+        Uses hardcoded paraphrases for reliability.
+        """
+        # Use hardcoded prompt and combined paraphrases
+        prompt = "Implement a function that filters even numbers from a list"
+        paraphrases = [
+            "Build a function to filter even numbers from a list",  # Lexical
+            "From a list, filter even numbers by implementing a function",  # Structural
+        ]
 
         # Generate IRs (limit for speed)
         all_prompts = [prompt, *paraphrases[:3]]

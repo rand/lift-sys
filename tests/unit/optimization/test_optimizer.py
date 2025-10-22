@@ -60,6 +60,7 @@ class TestDSPyOptimizer:
 
         mock_mipro.assert_called_once_with(
             metric=aggregate_metric,
+            auto=False,  # Explicitly set to avoid conflicts with manual parameters
             num_candidates=5,
             init_temperature=1.2,
         )

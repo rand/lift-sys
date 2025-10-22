@@ -265,9 +265,11 @@ class DSPyOptimizer:
         Returns:
             Dictionary of optimizer configuration
         """
+        # Get metric name safely (handle mocks and callables)
+        metric_name = getattr(self.metric, "__name__", str(self.metric))
         config = {
             "optimizer_type": self.optimizer_type,
-            "metric": self.metric.__name__,
+            "metric": metric_name,
         }
         config.update(self.optimizer_kwargs)
         return config

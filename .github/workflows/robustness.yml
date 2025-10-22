@@ -1,0 +1,218 @@
+name: Robustness Testing
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  schedule:
+    # Run nightly at 2 AM UTC for comprehensive baseline tracking
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update baseline metrics'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  robustness-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']  # Run on single version for robustness tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Download spaCy model
+        run: |
+          uv run python -m spacy download en_core_web_sm
+
+      - name: Download NLTK data
+        run: |
+          uv run python -c "import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')"
+
+      - name: Run robustness tests
+        id: robustness
+        run: |
+          echo "Running robustness test suite..."
+          uv run pytest tests/robustness/ \
+            --tb=short \
+            --capture=no \
+            -v \
+            --junit-xml=robustness-results.xml \
+            | tee robustness-output.txt
+        continue-on-error: true
+
+      - name: Parse robustness metrics
+        id: metrics
+        run: |
+          # Extract robustness scores from test output
+          # This is a simple parser - will be enhanced with structured output
+
+          echo "Parsing robustness metrics..."
+
+          # Count test results
+          PASSED=$(grep -c "PASSED" robustness-output.txt || echo "0")
+          FAILED=$(grep -c "FAILED" robustness-output.txt || echo "0")
+          SKIPPED=$(grep -c "SKIPPED" robustness-output.txt || echo "0")
+          TOTAL=$((PASSED + FAILED + SKIPPED))
+
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+          # Calculate pass rate
+          if [ "$TOTAL" -gt 0 ]; then
+            PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TOTAL) * 100}")
+          else
+            PASS_RATE="0.0"
+          fi
+          echo "pass_rate=$PASS_RATE" >> $GITHUB_OUTPUT
+
+          # Extract robustness scores from output (if present)
+          # Look for patterns like "Robustness: 95.00%"
+          if grep -q "Robustness:" robustness-output.txt; then
+            AVG_ROBUSTNESS=$(grep "Robustness:" robustness-output.txt | \
+              grep -oP '\d+\.\d+%' | \
+              sed 's/%//' | \
+              awk '{sum+=$1; count++} END {if(count>0) printf "%.2f", sum/count; else print "0.00"}')
+            echo "avg_robustness=$AVG_ROBUSTNESS" >> $GITHUB_OUTPUT
+          else
+            echo "avg_robustness=N/A" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check quality gates
+        id: gates
+        run: |
+          FAILED="${{ steps.metrics.outputs.failed }}"
+          PASS_RATE="${{ steps.metrics.outputs.pass_rate }}"
+
+          echo "Quality Gate Check:"
+          echo "  Tests Passed: ${{ steps.metrics.outputs.passed }}"
+          echo "  Tests Failed: $FAILED"
+          echo "  Tests Skipped: ${{ steps.metrics.outputs.skipped }}"
+          echo "  Pass Rate: ${PASS_RATE}%"
+
+          # Quality gates
+          WARN_THRESHOLD=90  # Warn if pass rate < 90%
+          FAIL_THRESHOLD=80  # Fail if pass rate < 80%
+
+          if (( $(echo "$PASS_RATE < $FAIL_THRESHOLD" | bc -l) )); then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "message=❌ CRITICAL: Robustness pass rate ${PASS_RATE}% below failure threshold ${FAIL_THRESHOLD}%" >> $GITHUB_OUTPUT
+            exit 1
+          elif (( $(echo "$PASS_RATE < $WARN_THRESHOLD" | bc -l) )); then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "message=⚠️  WARNING: Robustness pass rate ${PASS_RATE}% below warning threshold ${WARN_THRESHOLD}%" >> $GITHUB_OUTPUT
+          else
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "message=✅ PASSED: Robustness tests meet quality standards (${PASS_RATE}%)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robustness-results-${{ matrix.python-version }}
+          path: |
+            robustness-results.xml
+            robustness-output.txt
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.gates.outputs.status }}';
+            const message = '${{ steps.gates.outputs.message }}';
+            const passed = '${{ steps.metrics.outputs.passed }}';
+            const failed = '${{ steps.metrics.outputs.failed }}';
+            const skipped = '${{ steps.metrics.outputs.skipped }}';
+            const passRate = '${{ steps.metrics.outputs.pass_rate }}';
+            const avgRobustness = '${{ steps.metrics.outputs.avg_robustness }}';
+
+            const statusEmoji = {
+              'passed': '✅',
+              'warning': '⚠️',
+              'failed': '❌'
+            }[status] || '❓';
+
+            const body = `## ${statusEmoji} Robustness Testing Report
+
+            ${message}
+
+            ### Test Results
+            | Metric | Value |
+            |--------|-------|
+            | Tests Passed | ${passed} |
+            | Tests Failed | ${failed} |
+            | Tests Skipped | ${skipped} |
+            | Pass Rate | ${passRate}% |
+            | Avg Robustness | ${avgRobustness}${avgRobustness !== 'N/A' ? '%' : ''} |
+
+            ### Quality Gates
+            - ⚠️  Warning: Pass rate < 90%
+            - ❌ Failure: Pass rate < 80%
+            - ✅ Target: Pass rate ≥ 90%, Robustness ≥ 97%
+
+            ### What This Means
+
+            Robustness tests validate that the system produces consistent outputs for semantically equivalent inputs.
+            High robustness (≥97%) means the system is not overly sensitive to formatting variations.
+
+            **Target Sensitivity**: <3% (TokDrift methodology)
+
+            <details>
+            <summary>View detailed test output</summary>
+
+            Download the \`robustness-output.txt\` artifact from the workflow run for complete details.
+
+            </details>
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Update baseline (if requested)
+        if: github.event.inputs.update_baseline == 'true' || github.event.schedule
+        run: |
+          echo "Updating baseline metrics..."
+          # This would run baseline measurement tests and update expected_results.json
+          # Deferred to Phase 3 when we have actual IR/code generation integration
+          echo "Baseline update deferred to Phase 3 (requires IR generation integration)"
+
+  robustness-summary:
+    runs-on: ubuntu-latest
+    needs: robustness-tests
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "### Robustness Testing Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Robustness tests validate system consistency across semantic-preserving transformations." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Based on**: TokDrift methodology (arXiv:2510.14972)" >> $GITHUB_STEP_SUMMARY
+          echo "**Target**: <3% sensitivity (≥97% robustness)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See workflow artifacts for detailed results." >> $GITHUB_STEP_SUMMARY

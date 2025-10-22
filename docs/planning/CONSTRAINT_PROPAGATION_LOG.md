@@ -1234,6 +1234,70 @@ No solution spaces updated (H17 is a terminal consumer hole).
 
 ---
 
+### Event 11: H12 Resolution (2025-10-21)
+**Hole Resolved**: H12 - ConfidenceCalibration
+**Resolution Summary**: Implemented calibrated confidence scoring for IR and code predictions using isotonic regression
+
+**Implementation**: `lift_sys.optimization.confidence`
+
+**Components**:
+- `ConfidenceCalibrator`: Main calibration system with isotonic/logistic regression
+- `ConfidenceScore`: Calibrated confidence (0.0-1.0) with extracted features and metadata
+- `CalibrationMetrics`: Brier score, ECE, calibration plot data, correlation
+- `extract_ir_features()`: 7 IR features (effect_count, signature_completeness, etc.)
+- `extract_code_features()`: 7 code features (LOC, cyclomatic complexity, etc.)
+- `train_from_h10_dataset()`: Integration with H10 metrics (ir_quality, code_quality)
+
+**Testing**:
+- Unit tests: 27 tests (all pass) - feature extraction, metrics, calibration workflow
+- Integration tests: 4 tests (all pass) - H10 metrics integration, end-to-end workflow
+
+**Documentation**: `docs/planning/H12_PREPARATION.md`
+
+### Constraints Propagated
+
+#### To H11: OptimizationTracker
+**New Constraint**: MUST track confidence scores alongside optimization metrics
+**Reasoning**: H12 provides calibrated confidence that should be logged with optimization experiments
+**Impact**: OptimizationTracker schema must include confidence field
+
+#### To H9: HoleFillingStrategy
+**New Constraint**: SHOULD use confidence scores to rank hole suggestions
+**Reasoning**: H12 enables confidence-based suggestion ranking
+**Impact**: Suggestion selection can prioritize high-confidence suggestions
+
+#### To H13: FeatureFlagSchema
+**New Constraint**: MAY include confidence threshold as feature flag
+**Reasoning**: H12 enables confidence-based feature rollout (only show high-confidence suggestions)
+**Impact**: Feature flags can control min_confidence thresholds
+
+### Discovered Dependencies
+
+- H11 (OptimizationTracker) now depends on H12 for confidence tracking
+- H12 validated to work with H10 (OptimizationMetrics) - integration confirmed
+
+### Updated Solution Spaces
+
+| Hole | Before | After | Reduction |
+|------|--------|-------|-----------|
+| H11 | Open schema | Must include confidence | 10% (added required field) |
+| H9 | Unranked suggestions | Confidence-ranked | 20% (ranking strategy constrained) |
+| H13 | Open config | Confidence thresholds | 5% (added threshold config) |
+
+### Unblocked Holes
+
+- H11 (OptimizationTracker) - Can now include confidence in tracking schema
+- H9 (HoleFillingStrategy) - Can now use confidence for suggestion ranking
+
+### Acceptance Criteria Met
+
+- [x] Calibration plot data available via CalibrationMetrics.calibration_data
+- [x] Brier score <0.2 validated in tests
+- [x] Few-shot learning tested (improves with more data)
+- [ ] User study deferred to Phase 4
+
+---
+
 **Circular Constraints**: If A → B → C → A, detect and break cycle
 
 ---
@@ -1253,4 +1317,4 @@ As each hole is resolved:
 
 **Document Status**: ACTIVE - Update after each hole resolution
 **Owner**: Architecture team
-**Last Updated**: 2025-10-21 (Event 10: H17 Resolution)
+**Last Updated**: 2025-10-21 (Event 11: H12 Resolution)

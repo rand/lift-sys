@@ -20,7 +20,7 @@ def mock_provider_with_realistic_irs():
     """Mock provider that returns realistic IRs for testing."""
     provider = MockProvider()
 
-    # Configure realistic IR as structured dict (not JSON string)
+    # Configure realistic IR as structured dict matching IR JSON schema
     realistic_ir_dict = {
         "intent": {"summary": "Sort a list of numbers in ascending order"},
         "signature": {
@@ -28,7 +28,10 @@ def mock_provider_with_realistic_irs():
             "parameters": [{"name": "numbers", "type_hint": "list[int]"}],
             "returns": "list[int]",
         },
-        "effects": ["Return a new sorted list", "Original list is not modified"],
+        "effects": [
+            {"description": "Return a new sorted list"},
+            {"description": "Original list is not modified"},
+        ],
         "assertions": [
             {"predicate": "result is sorted in ascending order"},
             {"predicate": "len(result) == len(numbers)"},

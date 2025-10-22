@@ -51,14 +51,13 @@ def main():
         SELECT
             c.relname AS view_name,
             CASE
-                WHEN v.reloptions IS NULL THEN 'No options set'
-                WHEN array_to_string(v.reloptions, ',') LIKE '%security_invoker=true%' THEN 'security_invoker=on'
-                WHEN array_to_string(v.reloptions, ',') LIKE '%security_invoker=false%' THEN 'security_definer (default)'
-                ELSE array_to_string(v.reloptions, ',')
+                WHEN c.reloptions IS NULL THEN 'security_definer (default)'
+                WHEN array_to_string(c.reloptions, ',') LIKE '%security_invoker=true%' THEN 'security_invoker=on'
+                WHEN array_to_string(c.reloptions, ',') LIKE '%security_invoker=on%' THEN 'security_invoker=on'
+                ELSE 'Other: ' || array_to_string(c.reloptions, ',')
             END AS security_mode
         FROM pg_class c
         JOIN pg_namespace n ON c.relnamespace = n.oid
-        LEFT JOIN pg_class v ON v.oid = c.oid
         WHERE n.nspname = 'public'
         AND c.relkind = 'v'
         AND c.relname = ANY(%s)

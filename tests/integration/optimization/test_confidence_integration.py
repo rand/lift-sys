@@ -283,5 +283,6 @@ class TestScalingWithDataset:
         assert 0.0 <= conf_small.value <= 1.0
         assert 0.0 <= conf_large.value <= 1.0
 
-        # Large dataset calibrator should have more data (metadata)
-        assert "Trained calibrator from H10 dataset" in str(calibrator_large)
+        # Both calibrators should be properly trained
+        assert calibrator_small.code_fitted
+        assert calibrator_large.code_fitted

@@ -25,7 +25,14 @@ from lift_sys.dspy_signatures.migration_constraints import (
     rollback_execution_history_to_prompt_session,
     validate_migration,
 )
-from lift_sys.ir.models import EffectClause, IntermediateRepresentation, Parameter, SigClause
+from lift_sys.ir.models import (
+    EffectClause,
+    IntentClause,
+    IntermediateRepresentation,
+    Metadata,
+    Parameter,
+    SigClause,
+)
 from lift_sys.spec_sessions.models import (
     HoleResolution,
     IRDraft,
@@ -42,28 +49,19 @@ from lift_sys.spec_sessions.models import (
 def sample_ir() -> IntermediateRepresentation:
     """Create sample IR for testing."""
     return IntermediateRepresentation(
-        effects=[
-            EffectClause(
-                signature=SigClause(
-                    name="ExtractIntent",
-                    inputs=[
-                        Parameter(name="prompt", type_hint="str"),
-                    ],
-                    outputs=[
-                        Parameter(name="intent", type_hint="str"),
-                        Parameter(name="confidence", type_hint="float"),
-                    ],
-                ),
-                io_examples=[
-                    {
-                        "prompt": "Create user profile",
-                        "intent": "create_user",
-                        "confidence": 0.95,
-                    }
-                ],
-            )
-        ],
-        metadata={"version": "1.0"},
+        intent=IntentClause(
+            summary="Extract user intent from natural language prompt",
+            rationale="Identify the user's intended action for routing",
+        ),
+        signature=SigClause(
+            name="ExtractIntent",
+            parameters=[
+                Parameter(name="prompt", type_hint="str"),
+            ],
+            returns="dict[str, Any]",
+        ),
+        effects=[EffectClause(description="Extracts intent and confidence score from user prompt")],
+        metadata=Metadata(version="1.0"),
     )
 
 

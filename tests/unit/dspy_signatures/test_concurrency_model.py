@@ -25,7 +25,7 @@ from lift_sys.dspy_signatures.concurrency_model import (
     ProviderType,
     get_concurrency_model,
 )
-from lift_sys.dspy_signatures.node_interface import BaseNode, End, NextNode, RunContext
+from lift_sys.dspy_signatures.node_interface import BaseNode, End, RunContext
 from lift_sys.dspy_signatures.parallel_executor import ParallelExecutor
 from lift_sys.dspy_signatures.resource_limits import ResourceLimits
 
@@ -47,7 +47,7 @@ class MockLLMNode(BaseNode[TestState]):
         self.call_count = 0
         self.call_times: list[float] = []
 
-    async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
+    async def run(self, ctx: RunContext[TestState]) -> BaseNode[TestState] | End:
         """Simulate LLM call with timing."""
         self.call_count += 1
         self.call_times.append(time.time())

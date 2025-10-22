@@ -29,6 +29,11 @@ Usage:
 from lift_sys.robustness.equivalence_checker import EquivalenceChecker
 from lift_sys.robustness.ir_variant_generator import IRVariantGenerator
 from lift_sys.robustness.paraphrase_generator import ParaphraseGenerator
+from lift_sys.robustness.sensitivity_analyzer import (
+    SensitivityAnalyzer,
+    SensitivityResult,
+    StatisticalTestResult,
+)
 from lift_sys.robustness.types import NamingStyle, ParaphraseStrategy
 
 # Public API
@@ -38,6 +43,9 @@ __all__ = [
     "NamingStyle",
     "ParaphraseGenerator",
     "ParaphraseStrategy",
+    "SensitivityAnalyzer",
+    "SensitivityResult",
+    "StatisticalTestResult",
 ]
 
 __version__ = "0.1.0"

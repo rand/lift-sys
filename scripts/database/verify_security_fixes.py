@@ -60,10 +60,9 @@ def main():
         JOIN pg_namespace n ON c.relnamespace = n.oid
         WHERE n.nspname = 'public'
         AND c.relkind = 'v'
-        AND c.relname = ANY(%s)
+        AND c.relname IN ('session_summary', 'user_analytics', 'recent_activity', 'draft_validation_stats')
         ORDER BY c.relname;
-    """,
-        (view_names,),
+    """
     )
 
     views_fixed = 0
@@ -102,10 +101,11 @@ def main():
         FROM pg_proc p
         JOIN pg_namespace n ON p.pronamespace = n.oid
         WHERE n.nspname = 'public'
-        AND p.proname = ANY(%s)
+        AND p.proname IN ('update_updated_at_column', 'update_session_revision_count',
+                          'update_session_draft_count', 'update_session_hole_count',
+                          'refresh_user_analytics')
         ORDER BY p.proname;
-    """,
-        (function_names,),
+    """
     )
 
     functions_fixed = 0

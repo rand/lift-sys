@@ -90,8 +90,8 @@ class TestRealIRGenerationRobustness:
         # Generate lexical paraphrases
         paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.LEXICAL)
 
-        if len(paraphrases) < 2:
-            pytest.skip("Not enough paraphrases generated")
+        if len(paraphrases) < 1:
+            pytest.skip("Not enough paraphrases generated (need at least 1)")
 
         # Use real translator (async)
         async def generate_ir_async(p: str):
@@ -161,8 +161,8 @@ class TestRealIRGenerationRobustness:
         # Generate structural paraphrases
         paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.STRUCTURAL)
 
-        if len(paraphrases) < 2:
-            pytest.skip("Not enough structural paraphrases generated")
+        if len(paraphrases) < 1:
+            pytest.skip("Not enough structural paraphrases generated (need at least 1)")
 
         # Generate IRs
         all_prompts = [prompt, *paraphrases[:2]]  # Limit to 2 for speed
@@ -212,8 +212,8 @@ class TestRealIRGenerationRobustness:
         # Generate all types of paraphrases
         paraphrases = paraphrase_generator.generate(prompt, strategy=ParaphraseStrategy.ALL)
 
-        if len(paraphrases) < 2:
-            pytest.skip("Not enough combined paraphrases generated")
+        if len(paraphrases) < 1:
+            pytest.skip("Not enough combined paraphrases generated (need at least 1)")
 
         # Generate IRs (limit for speed)
         all_prompts = [prompt, *paraphrases[:3]]

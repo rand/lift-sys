@@ -176,6 +176,7 @@ class TestParallelExecutor:
         with pytest.raises(ValueError, match="max_concurrent must be ≥1"):
             ParallelExecutor(max_concurrent=-1)
 
+    @pytest.mark.asyncio
     async def test_execute_single_with_isolation_success(self):
         """Test single node execution with state isolation."""
         node = SetValueNode(42)
@@ -197,6 +198,7 @@ class TestParallelExecutor:
         # Timing recorded
         assert result.execution_time_ms > 0
 
+    @pytest.mark.asyncio
     async def test_execute_single_with_isolation_failure(self):
         """Test single node execution captures errors."""
         error = ValueError("test error")
@@ -217,6 +219,7 @@ class TestParallelExecutor:
         # Timing still recorded
         assert result.execution_time_ms >= 0
 
+    @pytest.mark.asyncio
     async def test_execute_parallel_empty_list(self):
         """Test execute_parallel with empty node list."""
         executor = ParallelExecutor(max_concurrent=4)
@@ -226,6 +229,7 @@ class TestParallelExecutor:
 
         assert results == []
 
+    @pytest.mark.asyncio
     async def test_execute_parallel_single_node(self):
         """Test execute_parallel with single node."""
         node = SetValueNode(99)
@@ -238,6 +242,7 @@ class TestParallelExecutor:
         assert results[0].is_success
         assert results[0].context.state.value == 99
 
+    @pytest.mark.asyncio
     async def test_execute_parallel_multiple_nodes(self):
         """Test execute_parallel with multiple nodes."""
         nodes = [SetValueNode(i * 10) for i in range(5)]
@@ -255,6 +260,7 @@ class TestParallelExecutor:
         values = [r.context.state.value for r in results]
         assert set(values) == {0, 10, 20, 30, 40}
 
+    @pytest.mark.asyncio
     async def test_state_isolation_no_race_conditions(self):
         """Test that state isolation prevents race conditions."""
         # Create 10 nodes that increment counter
@@ -276,6 +282,7 @@ class TestParallelExecutor:
 class TestMergeStrategies:
     """Tests for merge strategy implementations."""
 
+    @pytest.mark.asyncio
     async def test_merge_first_success_all_succeed(self):
         """Test FIRST_SUCCESS with all successful results."""
         nodes = [SetValueNode(i * 10) for i in range(3)]
@@ -289,6 +296,7 @@ class TestMergeStrategies:
         # Uses first result (value=0)
         assert merged.state.value == 0
 
+    @pytest.mark.asyncio
     async def test_merge_first_success_with_failures(self):
         """Test FIRST_SUCCESS skips failures and uses first success."""
         nodes = [
@@ -307,6 +315,7 @@ class TestMergeStrategies:
         # Uses first successful result (value=42)
         assert merged.state.value == 42
 
+    @pytest.mark.asyncio
     async def test_merge_first_success_all_fail(self):
         """Test FIRST_SUCCESS raises when all nodes fail."""
         nodes = [
@@ -321,6 +330,7 @@ class TestMergeStrategies:
         with pytest.raises(ParallelExecutionError, match="All parallel nodes failed"):
             executor.merge_states(results, MergeStrategy.FIRST_SUCCESS)
 
+    @pytest.mark.asyncio
     async def test_merge_all_success_all_succeed(self):
         """Test ALL_SUCCESS with all successful results."""
         nodes = [AppendResultNode(f"result_{i}") for i in range(3)]
@@ -338,6 +348,7 @@ class TestMergeStrategies:
         assert len(merged.state.results) == 1  # Only first node's result in merged state
         # Note: ALL_SUCCESS merges provenance, not state lists
 
+    @pytest.mark.asyncio
     async def test_merge_all_success_with_failure(self):
         """Test ALL_SUCCESS raises when any node fails."""
         nodes = [
@@ -355,6 +366,7 @@ class TestMergeStrategies:
         ):
             executor.merge_states(results, MergeStrategy.ALL_SUCCESS)
 
+    @pytest.mark.asyncio
     async def test_merge_majority_all_same(self):
         """Test MAJORITY with all identical outputs."""
         # Run same node multiple times (should produce same output)
@@ -369,6 +381,7 @@ class TestMergeStrategies:
         # All nodes produced same output (value=42)
         assert merged.state.value == 42
 
+    @pytest.mark.asyncio
     async def test_merge_majority_different_outputs(self):
         """Test MAJORITY selects most common output."""
         nodes = [
@@ -387,6 +400,7 @@ class TestMergeStrategies:
         # Most common output is value=20 (appears twice)
         assert merged.state.value == 20
 
+    @pytest.mark.asyncio
     async def test_merge_empty_results(self):
         """Test merge raises on empty results list."""
         executor = ParallelExecutor(max_concurrent=1)
@@ -436,7 +450,7 @@ class TestAcceptanceCriteria:
         outputs = []
         for _ in range(100):
             results = await executor.execute_parallel([node], ctx)
-            output_json = results[0].context.state.model_dump_json(sort_keys=True)
+            output_json = results[0].context.state.model_dump_json()
             outputs.append(output_json)
 
         # All outputs identical
@@ -490,6 +504,7 @@ class TestAcceptanceCriteria:
 class TestStatistics:
     """Tests for execution statistics."""
 
+    @pytest.mark.asyncio
     async def test_get_statistics_all_success(self):
         """Test statistics with all successful executions."""
         nodes = [SlowNode(delay_ms=10) for _ in range(5)]
@@ -507,6 +522,7 @@ class TestStatistics:
         assert stats["avg_time_ms"] >= 10  # At least delay time
         assert len(stats["errors"]) == 0
 
+    @pytest.mark.asyncio
     async def test_get_statistics_mixed_results(self):
         """Test statistics with mixed success/failure."""
         nodes = [

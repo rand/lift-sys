@@ -301,7 +301,7 @@ class ParallelExecutor(Generic[StateT]):
         for result in results:
             if result.is_success:
                 # Hash state for comparison
-                state_json = result.context.state.model_dump_json(sort_keys=True)
+                state_json = result.context.state.model_dump_json()
                 state_hash = hash(state_json)
                 state_key = str(state_hash)
 

@@ -6,6 +6,7 @@ This module provides:
 - Metric aggregation and validation
 - DSPy optimizer wrappers (MIPROv2, COPRO)
 - Route-aware optimization (multi-provider)
+- Statistical validation for optimization experiments
 """
 
 from lift_sys.optimization.metrics import (
@@ -38,6 +39,13 @@ from lift_sys.optimization.route_optimizer import (
     RouteAwareOptimizer,
     RouteOptimizationResult,
 )
+from lift_sys.optimization.validation import (
+    OptimizationValidator,
+    ValidationResult,
+    cohens_d,
+    paired_t_test,
+    validate_metric_correlation,
+)
 
 __all__ = [
     # Core quality
@@ -68,4 +76,10 @@ __all__ = [
     "OptimizationResult",
     "RouteAwareOptimizer",
     "RouteOptimizationResult",
+    # Validation (H17)
+    "OptimizationValidator",
+    "ValidationResult",
+    "cohens_d",
+    "paired_t_test",
+    "validate_metric_correlation",
 ]

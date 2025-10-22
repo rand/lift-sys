@@ -22,6 +22,13 @@ from lift_sys.dspy_signatures.concurrency_model import (
     ProviderType,
     get_concurrency_model,
 )
+from lift_sys.dspy_signatures.error_recovery import (
+    ErrorCategory,
+    ErrorContext,
+    ErrorRecovery,
+    RecoveryAction,
+    RetryConfig,
+)
 from lift_sys.dspy_signatures.node_interface import (
     BaseNode,
     End,
@@ -101,4 +108,10 @@ __all__ = [
     "NoOpCache",
     "CacheEntry",
     "CachedParallelExecutor",
+    # Error recovery (H5)
+    "ErrorRecovery",
+    "ErrorCategory",
+    "RecoveryAction",
+    "RetryConfig",
+    "ErrorContext",
 ]

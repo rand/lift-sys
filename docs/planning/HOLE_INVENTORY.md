@@ -1,8 +1,8 @@
 # Hole Inventory - DSPy + Pydantic AI Architecture
 
 **Date**: 2025-10-21
-**Status**: TRACKING (19 holes, 13 resolved)
-**Version**: 1.4
+**Status**: TRACKING (19 holes, 14 resolved, 73.7%)
+**Version**: 1.5
 
 ---
 
@@ -11,10 +11,10 @@
 This document catalogs all typed holes in the DSPy + Pydantic AI architecture proposal. Each hole represents an unknown or underspecified element that must be resolved during implementation.
 
 **Total Holes**: 19
-**Resolved**: 13 (H1, H2, H3, H4, H6, H8, H9, H10, H11, H12, H14, H16, H17)
+**Resolved**: 14 (H1, H2, H3, H4, H5, H6, H8, H9, H10, H11, H12, H14, H16, H17)
 **In Progress**: 0
 **Blocked**: 0
-**Ready**: 3 (H5, H7, H15 - H4 unblocked H18)
+**Ready**: 2 (H7, H15 - H4 unblocked H18)
 
 **Note**: Some resolved holes (H2, H6, H9, H10, H11, H14) not yet updated with resolution details in this document. See SESSION_STATE.md for complete status.
 
@@ -277,44 +277,41 @@ class ParallelExecutor(Generic[StateT]):
 ### H5: ErrorRecovery
 **Type**: Implementation
 **Kind**: `ErrorHandler`
-**Status**: ⏳ Blocked by H9
+**Status**: ✅ RESOLVED
 
 **Description**: Handling node failures and graph-level errors
 
 **Type Signature**:
 ```python
-class ErrorRecovery:
-    async def handle_node_error(
+class ErrorRecovery(Generic[StateT]):
+    async def execute_with_retry(
         self,
-        node: BaseNode,
-        error: Exception,
-        ctx: RunContext
-    ) -> RecoveryAction: ...
-    def should_retry(self, error: Exception, attempt: int) -> bool: ...
+        node: BaseNode[StateT],
+        ctx: RunContext[StateT],
+        executor: ParallelExecutor[StateT]
+    ) -> NodeResult[StateT]: ...
+    def classify_error(self, error: Exception) -> ErrorCategory: ...
+    def should_retry(self, error_ctx: ErrorContext) -> bool: ...
 ```
 
 **Constraints**:
-- MUST preserve graph state on failure
-- MUST support retry with backoff
-- MUST log errors for debugging
-- SHOULD allow graceful degradation
+- MUST preserve graph state on failure ✅
+- MUST support retry with backoff ✅
+- MUST log errors for debugging ✅
+- SHOULD allow graceful degradation ✅
 
 **Dependencies**:
 - **Blocks**: Production readiness
-- **Blocked by**: H9 (ValidationHooks - needs validation framework)
+- **Blocked by**: ✅ H9 (ValidationHooks - RESOLVED), ✅ H4 (ParallelizationImpl - RESOLVED)
 
 **Acceptance Criteria**:
-- [ ] Transient errors retry successfully
-- [ ] Fatal errors terminate gracefully
-- [ ] State preserved on all failure modes
-- [ ] Error messages actionable
+- [x] Transient errors retry successfully
+- [x] Fatal errors terminate gracefully
+- [x] State preserved on all failure modes
+- [x] Error messages actionable
 
-**Resolution Ideas**:
-1. Retry decorator with exponential backoff
-2. Circuit breaker pattern
-3. Fallback to baseline on repeated failures
-
-**Assigned To**: TBD
+**Assigned To**: Claude
+**Completed**: 2025-10-21
 **Target Phase**: Phase 7 (Week 7)
 
 ---

@@ -188,8 +188,8 @@ def {ir.signature.name}(nums):
 
     def test_wilcoxon_test_significant_difference(self):
         """Test Wilcoxon test with significant differences."""
-        original_scores = [0.9, 0.85, 0.88, 0.92, 0.87]
-        variant_scores = [0.7, 0.65, 0.68, 0.72, 0.67]  # Clearly worse
+        original_scores = [0.95, 0.92, 0.94, 0.96, 0.93, 0.95, 0.94]
+        variant_scores = [0.60, 0.55, 0.58, 0.62, 0.57, 0.60, 0.59]  # Clearly worse
 
         analyzer = SensitivityAnalyzer()
         result = analyzer.wilcoxon_test(original_scores, variant_scores)
@@ -261,7 +261,7 @@ def {ir.signature.name}(nums):
         analyzer = SensitivityAnalyzer()
         overall_robustness = analyzer.compute_robustness_score(results)
 
-        assert overall_robustness == 0.85  # (0.9 + 0.8) / 2
+        assert overall_robustness == pytest.approx(0.85)  # (0.9 + 0.8) / 2
 
     def test_compute_robustness_score_empty(self):
         """Test robustness score computation with empty list."""
@@ -296,10 +296,10 @@ def {ir.signature.name}(nums):
         analyzer = SensitivityAnalyzer()
         comparison = analyzer.compare_sensitivity(result1, result2)
 
-        assert comparison["sensitivity_diff"] == -0.1  # Improved (lower)
-        assert comparison["robustness_diff"] == 0.1  # Improved (higher)
-        assert comparison["sensitivity_change_pct"] == -50.0  # 50% reduction
-        assert comparison["robustness_change_pct"] == 12.5  # 12.5% increase
+        assert comparison["sensitivity_diff"] == pytest.approx(-0.1)  # Improved (lower)
+        assert comparison["robustness_diff"] == pytest.approx(0.1)  # Improved (higher)
+        assert comparison["sensitivity_change_pct"] == pytest.approx(-50.0)  # 50% reduction
+        assert comparison["robustness_change_pct"] == pytest.approx(12.5)  # 12.5% increase
 
     def test_sensitivity_result_str(self):
         """Test string representation of SensitivityResult."""

@@ -132,9 +132,10 @@ class RouteAwareOptimizer:
         Raises:
             ValueError: If routes is empty
         """
-        routes = routes or [ProviderRoute.BEST_AVAILABLE, ProviderRoute.MODAL_INFERENCE]
-
-        if not routes:
+        # Set default routes if None, but validate if empty list
+        if routes is None:
+            routes = [ProviderRoute.BEST_AVAILABLE, ProviderRoute.MODAL_INFERENCE]
+        elif not routes:  # Empty list check
             raise ValueError("routes cannot be empty")
 
         logger.info(f"Starting multi-route optimization for routes: {[r.value for r in routes]}")

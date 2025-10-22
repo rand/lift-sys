@@ -101,9 +101,9 @@ class DSPyOptimizer:
         self.metric = metric or self._default_metric()
         self.optimizer_kwargs = optimizer_kwargs
 
-        logger.info(
-            f"Initialized {optimizer_type.upper()} optimizer with metric={self.metric.__name__}"
-        )
+        # Get metric name safely (handle mocks and callables)
+        metric_name = getattr(self.metric, "__name__", str(self.metric))
+        logger.info(f"Initialized {optimizer_type.upper()} optimizer with metric={metric_name}")
 
     def optimize(
         self,
@@ -215,8 +215,11 @@ class DSPyOptimizer:
         """
         if self.optimizer_type == "mipro":
             # MIPROv2 default configuration
+            # Note: DSPy has 'auto' parameter that conflicts with manual settings
+            # We disable auto to allow manual control
             return MIPROv2(
                 metric=self.metric,
+                auto=False,  # Disable auto to allow manual num_candidates/num_trials
                 num_candidates=self.optimizer_kwargs.get("num_candidates", 3),
                 init_temperature=self.optimizer_kwargs.get("init_temperature", 1.4),
             )

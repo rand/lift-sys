@@ -51,6 +51,14 @@ from lift_sys.dspy_signatures.resource_limits import (
     ResourceType,
     ResourceUsage,
 )
+from lift_sys.dspy_signatures.trace_visualization import (
+    ExecutionTrace,
+    NodeEvent,
+    NodeEventType,
+    StateSnapshot,
+    TraceVisualizationProtocol,
+    TraceVisualizationService,
+)
 from lift_sys.dspy_signatures.validation_hooks import (
     CompositeValidator,
     ExecutionIdValidationHook,
@@ -114,4 +122,11 @@ __all__ = [
     "RecoveryAction",
     "RetryConfig",
     "ErrorContext",
+    # Trace visualization (H7)
+    "TraceVisualizationProtocol",
+    "TraceVisualizationService",
+    "ExecutionTrace",
+    "NodeEvent",
+    "NodeEventType",
+    "StateSnapshot",
 ]

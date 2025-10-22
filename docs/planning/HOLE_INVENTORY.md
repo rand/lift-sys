@@ -1,8 +1,8 @@
 # Hole Inventory - DSPy + Pydantic AI Architecture
 
 **Date**: 2025-10-21
-**Status**: TRACKING (19 holes, 14 resolved, 73.7%)
-**Version**: 1.5
+**Status**: TRACKING (19 holes, 15 resolved, 78.9%)
+**Version**: 1.6
 
 ---
 
@@ -11,10 +11,10 @@
 This document catalogs all typed holes in the DSPy + Pydantic AI architecture proposal. Each hole represents an unknown or underspecified element that must be resolved during implementation.
 
 **Total Holes**: 19
-**Resolved**: 14 (H1, H2, H3, H4, H5, H6, H8, H9, H10, H11, H12, H14, H16, H17)
+**Resolved**: 15 (H1, H2, H3, H4, H5, H6, H7, H8, H9, H10, H11, H12, H14, H16, H17)
 **In Progress**: 0
 **Blocked**: 0
-**Ready**: 2 (H7, H15 - H4 unblocked H18)
+**Ready**: 1 (H15 - H4 unblocked H18)
 
 **Note**: Some resolved holes (H2, H6, H9, H10, H11, H14) not yet updated with resolution details in this document. See SESSION_STATE.md for complete status.
 
@@ -363,40 +363,37 @@ class BaseNode(Protocol):
 ### H7: TraceVisualizationProtocol
 **Type**: Interface
 **Kind**: `Protocol`
-**Status**: ⏳ Blocked by H11
+**Status**: ✅ RESOLVED
 
 **Description**: Interface for exposing graph execution traces to UI
 
 **Type Signature**:
 ```python
 class TraceVisualizationProtocol(Protocol):
-    def get_trace(self, execution_id: UUID) -> ExecutionTrace: ...
-    def get_node_timeline(self, execution_id: UUID) -> list[NodeEvent]: ...
-    def get_state_history(self, execution_id: UUID) -> list[StateSnapshot]: ...
+    async def get_trace(self, execution_id: UUID | str) -> ExecutionTrace: ...
+    async def get_node_timeline(self, execution_id: UUID | str, node_type: str | None = None) -> list[NodeEvent]: ...
+    async def get_state_history(self, execution_id: UUID | str, include_diffs: bool = True) -> list[StateSnapshot]: ...
+    async def list_executions(...) -> list[ExecutionTrace]: ...
 ```
 
 **Constraints**:
-- MUST support real-time updates (WebSocket)
-- MUST include node inputs/outputs
-- MUST show timing information
-- SHOULD support filtering and search
+- MUST support real-time updates (WebSocket) ✅
+- MUST include node inputs/outputs ✅
+- MUST show timing information ✅
+- SHOULD support filtering and search ✅
 
 **Dependencies**:
 - **Blocks**: UX features
-- **Blocked by**: H11 (ExecutionHistorySchema - needs schema definition)
+- **Blocked by**: ✅ H11 (ExecutionHistorySchema - RESOLVED)
 
 **Acceptance Criteria**:
-- [ ] UI can display execution trace
-- [ ] Real-time updates work via WebSocket
-- [ ] Performance: <100ms query time
-- [ ] Supports filtering by node type
+- [x] UI can display execution trace
+- [x] Real-time updates work via WebSocket
+- [x] Performance: <100ms query time
+- [x] Supports filtering by node type
 
-**Resolution Ideas**:
-1. REST API + WebSocket for updates
-2. GraphQL with subscriptions
-3. Server-sent events for streaming
-
-**Assigned To**: TBD
+**Assigned To**: Claude
+**Completed**: 2025-10-21
 **Target Phase**: Phase 5 (Week 5)
 
 ---

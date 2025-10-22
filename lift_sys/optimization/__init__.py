@@ -7,8 +7,19 @@ This module provides:
 - DSPy optimizer wrappers (MIPROv2, COPRO)
 - Route-aware optimization (multi-provider)
 - Statistical validation for optimization experiments
+- Confidence calibration for predictions
 """
 
+from lift_sys.optimization.confidence import (
+    CalibrationMetrics,
+    ConfidenceCalibrator,
+    ConfidenceScore,
+    compute_brier_score,
+    compute_ece,
+    extract_code_features,
+    extract_ir_features,
+    train_from_h10_dataset,
+)
 from lift_sys.optimization.metrics import (
     # Aggregation
     aggregate_metric,
@@ -82,4 +93,13 @@ __all__ = [
     "cohens_d",
     "paired_t_test",
     "validate_metric_correlation",
+    # Confidence Calibration (H12)
+    "ConfidenceCalibrator",
+    "ConfidenceScore",
+    "CalibrationMetrics",
+    "extract_ir_features",
+    "extract_code_features",
+    "compute_brier_score",
+    "compute_ece",
+    "train_from_h10_dataset",
 ]

@@ -219,10 +219,9 @@ class TestRobustnessEdgeCases:
         """Test handling of empty prompts."""
         generator = ParaphraseGenerator()
 
-        # Should handle empty prompt gracefully
-        paraphrases = generator.generate("", strategy=ParaphraseStrategy.LEXICAL)
-        assert isinstance(paraphrases, list)
-        assert len(paraphrases) == 0, "Empty prompt should generate no paraphrases"
+        # Should raise ValueError for empty prompt
+        with pytest.raises(ValueError, match="Prompt cannot be empty"):
+            generator.generate("", strategy=ParaphraseStrategy.LEXICAL)
 
     def test_minimal_ir_variant_generation(self):
         """Test IR variant generation with minimal IR."""

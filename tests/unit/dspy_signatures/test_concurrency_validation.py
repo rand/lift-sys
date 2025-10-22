@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import statistics
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -43,6 +44,14 @@ class IncrementNode(BaseNode[TestState]):
 
     name: str = "IncrementNode"
 
+    def extract_inputs(self, state: TestState) -> dict:
+        """Extract inputs (not used in test)."""
+        return {}
+
+    def update_state(self, state: TestState, result: Any) -> None:
+        """Update state (not used in test)."""
+        pass
+
     async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
         """Increment value and track execution."""
         # Simulate async work
@@ -68,6 +77,14 @@ class MultiplyNode(BaseNode[TestState]):
     name: str = "MultiplyNode"
     multiplier: int = 2
 
+    def extract_inputs(self, state: TestState) -> dict:
+        """Extract inputs (not used in test)."""
+        return {}
+
+    def update_state(self, state: TestState, result: Any) -> None:
+        """Update state (not used in test)."""
+        pass
+
     async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
         """Multiply value and track execution."""
         await asyncio.sleep(0.01)
@@ -91,6 +108,14 @@ class SharedResourceNode(BaseNode[TestState]):
 
     name: str = "SharedResourceNode"
     shared_counter: int = 0  # Class variable (intentionally shared)
+
+    def extract_inputs(self, state: TestState) -> dict:
+        """Extract inputs (not used in test)."""
+        return {}
+
+    def update_state(self, state: TestState, result: Any) -> None:
+        """Update state (not used in test)."""
+        pass
 
     async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
         """Access shared resource."""
@@ -382,6 +407,14 @@ async def test_ac4_error_handling_in_parallel():
 
     class FailingNode(BaseNode[TestState]):
         name: str = "FailingNode"
+
+        def extract_inputs(self, state: TestState) -> dict:
+            """Extract inputs (not used in test)."""
+            return {}
+
+        def update_state(self, state: TestState, result: Any) -> None:
+            """Update state (not used in test)."""
+            pass
 
         async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
             await asyncio.sleep(0.01)

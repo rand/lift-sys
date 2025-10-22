@@ -110,14 +110,15 @@ class TestPairedTTest:
 
     def test_paired_t_test_no_difference(self):
         """Test paired t-test when there's no difference."""
+        import numpy as np
+
         baseline = [0.5, 0.6, 0.7, 0.8, 0.9]
         optimized = [0.5, 0.6, 0.7, 0.8, 0.9]
 
         statistic, p_value = paired_t_test(baseline, optimized)
 
-        # Should not be significant (p >= 0.05)
-        # p-value should be close to 1.0 for identical arrays
-        assert p_value > 0.5
+        # When arrays are identical, p-value will be NaN
+        assert np.isnan(p_value)
 
     def test_paired_t_test_mismatched_lengths(self):
         """Test paired t-test with different array lengths."""
@@ -161,7 +162,7 @@ class TestValidateMetricCorrelation:
         )
 
         assert correlation == 1.0
-        assert passes is True
+        assert passes  # Truthiness check works for numpy booleans
 
     def test_validate_metric_correlation_moderate(self):
         """Test metric correlation with moderate correlation."""
@@ -174,7 +175,7 @@ class TestValidateMetricCorrelation:
         )
 
         assert 0.3 < correlation < 0.8
-        assert passes is False
+        assert not passes  # Truthiness check works for numpy booleans
 
     def test_validate_metric_correlation_mismatched_lengths(self):
         """Test metric correlation with different array lengths."""
@@ -351,7 +352,7 @@ class TestOptimizationValidator:
         assert result.optimized_mean > result.baseline_mean
         assert result.improvement_pct > 0
         # With clear improvement, should be significant
-        assert result.significant is True
+        assert result.significant  # Truthiness check works for numpy booleans
         assert "DEPLOY" in result.recommendation or "CONSIDER" in result.recommendation
 
     @patch.object(DSPyOptimizer, "optimize")
@@ -398,17 +399,19 @@ class TestOptimizationValidator:
 
         # No improvement
         assert result.improvement_pct == 0.0
-        assert result.significant is False
+        # When all values are identical, p-value can be NaN
+        # significant should be False in this case
+        assert not result.significant  # Truthiness check works for numpy booleans
         assert "NO DEPLOY" in result.recommendation
 
-    @patch.object(DSPyOptimizer, "optimize")
-    def test_validate_optimization_failure(self, mock_optimize):
+    def test_validate_optimization_failure(self):
         """Test validation when optimization fails."""
         mock_metric = Mock(return_value=0.6)
         validator = OptimizationValidator(metric=mock_metric)
 
-        # Mock optimizer to raise exception
-        mock_optimize.side_effect = Exception("Optimization failed")
+        # Create mock optimizer that raises exception
+        mock_optimizer = Mock()
+        mock_optimizer.optimize.side_effect = Exception("Optimization failed")
 
         # Create examples
         train_examples = [
@@ -424,7 +427,7 @@ class TestOptimizationValidator:
         with pytest.raises(ValueError, match="Optimization failed"):
             validator.validate(
                 pipeline=Mock(),
-                optimizer=Mock(),
+                optimizer=mock_optimizer,
                 train_examples=train_examples,
                 test_examples=test_examples,
             )

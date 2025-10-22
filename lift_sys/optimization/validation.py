@@ -171,9 +171,14 @@ class OptimizationValidator:
 
         # Step 4: Run paired t-test
         statistic, p_value = ttest_rel(baseline_scores, optimized_scores, alternative="less")
-        significant = p_value < self.significance_level
 
-        logger.info(f"Paired t-test: statistic={statistic:.3f}, p={p_value:.4f}")
+        # Handle NaN p-value (occurs when all scores are identical)
+        if np.isnan(p_value):
+            significant = False
+            logger.info("Paired t-test: p-value is NaN (no variance), treating as not significant")
+        else:
+            significant = p_value < self.significance_level
+            logger.info(f"Paired t-test: statistic={statistic:.3f}, p={p_value:.4f}")
 
         # Step 5: Calculate Cohen's d
         effect_size = cohens_d(baseline_scores, optimized_scores)
@@ -184,6 +189,10 @@ class OptimizationValidator:
         # Step 6: Calculate improvement percentage
         if baseline_mean > 0:
             improvement_pct = ((optimized_mean - baseline_mean) / baseline_mean) * 100
+        elif optimized_mean > 0:
+            # Baseline was 0, optimized is positive - infinite improvement
+            # Cap at a large but reasonable value
+            improvement_pct = 10000.0
         else:
             improvement_pct = 0.0
 

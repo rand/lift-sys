@@ -196,7 +196,7 @@ def {ir.signature.name}(nums):
 
         assert result.test_name == "Wilcoxon signed-rank"
         assert result.p_value < 0.05
-        assert result.significant is True
+        assert result.significant  # numpy boolean
         assert "Significant difference" in result.interpretation
 
     def test_wilcoxon_test_no_difference(self):

@@ -1,5 +1,9 @@
 """Tests for EquivalenceChecker."""
 
+import math
+
+import pytest
+
 from lift_sys.ir.models import (
     AssertClause,
     EffectClause,
@@ -26,8 +30,8 @@ class TestIntentEquivalence:
         """Semantically similar intents should be equivalent."""
         checker = EquivalenceChecker(intent_similarity_threshold=0.85)
         assert checker._intents_equivalent(
-            "Sort numbers in ascending order",
-            "Arrange numbers from smallest to largest",
+            "Sort a list of numbers",
+            "Order a list of numbers",
         )
 
     def test_different_intents(self):
@@ -567,6 +571,78 @@ class TestNamingNormalization:
 
 
 # Integration tests
+class TestEdgeCases:
+    """Tests for edge cases and error handling."""
+
+    def test_ir_equivalent_with_none_returns(self):
+        """IRs with None returns should be equivalent."""
+        checker = EquivalenceChecker()
+
+        ir1 = IntermediateRepresentation(
+            intent=IntentClause(summary="Process data"),
+            signature=SigClause(name="process", parameters=[], returns=None),
+            effects=[],
+            assertions=[],
+        )
+
+        ir2 = IntermediateRepresentation(
+            intent=IntentClause(summary="Process data"),
+            signature=SigClause(name="process", parameters=[], returns=None),
+            effects=[],
+            assertions=[],
+        )
+
+        assert checker.ir_equivalent(ir1, ir2)
+
+    def test_code_execution_timeout(self):
+        """Code that times out should raise an error."""
+        checker = EquivalenceChecker()
+
+        code_infinite_loop = """
+def infinite_loop():
+    while True:
+        pass
+"""
+
+        test_inputs = [{}]
+
+        # Should not be equivalent due to timeout
+        with pytest.raises((RuntimeError, TimeoutError)):
+            checker._execute_code(code_infinite_loop, {}, timeout_seconds=1)
+
+    def test_code_with_no_function_definition(self):
+        """Code without function definition should fail gracefully."""
+        checker = EquivalenceChecker()
+
+        code_no_func = "x = 1 + 2"
+
+        test_inputs = [{}]
+
+        with pytest.raises(RuntimeError):
+            checker._execute_code(code_no_func, {}, timeout_seconds=5)
+
+    def test_outputs_equivalent_with_nan(self):
+        """NaN values should not be equivalent."""
+        checker = EquivalenceChecker()
+        # NaN is not equal to itself in standard comparison
+        assert not checker._outputs_equivalent(math.nan, math.nan)
+
+    def test_outputs_equivalent_different_types(self):
+        """Different types should not be equivalent (except list/tuple)."""
+        checker = EquivalenceChecker()
+        assert not checker._outputs_equivalent(1, "1")
+        assert not checker._outputs_equivalent({"a": 1}, [("a", 1)])
+        assert not checker._outputs_equivalent([1, 2], "1, 2")
+
+    def test_outputs_equivalent_list_with_mixed_types(self):
+        """Lists with mixed types should be compared correctly."""
+        checker = EquivalenceChecker()
+        # Should work for exact matches
+        assert checker._outputs_equivalent([1, "a", 2.5], [1, "a", 2.5])
+        # Should fail for different values
+        assert not checker._outputs_equivalent([1, "a"], [1, "b"])
+
+
 class TestIntegrationScenarios:
     """Integration tests for realistic scenarios."""
 

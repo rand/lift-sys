@@ -1,8 +1,8 @@
 # Hole Inventory - DSPy + Pydantic AI Architecture
 
-**Date**: 2025-10-20
-**Status**: TRACKING (19 holes, 0 resolved)
-**Version**: 1.0
+**Date**: 2025-10-21
+**Status**: TRACKING (19 holes, 6 resolved)
+**Version**: 1.1
 
 ---
 
@@ -11,10 +11,10 @@
 This document catalogs all typed holes in the DSPy + Pydantic AI architecture proposal. Each hole represents an unknown or underspecified element that must be resolved during implementation.
 
 **Total Holes**: 19
-**Resolved**: 0
+**Resolved**: 6 (H1, H6, H8, H10, H12, H17)
 **In Progress**: 0
 **Blocked**: 0
-**Ready**: 3 (H6, H9, H14)
+**Ready**: 3 (H9, H14, others)
 
 ---
 
@@ -604,43 +604,55 @@ CREATE TABLE graph_executions (
 ### H12: ConfidenceCalibration
 **Type**: Specification
 **Kind**: `ScoringFunction`
-**Status**: ⏳ Blocked by H10
+**Status**: ✅ RESOLVED (2025-10-21)
 
 **Description**: Method for scoring hole suggestion confidence
 
 **Type Signature**:
 ```python
-def score_suggestion(
-    hole: TypedHole,
-    suggestion: str,
-    context: dict
-) -> float:  # 0.0-1.0, calibrated to match accuracy
+def estimate_confidence(
+    prediction: IntermediateRepresentation | str,
+    prediction_type: Literal["ir", "code"],
+    features: dict[str, float] | None = None,
+) -> ConfidenceScore:
+    """Estimate calibrated confidence score (0.0-1.0)."""
     ...
 ```
 
 **Constraints**:
-- MUST correlate with actual accuracy
-- MUST be calibrated (score 0.8 → 80% chance correct)
-- SHOULD improve with feedback
-- SHOULD consider multiple factors
+- MUST correlate with actual accuracy ✅
+- MUST be calibrated (score 0.8 → 80% chance correct) ✅
+- SHOULD improve with feedback ✅
+- SHOULD consider multiple factors ✅
 
 **Dependencies**:
 - **Blocks**: Suggestion quality
-- **Blocked by**: H10 (OptimizationMetrics - uses similar scoring)
+- **Blocked by**: H10 (OptimizationMetrics - uses similar scoring) ✅ H10 resolved
 
 **Acceptance Criteria**:
-- [ ] Calibration plot: predicted vs actual
-- [ ] Brier score <0.2
-- [ ] Improves with few-shot learning
-- [ ] User study: confidence helpful
+- [x] Calibration plot: predicted vs actual (via CalibrationMetrics.calibration_data)
+- [x] Brier score <0.2 (validated in tests)
+- [x] Improves with few-shot learning (tested with scaling datasets)
+- [ ] User study: confidence helpful (deferred to Phase 4)
 
-**Resolution Ideas**:
-1. Logistic regression on features
-2. Neural calibration network
-3. Isotonic regression
+**Resolution**:
+- **Method**: Isotonic regression (scikit-learn)
+- **Implementation**: `lift_sys.optimization.confidence`
+- **Components**:
+  - `ConfidenceCalibrator`: Main calibration system
+  - `ConfidenceScore`: Calibrated confidence with features
+  - `CalibrationMetrics`: Brier score, ECE, calibration data
+  - `extract_ir_features()`: 7 IR features for calibration
+  - `extract_code_features()`: 7 code features for calibration
+  - `train_from_h10_dataset()`: Integration with H10 metrics
+- **Tests**:
+  - Unit: 27 tests (all pass) - `tests/unit/optimization/test_confidence.py`
+  - Integration: 4 tests (all pass) - `tests/integration/optimization/test_confidence_integration.py`
+- **Documentation**: `docs/planning/H12_PREPARATION.md`
 
-**Assigned To**: TBD
-**Target Phase**: Phase 3 (Week 3)
+**Assigned To**: Claude
+**Completed**: 2025-10-21
+**Target Phase**: Phase 3 (Week 3) - COMPLETED EARLY
 
 ---
 

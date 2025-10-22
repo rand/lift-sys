@@ -1125,6 +1125,119 @@ H8 implements full dual-provider routing support:
 
 ---
 
+### Event 10: H17 Resolution (2025-10-21)
+**Hole Resolved**: H17 - OptimizationValidation
+**Resolution Summary**: Implemented statistical validation framework for optimization experiments with paired t-test and Cohen's d effect size
+
+**Resolution Details**:
+- Created `OptimizationValidator` class for statistical validation of optimization improvements
+- Implemented paired t-test for statistical significance (p < 0.05 threshold)
+- Calculated Cohen's d effect size for practical significance (d > 0.2 threshold)
+- Validated with 53 held-out test examples (exceeds 50 requirement)
+- Generated deployment recommendations based on statistical and practical significance
+- Tested both MIPROv2 and COPRO optimizers
+- Tested both provider routes per ADR 001
+- All 36 tests passing (30 unit, 6 integration)
+
+**Implementation**:
+- `lift_sys/optimization/validation.py` (422 lines)
+- `docs/planning/H17_PREPARATION.md` (comprehensive methodology)
+
+**Tests**:
+- `tests/unit/optimization/test_validation.py` (30 tests)
+- `tests/integration/test_validation_e2e.py` (6 integration tests)
+- **Result**: 36/36 passing
+
+**Key Components**:
+- `ValidationResult` dataclass: p_value, effect_size, improvement_pct, significant, practical, recommendation
+- `OptimizationValidator.validate()`: 6-step validation workflow
+- `cohens_d()`: Effect size calculation with pooled standard deviation
+- `paired_t_test()`: Statistical significance testing for correlated samples
+- `validate_metric_correlation()`: Metric reliability validation (Pearson r > 0.8)
+
+### Constraints Propagated
+
+**No New Constraints** - H17 is a consumer of H8 and H10, not a provider to other holes.
+
+**Validation Requirements Confirmed**:
+- H8 optimizers work correctly (tested with mocks)
+- H10 metrics are suitable for validation (correlation target met)
+- ADR 001 dual-provider routing supports validation across routes
+- Statistical methodology documented in H17_PREPARATION.md
+
+### Acceptance Criteria Validation
+
+✅ **Paired t-test implemented**: Uses `scipy.stats.ttest_rel()` with alternative="less"
+✅ **Effect size (Cohen's d) calculated**: Pooled standard deviation approach
+✅ **Test on 50+ held-out examples**: Integration tests use 53 examples
+✅ **Documentation of methodology**: H17_PREPARATION.md with statistical background
+✅ **Both MIPROv2 and COPRO tested**: Separate integration tests for each optimizer
+✅ **Both provider routes tested**: test_validation_route_aware_optimization covers ADR 001
+✅ **Statistical significance validated**: p < 0.05 threshold enforced
+
+### Implementation Notes
+
+**Design Decisions**:
+- Paired t-test (not independent samples) because same examples evaluated before/after optimization
+- NaN p-value handling for identical score arrays (treat as not significant)
+- Improvement percentage capped at 10000% for zero baseline cases
+- Four-tier recommendation system: DEPLOY, CONSIDER, INVESTIGATE, NO DEPLOY
+- Truthiness checks for numpy boolean compatibility
+
+**Edge Cases Handled**:
+- NaN p-values when all scores identical (no variance)
+- Zero baseline scores (infinite improvement percentage)
+- Zero variance (Cohen's d = 0)
+- Optimization failures (raises ValueError)
+- Insufficient examples (raises ValueError if <20 train, <50 test)
+
+**Integration Points**:
+- H8 `DSPyOptimizer` used for running optimizations
+- H10 metrics used as evaluation functions
+- Returns structured `ValidationResult` for programmatic decision-making
+
+### Phase 7 Completion
+
+H17 was the only hole in Phase 7 (Validation). **Phase 7 is now complete.**
+
+### Updated Solution Spaces
+
+No solution spaces updated (H17 is a terminal consumer hole).
+
+### Testing Statistics
+
+**Test Coverage**:
+- Statistical utilities: 12 tests (cohens_d, paired_t_test, metric correlation)
+- ValidationResult: 1 test (dataclass creation)
+- OptimizationValidator: 17 tests (workflow, recommendations, edge cases)
+- Integration tests: 6 tests (MIPROv2, COPRO, routes, effect size, no improvement)
+
+**Performance**:
+- Validation completes in <1s for 53 examples (mocked LLM calls)
+- Statistical computations negligible (<1ms)
+
+**Type Safety**: ✅ Passes `mypy --strict`
+
+### Known Limitations
+
+- Integration tests use mocked DSPy optimizers (not real LLM optimization)
+- Real validation will have cold start latency from Modal functions
+- Statistical power assumes normal distribution of metric scores
+- p-value interpretation assumes independent examples (violation if examples correlated)
+
+### Future Enhancements
+
+- Add Bonferroni correction for multiple comparisons
+- Support non-parametric tests (Wilcoxon signed-rank) for non-normal distributions
+- Add confidence intervals for improvement estimates
+- Track validation history over time (optimization experiment log)
+
+---
+
+**Circular Constraints**: If A → B → C → A, detect and break cycle
+
+---
+
 ## Next Steps
 
 As each hole is resolved:
@@ -1140,4 +1253,4 @@ As each hole is resolved:
 
 **Document Status**: ACTIVE - Update after each hole resolution
 **Owner**: Architecture team
-**Last Updated**: 2025-10-21 (Event 8: H10 Resolution)
+**Last Updated**: 2025-10-21 (Event 10: H17 Resolution)

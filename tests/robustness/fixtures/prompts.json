@@ -1,0 +1,30 @@
+{
+  "simple_functions": [
+    "Create a function that sorts a list of numbers",
+    "Write a function to filter even numbers from a list",
+    "Implement a function that reverses a string",
+    "Create a function to calculate factorial",
+    "Write a function that finds the maximum value in a list"
+  ],
+  "validation_functions": [
+    "Create a function that validates email addresses",
+    "Write a function to check if a password is strong",
+    "Implement a function that validates phone numbers",
+    "Create a function to validate credit card numbers",
+    "Write a function that checks if a date is valid"
+  ],
+  "transformation_functions": [
+    "Create a function that converts snake_case to camelCase",
+    "Write a function to normalize whitespace in strings",
+    "Implement a function that removes duplicates from a list",
+    "Create a function to flatten nested lists",
+    "Write a function that groups items by a key"
+  ],
+  "edge_case_functions": [
+    "Create a function that handles empty lists gracefully",
+    "Write a function to process None values in data",
+    "Implement a function that validates user input with error handling",
+    "Create a function that works with both strings and numbers",
+    "Write a function that handles Unicode characters correctly"
+  ]
+}

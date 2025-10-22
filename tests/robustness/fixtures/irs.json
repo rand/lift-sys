@@ -1,0 +1,126 @@
+[
+  {
+    "intent": {
+      "summary": "Sort a list of numbers in ascending order"
+    },
+    "signature": {
+      "name": "sort_numbers",
+      "parameters": [
+        {
+          "name": "numbers",
+          "type_hint": "list[int]"
+        }
+      ],
+      "returns": "list[int]"
+    },
+    "effects": [],
+    "assertions": [
+      {
+        "predicate": "result is sorted in ascending order"
+      }
+    ]
+  },
+  {
+    "intent": {
+      "summary": "Validate email address format"
+    },
+    "signature": {
+      "name": "validate_email",
+      "parameters": [
+        {
+          "name": "email",
+          "type_hint": "str"
+        }
+      ],
+      "returns": "bool"
+    },
+    "effects": [
+      "Check for @ symbol",
+      "Validate domain format",
+      "Check local part is valid"
+    ],
+    "assertions": [
+      {
+        "predicate": "email matches standard regex pattern"
+      }
+    ]
+  },
+  {
+    "intent": {
+      "summary": "Filter even numbers from a list"
+    },
+    "signature": {
+      "name": "filter_even_numbers",
+      "parameters": [
+        {
+          "name": "numbers",
+          "type_hint": "list[int]"
+        }
+      ],
+      "returns": "list[int]"
+    },
+    "effects": [
+      "Iterate through numbers",
+      "Keep only even numbers"
+    ],
+    "assertions": [
+      {
+        "predicate": "all numbers in result are even"
+      },
+      {
+        "predicate": "result length <= input length"
+      }
+    ]
+  },
+  {
+    "intent": {
+      "summary": "Calculate factorial of a number"
+    },
+    "signature": {
+      "name": "calculate_factorial",
+      "parameters": [
+        {
+          "name": "n",
+          "type_hint": "int"
+        }
+      ],
+      "returns": "int"
+    },
+    "effects": [
+      "Check n is non-negative",
+      "Compute factorial recursively or iteratively"
+    ],
+    "assertions": [
+      {
+        "predicate": "result > 0 for n > 0"
+      },
+      {
+        "predicate": "result == 1 for n == 0"
+      }
+    ]
+  },
+  {
+    "intent": {
+      "summary": "Reverse a string"
+    },
+    "signature": {
+      "name": "reverse_string",
+      "parameters": [
+        {
+          "name": "text",
+          "type_hint": "str"
+        }
+      ],
+      "returns": "str"
+    },
+    "effects": [],
+    "assertions": [
+      {
+        "predicate": "result length == input length"
+      },
+      {
+        "predicate": "result is input reversed"
+      }
+    ]
+  }
+]

@@ -291,8 +291,8 @@ def extract_ir_features(ir: IntermediateRepresentation) -> dict[str, float]:
 
     # Signature completeness (name, parameters, returns all present)
     has_name = bool(ir.signature.name)
-    has_returns = bool(ir.signature.returns)
-    has_parameters = bool(ir.signature.parameters)
+    has_returns = ir.signature.returns is not None
+    has_parameters = True  # parameters field always exists (can be empty list)
     populated = sum([has_name, has_returns, has_parameters])
     features["signature_completeness"] = populated / 3.0
 

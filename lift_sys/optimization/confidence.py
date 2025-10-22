@@ -263,12 +263,12 @@ def extract_ir_features(ir: IntermediateRepresentation) -> dict[str, float]:
 
     Features:
         - effect_count: Number of effects (normalized by max 20)
-        - effect_complexity: Text length of effects (normalized)
-        - signature_completeness: Signature field presence
+        - effect_complexity: Total length of effect descriptions (normalized)
+        - signature_completeness: Presence of name, params, returns
         - constraint_count: Number of constraints (normalized by max 10)
         - parameter_count: Number of parameters (normalized by max 10)
         - assertion_count: Number of assertions (normalized by max 10)
-        - intent_length: Length of intent text (normalized)
+        - intent_length: Length of intent summary (normalized)
 
     Args:
         ir: IntermediateRepresentation instance
@@ -282,46 +282,35 @@ def extract_ir_features(ir: IntermediateRepresentation) -> dict[str, float]:
     effect_count = len(ir.effects) if ir.effects else 0
     features["effect_count"] = min(effect_count / 20.0, 1.0)
 
-    # Effect complexity (based on total text length of effect descriptions)
+    # Effect complexity (total length of effect descriptions)
     if ir.effects:
-        total_effect_text = sum(len(str(eff)) for eff in ir.effects)
-        features["effect_complexity"] = min(
-            total_effect_text / 500.0, 1.0
-        )  # Normalize by 500 chars
+        total_effect_text = sum(len(eff.description) for eff in ir.effects)
+        features["effect_complexity"] = min(total_effect_text / 500.0, 1.0)
     else:
         features["effect_complexity"] = 0.0
 
-    # Signature completeness (check if signature has name and return type)
-    if ir.signature:
-        # SigClause has: name (str), parameters (list[Parameter]), return_type (str), holes
-        has_name = bool(ir.signature.name)
-        has_return_type = bool(ir.signature.return_type)
-        has_parameters = bool(ir.signature.parameters)
-        populated = sum([has_name, has_return_type, has_parameters])
-        features["signature_completeness"] = populated / 3.0
-    else:
-        features["signature_completeness"] = 0.0
+    # Signature completeness (name, parameters, returns all present)
+    has_name = bool(ir.signature.name)
+    has_returns = bool(ir.signature.returns)
+    has_parameters = bool(ir.signature.parameters)
+    populated = sum([has_name, has_returns, has_parameters])
+    features["signature_completeness"] = populated / 3.0
 
     # Constraint count (normalize by max 10)
     constraint_count = len(ir.constraints) if ir.constraints else 0
     features["constraint_count"] = min(constraint_count / 10.0, 1.0)
 
     # Parameter count (number of parameters in signature)
-    param_count = 0
-    if ir.signature and ir.signature.parameters:
-        param_count = len(ir.signature.parameters)
+    param_count = len(ir.signature.parameters) if ir.signature.parameters else 0
     features["parameter_count"] = min(param_count / 10.0, 1.0)
 
     # Assertion count (normalize by max 10)
     assertion_count = len(ir.assertions) if ir.assertions else 0
     features["assertion_count"] = min(assertion_count / 10.0, 1.0)
 
-    # Intent length (normalize by 500 chars)
-    if ir.intent:
-        intent_text = str(ir.intent)
-        features["intent_length"] = min(len(intent_text) / 500.0, 1.0)
-    else:
-        features["intent_length"] = 0.0
+    # Intent length (length of intent summary, normalized by 500 chars)
+    intent_length = len(ir.intent.summary) if ir.intent.summary else 0
+    features["intent_length"] = min(intent_length / 500.0, 1.0)
 
     return features
 

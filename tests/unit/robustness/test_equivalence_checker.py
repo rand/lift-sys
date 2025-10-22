@@ -1,6 +1,7 @@
 """Tests for EquivalenceChecker."""
 
 import math
+import subprocess
 
 import pytest
 
@@ -607,7 +608,7 @@ def infinite_loop():
         test_inputs = [{}]
 
         # Should not be equivalent due to timeout
-        with pytest.raises((RuntimeError, TimeoutError)):
+        with pytest.raises((RuntimeError, subprocess.TimeoutExpired)):
             checker._execute_code(code_infinite_loop, {}, timeout_seconds=1)
 
     def test_code_with_no_function_definition(self):

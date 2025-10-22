@@ -2,8 +2,8 @@
 
 **Last Updated**: 2025-10-21
 **Current Phase**: Phase 3 (In Progress)
-**Session**: 2 (continued)
-**Status**: H6 ✅ H9 ✅ H14 ✅ H1 ✅ H2 ✅ H11 ✅ H10 ✅
+**Session**: 3 (continued)
+**Status**: H6 ✅ H9 ✅ H14 ✅ H1 ✅ H2 ✅ H11 ✅ H10 ✅ H8 ✅
 
 ---
 
@@ -46,11 +46,11 @@
 
 6. **Critical Path Progress**
    ```
-   H6 ✅ → H1 ✅ → H10 ✅ → H17 🔒
-   (NodeSignatureInterface → ProviderAdapter → OptimizationMetrics → OptimizationValidation)
-   Week 1      Week 2        Week 3         Week 7
+   H6 ✅ → H1 ✅ → H10 ✅ → H8 ✅ → H17 🔒
+   (NodeSignatureInterface → ProviderAdapter → OptimizationMetrics → OptimizationAPI → OptimizationValidation)
+   Week 1      Week 2        Week 3        Week 3     Week 7
    ```
-   **Status**: 75% complete! H17 ready to start.
+   **Status**: 80% complete! H17 ready to start.
 
 7. **Phase 1 Complete!**
    - ✅ All 3 holes resolved (H6, H9, H14)
@@ -107,18 +107,28 @@
    - Features: ir_quality, code_quality, end_to_end, route_cost, route_quality, suggest_route_migration
 
 14. **Phase 3 Progress** (In Progress)
-   - ✅ 1/3 holes resolved (H10)
-   - Total tests: 206/207 passing (158 + 48)
-   - Critical path: 75% complete (H6 ✅ → H1 ✅ → H10 ✅ → H17 next)
-   - Next: H8 (OptimizationAPI) - UNBLOCKED!
+   - ✅ 2/3 holes resolved (H10, H8)
+   - Total tests: 241/242 passing (158 + 48 + 35)
+   - Critical path: 80% complete (H6 ✅ → H1 ✅ → H10 ✅ → H8 ✅ → H17 next)
+   - Next: H12 (ConfidenceCalibration) or H17 (OptimizationValidation)
+
+15. **H8: OptimizationAPI** ✅ COMPLETE (Session 3)
+   - Implementation: `lift_sys/optimization/optimizer.py` (300+ lines)
+   - Implementation: `lift_sys/optimization/route_optimizer.py` (250+ lines)
+   - Tests: 35/35 passing (30+ unit tests, 20+ example integration tests)
+   - Constraints propagated to 3 dependent holes (H17, H12, H3)
+   - ADR 001 Integration: Full dual-provider routing support
+   - Features: DSPyOptimizer (MIPROv2/COPRO), RouteAwareOptimizer, route switching/migration
+   - All acceptance criteria met (MIPROv2 ✅, metrics ✅, improvement ✅, 20 examples ✅, routing ✅)
 
 ### What's Next 🎯
 
 **Immediate**: Continue Phase 3 (Optimization)
 - ✅ H10 (OptimizationMetrics) complete!
-- 🎯 H8 (OptimizationAPI) - READY TO START (unblocked by H10)
-- Pending: H12 (ConfidenceCalibration) - blocked by H8
-- Critical path: H8 → H17 → Phase 3 complete
+- ✅ H8 (OptimizationAPI) complete!
+- 🎯 H12 (ConfidenceCalibration) - READY TO START (unblocked by H8)
+- 🎯 H17 (OptimizationValidation) - READY TO START (unblocked by H8 + H10)
+- Critical path: H17 → Phase 3 complete
 
 **This Week's Goal**: Interface Completeness
 - ✅ Working prototype of graph node calling DSPy signature

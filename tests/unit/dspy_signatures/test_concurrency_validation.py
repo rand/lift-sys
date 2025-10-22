@@ -121,7 +121,7 @@ class SharedResourceNode(BaseNode[TestState]):
 @pytest.mark.asyncio
 async def test_ac1_deterministic_single_node():
     """AC1: Single node execution is deterministic across 100 iterations."""
-    executor = ParallelExecutor[TestState](max_concurrency=1)
+    executor = ParallelExecutor[TestState](max_concurrent=1)
     node = IncrementNode()
     initial_state = TestState(value=10)
 
@@ -139,7 +139,7 @@ async def test_ac1_deterministic_single_node():
 @pytest.mark.asyncio
 async def test_ac1_deterministic_parallel_nodes():
     """AC1: Parallel execution is deterministic across 100 iterations."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     nodes = [
         IncrementNode(name="Inc1"),
         IncrementNode(name="Inc2"),
@@ -164,7 +164,7 @@ async def test_ac1_deterministic_parallel_nodes():
 @pytest.mark.asyncio
 async def test_ac1_deterministic_complex_graph():
     """AC1: Complex graph execution is deterministic across 100 iterations."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     nodes = [
         MultiplyNode(name="Mult1", multiplier=2),
         MultiplyNode(name="Mult2", multiplier=3),
@@ -198,7 +198,7 @@ async def test_ac1_deterministic_complex_graph():
 @pytest.mark.asyncio
 async def test_ac2_state_isolation_prevents_races():
     """AC2: State isolation prevents race conditions."""
-    executor = ParallelExecutor[TestState](max_concurrency=10)
+    executor = ParallelExecutor[TestState](max_concurrent=10)
     nodes = [IncrementNode(name=f"Inc{i}") for i in range(10)]
     initial_state = TestState(value=0)
 
@@ -219,7 +219,7 @@ async def test_ac2_state_isolation_prevents_races():
 @pytest.mark.asyncio
 async def test_ac2_no_shared_state_mutation():
     """AC2: Parallel nodes don't mutate shared state."""
-    executor = ParallelExecutor[TestState](max_concurrency=5)
+    executor = ParallelExecutor[TestState](max_concurrent=5)
 
     # Create nodes with separate instances
     nodes = [IncrementNode(name=f"Inc{i}") for i in range(5)]
@@ -243,7 +243,7 @@ async def test_ac2_no_shared_state_mutation():
 @pytest.mark.asyncio
 async def test_ac2_concurrent_stress_test():
     """AC2: High concurrency stress test for race conditions."""
-    executor = ParallelExecutor[TestState](max_concurrency=20)
+    executor = ParallelExecutor[TestState](max_concurrent=20)
 
     # Create many nodes
     nodes = [IncrementNode(name=f"Inc{i}") for i in range(50)]
@@ -268,7 +268,7 @@ async def test_ac2_concurrent_stress_test():
 @pytest.mark.asyncio
 async def test_ac3_single_node_performance_variance():
     """AC3: Single node execution has low performance variance."""
-    executor = ParallelExecutor[TestState](max_concurrency=1)
+    executor = ParallelExecutor[TestState](max_concurrent=1)
     node = IncrementNode()
     initial_state = TestState(value=0)
 
@@ -289,7 +289,7 @@ async def test_ac3_single_node_performance_variance():
 @pytest.mark.asyncio
 async def test_ac3_parallel_performance_variance():
     """AC3: Parallel execution has acceptable performance variance."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     nodes = [IncrementNode(name=f"Inc{i}") for i in range(4)]
     initial_state = TestState(value=0)
 
@@ -315,7 +315,7 @@ async def test_ac3_scaling_performance():
     initial_state = TestState(value=0)
 
     # Measure sequential execution
-    executor_seq = ParallelExecutor[TestState](max_concurrency=1)
+    executor_seq = ParallelExecutor[TestState](max_concurrent=1)
     nodes_seq = [IncrementNode(name=f"Inc{i}") for i in range(10)]
 
     times_seq = []
@@ -329,7 +329,7 @@ async def test_ac3_scaling_performance():
     mean_seq = statistics.mean(times_seq)
 
     # Measure parallel execution
-    executor_par = ParallelExecutor[TestState](max_concurrency=10)
+    executor_par = ParallelExecutor[TestState](max_concurrent=10)
     nodes_par = [IncrementNode(name=f"Inc{i}") for i in range(10)]
 
     times_par = []
@@ -357,7 +357,7 @@ async def test_ac3_scaling_performance():
 @pytest.mark.asyncio
 async def test_ac4_end_to_end_workflow():
     """AC4: End-to-end workflow with mixed operations."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
 
     # Stage 1: Parallel increments
     inc_nodes = [IncrementNode(name=f"Inc{i}") for i in range(3)]
@@ -387,7 +387,7 @@ async def test_ac4_error_handling_in_parallel():
             await asyncio.sleep(0.01)
             raise ValueError("Intentional failure")
 
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     nodes = [
         IncrementNode(name="Inc1"),
         FailingNode(name="Fail1"),
@@ -409,7 +409,7 @@ async def test_ac4_error_handling_in_parallel():
 @pytest.mark.asyncio
 async def test_ac4_merge_strategy_all_success():
     """AC4: ALL_SUCCESS merge strategy validates all results."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     nodes = [
         IncrementNode(name="Inc1"),
         IncrementNode(name="Inc2"),
@@ -430,7 +430,7 @@ async def test_ac4_merge_strategy_all_success():
 @pytest.mark.asyncio
 async def test_ac4_determinism_validation_100_iterations():
     """AC4: Comprehensive determinism validation across 100 iterations."""
-    executor = ParallelExecutor[TestState](max_concurrency=5)
+    executor = ParallelExecutor[TestState](max_concurrent=5)
     nodes = [
         MultiplyNode(name="Mult", multiplier=3),
         IncrementNode(name="Inc"),
@@ -472,14 +472,14 @@ async def test_ac4_determinism_validation_100_iterations():
 @pytest.mark.asyncio
 async def test_semaphore_limits_concurrency():
     """Semaphore correctly limits concurrent executions."""
-    executor = ParallelExecutor[TestState](max_concurrency=2)
+    executor = ParallelExecutor[TestState](max_concurrent=2)
 
     # Create many nodes
     nodes = [IncrementNode(name=f"Inc{i}") for i in range(10)]
     initial_state = TestState(value=0)
     ctx = RunContext(state=initial_state)
 
-    # Execute - should respect max_concurrency=2
+    # Execute - should respect max_concurrent=2
     results = await executor.execute_parallel(
         nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
     )
@@ -492,7 +492,7 @@ async def test_semaphore_limits_concurrency():
 @pytest.mark.asyncio
 async def test_state_immutability():
     """State immutability prevents unintended mutations."""
-    executor = ParallelExecutor[TestState](max_concurrency=4)
+    executor = ParallelExecutor[TestState](max_concurrent=4)
     node = IncrementNode()
 
     initial_state = TestState(value=42, results=["initial"])

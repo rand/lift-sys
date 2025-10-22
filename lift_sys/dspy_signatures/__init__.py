@@ -34,6 +34,15 @@ from lift_sys.dspy_signatures.feature_flags import (
     FeatureFlagConfig,
     RolloutStrategy,
 )
+from lift_sys.dspy_signatures.migration_constraints import (
+    IncompleteMigrationError,
+    MigrationError,
+    RollbackError,
+    is_migrated_session,
+    migrate_prompt_session_to_execution_history,
+    rollback_execution_history_to_prompt_session,
+    validate_migration,
+)
 from lift_sys.dspy_signatures.node_interface import (
     BaseNode,
     End,
@@ -131,6 +140,14 @@ __all__ = [
     "FeatureFlag",
     "FeatureFlagConfig",
     "RolloutStrategy",
+    # Migration constraints (H15)
+    "migrate_prompt_session_to_execution_history",
+    "rollback_execution_history_to_prompt_session",
+    "is_migrated_session",
+    "validate_migration",
+    "MigrationError",
+    "IncompleteMigrationError",
+    "RollbackError",
     # Trace visualization (H7)
     "TraceVisualizationProtocol",
     "TraceVisualizationService",

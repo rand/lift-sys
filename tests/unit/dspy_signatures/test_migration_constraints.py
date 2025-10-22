@@ -25,7 +25,7 @@ from lift_sys.dspy_signatures.migration_constraints import (
     rollback_execution_history_to_prompt_session,
     validate_migration,
 )
-from lift_sys.ir.models import Effect, IntermediateRepresentation, Parameter, Signature
+from lift_sys.ir.models import EffectClause, IntermediateRepresentation, Parameter, SigClause
 from lift_sys.spec_sessions.models import (
     HoleResolution,
     IRDraft,
@@ -43,8 +43,8 @@ def sample_ir() -> IntermediateRepresentation:
     """Create sample IR for testing."""
     return IntermediateRepresentation(
         effects=[
-            Effect(
-                signature=Signature(
+            EffectClause(
+                signature=SigClause(
                     name="ExtractIntent",
                     inputs=[
                         Parameter(name="prompt", type_hint="str"),

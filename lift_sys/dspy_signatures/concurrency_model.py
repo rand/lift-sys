@@ -112,11 +112,11 @@ class ConcurrencyModel(BaseModel):
         max concurrent = R/60 * L (requests in flight during latency period)
 
         Returns:
-            Maximum number of concurrent LLM calls
+            Maximum number of concurrent LLM calls (minimum 1)
         """
         if self.provider_limits.max_concurrent_requests is not None:
             # Use provider-enforced limit
-            return int(self.provider_limits.max_concurrent_requests * self.safety_margin)
+            return max(1, int(self.provider_limits.max_concurrent_requests * self.safety_margin))
 
         # Calculate from rate and latency
         rate_per_second = self.provider_limits.requests_per_minute / 60

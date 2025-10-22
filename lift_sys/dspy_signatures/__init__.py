@@ -5,6 +5,13 @@ This module provides the interface between Pydantic AI graph nodes and DSPy sign
 enabling declarative LLM task specifications with automatic optimization.
 """
 
+from lift_sys.dspy_signatures.caching import (
+    CachedParallelExecutor,
+    CacheEntry,
+    CachingStrategy,
+    InMemoryCache,
+    NoOpCache,
+)
 from lift_sys.dspy_signatures.concurrency_model import (
     ANTHROPIC_TIER1_LIMITS,
     MODAL_GPU_LIMITS,
@@ -88,4 +95,10 @@ __all__ = [
     "OPENAI_TIER1_LIMITS",
     "MODAL_GPU_LIMITS",
     "PROVIDER_LIMITS_REGISTRY",
+    # Caching (H3)
+    "CachingStrategy",
+    "InMemoryCache",
+    "NoOpCache",
+    "CacheEntry",
+    "CachedParallelExecutor",
 ]

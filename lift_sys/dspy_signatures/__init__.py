@@ -11,6 +11,12 @@ from lift_sys.dspy_signatures.node_interface import (
     NextNode,
     RunContext,
 )
+from lift_sys.dspy_signatures.parallel_executor import (
+    MergeStrategy,
+    NodeResult,
+    ParallelExecutionError,
+    ParallelExecutor,
+)
 from lift_sys.dspy_signatures.resource_limits import (
     MODAL_DEFAULT_LIMITS,
     LimitCheckResult,
@@ -39,6 +45,11 @@ __all__ = [
     "RunContext",
     "NextNode",
     "End",
+    # Parallel execution (H4)
+    "ParallelExecutor",
+    "NodeResult",
+    "MergeStrategy",
+    "ParallelExecutionError",
     # Validation hooks
     "ValidationHook",
     "ValidationResult",

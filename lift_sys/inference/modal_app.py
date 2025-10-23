@@ -97,11 +97,19 @@ GPU_CONFIG = "A100-80GB"  # ~$4/hr
 MODELS_DIR = "/models"
 volume = modal.Volume.from_name("lift-sys-models", create_if_missing=True)
 
+# Torch compilation cache for faster subsequent cold starts
+# After first compilation (~125s), cached graphs load in seconds
+TORCH_COMPILE_CACHE_DIR = "/root/.cache/vllm"
+torch_cache_volume = modal.Volume.from_name("lift-sys-torch-cache", create_if_missing=True)
+
 
 @app.cls(
     image=llm_image,  # Image with vLLM, transformers, FastAPI
     gpu=GPU_CONFIG,
-    volumes={MODELS_DIR: volume},  # Mount volume for model caching
+    volumes={
+        MODELS_DIR: volume,  # Mount volume for model caching
+        TORCH_COMPILE_CACHE_DIR: torch_cache_volume,  # Cache torch compilation graphs
+    },
     timeout=1200,  # 20 minutes for first-time model download + loading + inference
     scaledown_window=600,  # Keep warm for 10 minutes to avoid cold starts during testing
 )
@@ -117,6 +125,7 @@ class ConstrainedIRGenerator:
 
         print(f"Loading model: {MODEL_NAME}")
         print(f"Model cache directory: {MODELS_DIR}")
+        print(f"Torch cache directory: {TORCH_COMPILE_CACHE_DIR}")
         start = time.time()
 
         # Set HuggingFace cache to use Modal volume for faster cold starts
@@ -126,11 +135,20 @@ class ConstrainedIRGenerator:
         # Import vLLM
         from vllm import LLM
 
+        # Check if eager execution mode requested (faster cold starts, slower inference)
+        # Set VLLM_EAGER=1 in Modal secrets to disable torch.compile
+        enforce_eager = os.getenv("VLLM_EAGER", "0") == "1"
+        if enforce_eager:
+            print("⚡ Eager execution mode enabled (no torch.compile)")
+            print("   Cold start: ~5min instead of 7min")
+            print("   Inference: 10-20% slower")
+
         # Initialize vLLM with XGrammar backend for constrained generation
         # vLLM 0.9.2+ has native XGrammar support (default backend)
         # Optimized settings for 32B model on A100-80GB:
         # - 32B BF16 model ~64GB, fits comfortably on 80GB GPU
         # - Limited max_model_len (8192) sufficient for IR generation
+        # - Torch compilation cache persisted across restarts (first: ~125s, cached: ~5s)
         self.llm = LLM(
             model=MODEL_NAME,
             trust_remote_code=True,
@@ -138,15 +156,20 @@ class ConstrainedIRGenerator:
             gpu_memory_utilization=0.90,  # 32B fits well on A100-80GB
             max_model_len=8192,  # Sufficient for IR, reduces memory footprint
             guided_decoding_backend="xgrammar",  # XGrammar for fast JSON schema enforcement
+            enforce_eager=enforce_eager,  # Disable torch.compile if VLLM_EAGER=1
         )
 
         load_time = time.time() - start
         print(f"Model loaded in {load_time:.2f}s")
         print(f"Model: {MODEL_NAME}")
         print("XGrammar backend enabled for structured outputs")
+        if not enforce_eager:
+            print(f"Torch compilation cache: {TORCH_COMPILE_CACHE_DIR}")
 
-        # Commit volume changes to persist model cache
+        # Commit volume changes to persist caches
         volume.commit()
+        if not enforce_eager:
+            torch_cache_volume.commit()  # Persist compiled graphs
 
     def _generate_impl(
         self,

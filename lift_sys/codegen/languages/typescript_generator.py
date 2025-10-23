@@ -392,13 +392,27 @@ Use TypeScript syntax:
 
         # Add body statements
         body_statements = impl.get("body_statements", [])
-        for stmt in body_statements:
+        for i, stmt in enumerate(body_statements):
             code = stmt.get("code", "")
             rationale = stmt.get("rationale", "")
 
             # Add comment if rationale provided
             if rationale:
                 lines.append(f"  // {rationale}")
+
+            # Post-process code to fix missing return keywords
+            # If it's the last statement and looks like a standalone expression, add return
+            is_last_statement = i == len(body_statements) - 1
+            if (
+                is_last_statement
+                and code.strip()
+                and not any(
+                    code.strip().startswith(keyword)
+                    for keyword in ["return", "throw", "if", "for", "while", "const", "let", "var"]
+                )
+            ):
+                # Standalone expression at end - likely missing return keyword
+                code = f"return {code.strip()}"
 
             # Add code with proper indentation
             for code_line in code.split("\n"):

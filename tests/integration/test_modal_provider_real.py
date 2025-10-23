@@ -562,28 +562,29 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
             "required": ["name", "description"],
         }
 
-        # Low max_tokens - terse description
+        # Low max_tokens - terse description (1024 tokens)
+        # Note: 512 tokens too small for complex prompts (truncates mid-JSON)
         result_low = await modal_recorder.get_or_record(
-            key="max_tokens_quicksort_512",
+            key="max_tokens_quicksort_1024",
             generator_fn=lambda: provider.generate_structured(
                 prompt=prompt,
                 schema=schema,
                 temperature=0.0,
-                max_tokens=512,
+                max_tokens=1024,
             ),
-            metadata={"test": "max_tokens", "tokens": 512},
+            metadata={"test": "max_tokens", "tokens": 1024},
         )
 
-        # High max_tokens - detailed description
+        # High max_tokens - detailed description (4096 tokens)
         result_high = await modal_recorder.get_or_record(
-            key="max_tokens_quicksort_2048",
+            key="max_tokens_quicksort_4096",
             generator_fn=lambda: provider.generate_structured(
                 prompt=prompt,
                 schema=schema,
                 temperature=0.0,
-                max_tokens=2048,
+                max_tokens=4096,
             ),
-            metadata={"test": "max_tokens", "tokens": 2048},
+            metadata={"test": "max_tokens", "tokens": 4096},
         )
 
         # Both should be valid JSON with required fields
@@ -597,13 +598,13 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
         len_low = len(result_low["description"])
         len_high = len(result_high["description"])
 
-        print(f"\nmax_tokens=512: {len_low} chars")
-        print(f"max_tokens=2048: {len_high} chars")
+        print(f"\nmax_tokens=1024: {len_low} chars")
+        print(f"max_tokens=4096: {len_high} chars")
 
-        # High max_tokens should allow more detail (or equal if prompt is simple)
+        # High max_tokens should allow more detail (or equal if model is terse)
         assert len_high >= len_low, (
             f"Higher max_tokens should allow more detail: "
-            f"512 tokens={len_low} chars, 2048 tokens={len_high} chars"
+            f"1024 tokens={len_low} chars, 4096 tokens={len_high} chars"
         )
 
     finally:

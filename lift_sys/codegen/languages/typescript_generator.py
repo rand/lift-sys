@@ -343,6 +343,11 @@ Use TypeScript syntax:
             lines.append(f" * {ir.intent.rationale}")
         lines.append(" *")
 
+        # Detect if function should be async (contains await keywords)
+        # Note: We do this early so we can update TSDoc correctly
+        body_statements = impl.get("body_statements", [])
+        needs_async = any("await " in stmt.get("code", "") for stmt in body_statements)
+
         # Add parameter documentation
         for param in ir.signature.parameters:
             ts_type = self.type_resolver.resolve(param.type_hint).annotation
@@ -350,20 +355,31 @@ Use TypeScript syntax:
 
         # Add return documentation
         ts_return = self.type_resolver.resolve(ir.signature.returns).annotation
+        if needs_async and not ts_return.startswith("Promise<"):
+            ts_return = f"Promise<{ts_return}>"
         lines.append(f" * @returns {ts_return}")
         lines.append(" */")
 
         # Add function signature
         params = [(p.name, p.type_hint) for p in ir.signature.parameters]
+        return_type = ir.signature.returns
+
+        # Wrap return type with Promise<> if async
+        if needs_async and not return_type.startswith("Promise<"):
+            return_type = f"Promise<{return_type}>"
+
         signature = self.type_resolver.format_function_signature(
             ir.signature.name,
             params,
-            ir.signature.returns,
+            return_type,
         )
 
-        # Convert to export function
+        # Convert to export function and add async if needed
         if signature.startswith("function "):
-            signature = "export " + signature
+            if needs_async:
+                signature = "export async " + signature
+            else:
+                signature = "export " + signature
         elif signature.startswith("async function "):
             signature = "export async " + signature[6:]  # Skip "async "
 

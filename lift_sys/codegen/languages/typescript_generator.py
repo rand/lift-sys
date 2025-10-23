@@ -96,37 +96,12 @@ class TypeScriptGenerator:
                     # Convert to TypeScript code
                     complete_code = self._build_typescript_code(ir, impl_json, semantic_context)
 
-                    # Debug: Always save generated code for inspection (TEMPORARY)
-                    from datetime import datetime
-
-                    debug_path = f"/tmp/typescript_generated_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{attempt}.ts"
-                    with open(debug_path, "w") as f:
-                        f.write(f"// Attempt {attempt + 1}\n")
-                        f.write(f"// impl_json keys: {list(impl_json.keys())}\n")
-                    if "implementation" in impl_json:
-                        with open(debug_path, "a") as f:
-                            f.write(
-                                f"// implementation keys: {list(impl_json['implementation'].keys())}\n"
-                            )
-                            f.write(f"\n{complete_code}\n")
-                    print(f"📝 Generated TypeScript code saved to: {debug_path}")
-
                     # Validate TypeScript syntax
                     validation_result, error_output = self._validate_typescript_syntax(
                         complete_code
                     )
                     if not validation_result:
-                        # Debug: Save failed code for inspection
-                        from datetime import datetime
-
-                        debug_path = f"/tmp/typescript_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{attempt}.ts"
-                        with open(debug_path, "w") as f:
-                            f.write(f"// TSC Error:\n// {error_output}\n\n")
-                            f.write(complete_code)
-                        print(f"⚠️  TypeScript validation failed (attempt {attempt + 1})")
-                        print(f"   Saved debug code to: {debug_path}")
-                        print(f"   TSC Error: {error_output[:200]}")
-
+                        # Validation failed, retry if attempts remaining
                         if attempt == max_retries - 1:
                             raise ValueError(
                                 f"Generated invalid TypeScript syntax. TSC Error: {error_output[:200]}"

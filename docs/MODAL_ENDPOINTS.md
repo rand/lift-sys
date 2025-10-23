@@ -65,15 +65,18 @@
 ```
 
 **Latency**:
-- **Cold start** (first call after deployment): 3-5 minutes (model download + load)
-- **Cold start** (subsequent cold starts): 30-90 seconds (model load from volume)
+- **Cold start** (first call after deployment): **7+ minutes** (423s measured)
+  - Model loading: 43s (14 safetensor shards)
+  - Memory allocation: 45s (61GB GPU memory)
+  - Torch compile: 156s (graph compilation)
+  - KV cache init: 46s (CUDA graph capture)
 - **Warm requests**: 2-10 seconds (model already loaded)
 
-**Note**: The 32B model is MUCH larger than the previous 7B model, resulting in:
-- Longer cold start times
-- Higher quality outputs
-- Higher token costs
-- Expected latency increase in benchmarks
+**⚠️ CRITICAL**: 32B model cold starts are **7-14x slower** than 7B model:
+- 7B model: 30-90s cold start
+- 32B model: 420s (7 min) cold start
+- **Recommendation**: Pre-warm model before benchmarks
+- **Timeout**: Use 600s (10 min) for cold starts, 30s for warm requests
 
 ---
 
@@ -136,14 +139,24 @@ modal run lift_sys/inference/modal_app.py::test
 
 ## Known Issues & Observations
 
-### Cold Start Behavior
-- **Issue**: Generate endpoint can timeout on cold start (>2 minutes)
-- **Cause**: Loading 32B model weights (~60GB) into GPU memory
+### Issue 1: Missing Request Validation (P0 - CRITICAL)
+- **Problem**: Endpoint crashes with `KeyError: 'schema'` if schema not provided
+- **Error**: `KeyError: 'schema'` at line 281 in modal_app.py
+- **Impact**: Returns 500 Internal Server Error instead of 422 Unprocessable Entity
+- **Workaround**: Always include `schema` in request body
+- **Fix**: Add Pydantic BaseModel validation (bead: lift-sys-298)
+- **See**: `docs/planning/MODAL_ENDPOINT_ISSUES.md` for details
+
+### Issue 2: Extreme Cold Start Times (P1)
+- **Problem**: 7+ minute cold starts make real-time testing impractical
+- **Measured**: 423.71 seconds (7min 3s) for 32B model load
+- **Comparison**: 7B model was 30-90s (7-14x faster)
+- **Cause**: Loading 61GB model weights + torch compilation + CUDA graphs
 - **Mitigation**:
-  - Use health endpoint for connectivity tests
-  - Allow 3-5 minute timeout for first request
-  - Subsequent requests are much faster if model stays warm
-  - Consider keeping model warm with periodic requests
+  - Pre-warm model before benchmarks (call endpoint once, wait 7 min)
+  - Use ResponseRecorder for CI (cache responses)
+  - Increase timeouts to 600s (10 min) for cold starts
+  - Consider 7B model for development, 32B for production
 
 ### XGrammar Validation
 - **Status**: ✅ Working (confirmed via health endpoint)

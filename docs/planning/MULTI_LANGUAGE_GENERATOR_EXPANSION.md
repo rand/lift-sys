@@ -22,7 +22,11 @@ Successfully expanded lift-sys code generator from **1 language (TypeScript)** t
 
 ## Language Support Matrix
 
-### Tier 1: Production Ready ✅
+### High Priority Languages
+
+**All of these languages are high priority** for the lift-sys project. The first 4 are complete, the next 3 are in progress.
+
+#### Completed (Tier 1: Production Ready ✅)
 
 | Language | Status | Lines | E2E Tests | Key Features |
 |----------|--------|-------|-----------|--------------|
@@ -31,7 +35,7 @@ Successfully expanded lift-sys code generator from **1 language (TypeScript)** t
 | **Go** | ✅ Complete | 1,079 | 5 | Goroutines, channels, defer, error tuples, slices |
 | **Java** | ✅ Complete | 1,224 | 6 | Generics, annotations, exceptions, streams, access modifiers |
 
-### Tier 2: High Priority (Next Quarter)
+#### In Progress (Next Implementation Priority)
 
 | Language | Priority | Rationale | Key Schema Challenges |
 |----------|----------|-----------|----------------------|
@@ -39,7 +43,7 @@ Successfully expanded lift-sys code generator from **1 language (TypeScript)** t
 | **Zig** | 🔥 P1 | Systems programming, growing community, modern C alternative | Comptime, allocators, error unions, defer/errdefer, packed structs |
 | **C++** | 🔥 P2 | Enterprise adoption, large codebases, performance critical | Templates, RAII, smart pointers, move semantics, concepts (C++20) |
 
-### Tier 3: Consideration (Q2 2026)
+### Additional Languages for Consideration (Future)
 
 | Language | Priority | Rationale |
 |----------|----------|-----------|

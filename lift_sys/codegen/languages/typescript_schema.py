@@ -18,13 +18,13 @@ TYPESCRIPT_GENERATION_SCHEMA: dict[str, Any] = {
             "properties": {
                 "body_statements": {
                     "type": "array",
-                    "description": "List of implementation statements",
+                    "description": "List of implementation statements. For variables declared in 'variables' array, use assignment statements (type='assignment') without const/let/var keywords.",
                     "items": {
                         "type": "object",
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "description": "Type of statement",
+                                "description": "Type of statement. Use 'assignment' for variables already declared in 'variables' array. Use 'const_declaration' or 'let_declaration' only for new variables not in 'variables' array.",
                                 "enum": [
                                     "assignment",
                                     "return",
@@ -41,7 +41,7 @@ TYPESCRIPT_GENERATION_SCHEMA: dict[str, Any] = {
                             },
                             "code": {
                                 "type": "string",
-                                "description": "TypeScript code for this statement",
+                                "description": "TypeScript code for this statement. DO NOT include const/let/var keywords for variables already declared in 'variables' array. Use plain assignments like 'x = value' not 'const x = value'.",
                             },
                             "rationale": {
                                 "type": ["string", "null"],
@@ -55,7 +55,7 @@ TYPESCRIPT_GENERATION_SCHEMA: dict[str, Any] = {
                 },
                 "variables": {
                     "type": "array",
-                    "description": "Local variables used in implementation",
+                    "description": "Local variables to DECLARE at function start. These will be declared with their declaration_type (const/let/var). Do NOT redeclare these in body_statements.",
                     "items": {
                         "type": "object",
                         "properties": {

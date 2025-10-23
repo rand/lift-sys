@@ -97,9 +97,25 @@ class TypeScriptGenerator:
                     complete_code = self._build_typescript_code(ir, impl_json, semantic_context)
 
                     # Validate TypeScript syntax
-                    if not self._validate_typescript_syntax(complete_code):
+                    validation_result, error_output = self._validate_typescript_syntax(
+                        complete_code
+                    )
+                    if not validation_result:
+                        # Debug: Save failed code for inspection
+                        from datetime import datetime
+
+                        debug_path = f"/tmp/typescript_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{attempt}.ts"
+                        with open(debug_path, "w") as f:
+                            f.write(f"// TSC Error:\n// {error_output}\n\n")
+                            f.write(complete_code)
+                        print(f"⚠️  TypeScript validation failed (attempt {attempt + 1})")
+                        print(f"   Saved debug code to: {debug_path}")
+                        print(f"   TSC Error: {error_output[:200]}")
+
                         if attempt == max_retries - 1:
-                            raise ValueError("Generated invalid TypeScript syntax")
+                            raise ValueError(
+                                f"Generated invalid TypeScript syntax. TSC Error: {error_output[:200]}"
+                            )
                         continue
 
                     return GeneratedCode(
@@ -381,7 +397,7 @@ Use TypeScript syntax:
 
         return "\n".join(lines)
 
-    def _validate_typescript_syntax(self, code: str) -> bool:
+    def _validate_typescript_syntax(self, code: str) -> tuple[bool, str]:
         """
         Validate TypeScript syntax using tsc.
 
@@ -389,7 +405,7 @@ Use TypeScript syntax:
             code: TypeScript code to validate
 
         Returns:
-            True if syntax is valid, False otherwise
+            Tuple of (is_valid, error_output)
         """
         try:
             # Write to temporary file
@@ -410,16 +426,18 @@ Use TypeScript syntax:
                 )
 
                 # tsc returns 0 for success
-                return result.returncode == 0
+                is_valid = result.returncode == 0
+                error_output = result.stderr if not is_valid else ""
+                return (is_valid, error_output)
 
             finally:
                 # Clean up temp file
                 Path(temp_path).unlink(missing_ok=True)
 
-        except Exception:
+        except Exception as e:
             # If tsc not available or other error, assume valid
             # (syntax validation is optional)
-            return True
+            return (True, str(e))
 
     def _extract_json(self, response: str) -> dict[str, Any]:
         """Extract JSON from LLM response."""

@@ -2,19 +2,10 @@
 
 This module tests the complete TypeScript generation pipeline from IR to
 executable TypeScript code, including LSP context integration.
-
-**Phase 2 Migration Status**: First 3 tests migrated to real Modal with fixture caching
-- test_simple_arithmetic_function: ✅ Migrated
-- test_async_function_with_promise: ✅ Migrated
-- test_function_with_imports: ✅ Migrated
-- test_function_with_variables: MockProvider (original)
-- test_generation_with_lsp_context: MockProvider (original)
-- test_complex_function_with_multiple_features: MockProvider (original)
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -30,21 +21,14 @@ from lift_sys.ir.models import (
     SigClause,
 )
 from lift_sys.providers.mock import MockProvider
-from lift_sys.providers.modal_provider import ModalProvider
 
 
 class TestTypeScriptE2E:
     """End-to-end tests for TypeScript generation."""
 
-    @pytest.mark.integration
-    @pytest.mark.real_modal
     @pytest.mark.asyncio
-    async def test_simple_arithmetic_function(self, code_recorder):
-        """Test generating a simple arithmetic function.
-
-        Uses real Modal LLM for TypeScript code generation.
-        Cached via code_recorder for fast CI runs.
-        """
+    async def test_simple_arithmetic_function(self):
+        """Test generating a simple arithmetic function."""
         # Create IR for addition function
         ir = IntermediateRepresentation(
             intent=IntentClause(
@@ -68,50 +52,48 @@ class TestTypeScriptE2E:
             metadata=Metadata(origin="test", language="typescript"),
         )
 
-        # Set up real Modal provider
-        endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
-        provider = ModalProvider(endpoint_url=endpoint_url)
-        await provider.initialize({})
+        # Mock provider response
+        provider = MockProvider()
+        provider.set_response(
+            """
+{
+  "implementation": {
+    "body_statements": [
+      {"type": "return", "code": "return a + b;", "rationale": "Add the two numbers"}
+    ],
+    "variables": [],
+    "imports": []
+  }
+}
+"""
+        )
 
-        try:
-            # Generate TypeScript code (cached via code_recorder)
-            generator = TypeScriptGenerator(provider)
-            result = await code_recorder.get_or_record(
-                key="typescript_simple_add_function",
-                generator_fn=lambda: generator.generate(ir),
-                metadata={
-                    "test": "typescript_e2e",
-                    "function": "add",
-                    "language": "typescript",
-                },
-            )
+        # Generate TypeScript code
+        generator = TypeScriptGenerator(provider)
+        result = await generator.generate(ir)
 
-            # Verify result
-            assert result.language == "typescript"
-            assert result.source_code is not None
+        # Verify result
+        assert result.language == "typescript"
+        assert result.source_code is not None
 
-            # Verify structure
-            code = result.source_code
-            assert "export function add" in code or "function add" in code
-            assert "number" in code  # TypeScript type annotation
-            assert "return" in code
-            assert "a" in code and "b" in code
+        # Verify structure
+        code = result.source_code
+        assert "export function add" in code
+        assert "a: number" in code
+        assert "b: number" in code
+        assert ": number" in code  # Return type
+        assert "return a + b;" in code
 
-            # Verify TSDoc (may vary with LLM)
-            assert "/**" in code or "//" in code  # Some form of documentation
+        # Verify TSDoc
+        assert "/**" in code
+        assert "Add two numbers together" in code
+        assert "@param a" in code
+        assert "@param b" in code
+        assert "@returns" in code
 
-        finally:
-            await provider.aclose()
-
-    @pytest.mark.integration
-    @pytest.mark.real_modal
     @pytest.mark.asyncio
-    async def test_async_function_with_promise(self, code_recorder):
-        """Test generating an async function that returns a Promise.
-
-        Uses real Modal LLM for TypeScript async/Promise code generation.
-        Cached via code_recorder for fast CI runs.
-        """
+    async def test_async_function_with_promise(self):
+        """Test generating an async function that returns a Promise."""
         ir = IntermediateRepresentation(
             intent=IntentClause(
                 summary="Fetch user data from an API",
@@ -126,45 +108,37 @@ class TestTypeScriptE2E:
             metadata=Metadata(origin="test", language="typescript"),
         )
 
-        # Set up real Modal provider
-        endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
-        provider = ModalProvider(endpoint_url=endpoint_url)
-        await provider.initialize({})
+        provider = MockProvider()
+        provider.set_response(
+            """
+{
+  "implementation": {
+    "body_statements": [
+      {
+        "type": "return",
+        "code": "return Promise.resolve({ id: userId, name: 'Test User' });",
+        "rationale": "Return user data as a promise"
+      }
+    ],
+    "variables": [],
+    "imports": []
+  }
+}
+"""
+        )
 
-        try:
-            # Generate TypeScript code (cached via code_recorder)
-            generator = TypeScriptGenerator(provider)
-            result = await code_recorder.get_or_record(
-                key="typescript_async_fetch_user",
-                generator_fn=lambda: generator.generate(ir),
-                metadata={
-                    "test": "typescript_e2e",
-                    "function": "fetchUser",
-                    "language": "typescript",
-                    "feature": "async_promise",
-                },
-            )
+        generator = TypeScriptGenerator(provider)
+        result = await generator.generate(ir)
 
-            # Verify result
-            code = result.source_code
-            assert code is not None
-            assert "fetchUser" in code
-            assert "string" in code  # userId type
-            # Promise might be in return type or function body
-            assert "Promise" in code or "async" in code
+        code = result.source_code
+        assert "export" in code
+        assert "fetchUser" in code
+        assert "userId: string" in code
+        assert "Promise" in code
 
-        finally:
-            await provider.aclose()
-
-    @pytest.mark.integration
-    @pytest.mark.real_modal
     @pytest.mark.asyncio
-    async def test_function_with_imports(self, code_recorder):
-        """Test generating a function with external imports (syntax check only).
-
-        Uses real Modal LLM for TypeScript string manipulation code generation.
-        Cached via code_recorder for fast CI runs.
-        """
+    async def test_function_with_imports(self):
+        """Test generating a function with external imports (syntax check only)."""
         ir = IntermediateRepresentation(
             intent=IntentClause(
                 summary="Concatenate two strings with a separator",
@@ -183,35 +157,34 @@ class TestTypeScriptE2E:
             metadata=Metadata(origin="test", language="typescript"),
         )
 
-        # Set up real Modal provider
-        endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
-        provider = ModalProvider(endpoint_url=endpoint_url)
-        await provider.initialize({})
+        provider = MockProvider()
+        provider.set_response(
+            """
+{
+  "implementation": {
+    "body_statements": [
+      {
+        "type": "return",
+        "code": "return `${a}${separator}${b}`;",
+        "rationale": "Concatenate with template literal"
+      }
+    ],
+    "variables": [],
+    "imports": []
+  }
+}
+"""
+        )
 
-        try:
-            # Generate TypeScript code (cached via code_recorder)
-            generator = TypeScriptGenerator(provider)
-            result = await code_recorder.get_or_record(
-                key="typescript_join_strings",
-                generator_fn=lambda: generator.generate(ir),
-                metadata={
-                    "test": "typescript_e2e",
-                    "function": "joinStrings",
-                    "language": "typescript",
-                    "feature": "string_manipulation",
-                },
-            )
+        generator = TypeScriptGenerator(provider)
+        result = await generator.generate(ir)
 
-            # Verify function structure
-            code = result.source_code
-            assert code is not None
-            assert "joinStrings" in code
-            assert "string" in code  # TypeScript string type
-            # Should have all three parameters
-            assert "a" in code and "b" in code and "separator" in code
-
-        finally:
-            await provider.aclose()
+        code = result.source_code
+        # Verify function structure
+        assert "export function joinStrings" in code
+        assert "a: string" in code
+        assert "b: string" in code
+        assert "separator: string" in code
 
     @pytest.mark.asyncio
     async def test_function_with_variables(self):

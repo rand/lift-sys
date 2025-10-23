@@ -39,7 +39,6 @@ SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimi
 """
 
 import modal
-from pydantic import BaseModel, Field
 
 # Create Modal app
 app = modal.App("lift-sys-inference")
@@ -49,17 +48,6 @@ VLLM_VERSION = "0.9.2"  # v0.9.2+ has native XGrammar support
 TRANSFORMERS_VERSION = "4.53.0"  # Must be >=4.51.1 (vLLM req) and <4.54.0 (aimv2 conflict)
 FASTAPI_VERSION = "0.115.12"
 HF_HUB_VERSION = "0.20.0"
-
-
-# Pydantic request models for validation
-class GenerateRequest(BaseModel):
-    """Validated request model for generate endpoint."""
-
-    prompt: str = Field(..., description="Natural language prompt for generation")
-    schema: dict = Field(..., description="JSON schema for XGrammar constraints")
-    max_tokens: int = Field(default=2048, ge=1, le=8192, description="Maximum tokens to generate")
-    temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Sampling temperature")
-    top_p: float = Field(default=0.95, ge=0.0, le=1.0, description="Nucleus sampling parameter")
 
 
 # Create optimized base image with all dependencies
@@ -75,11 +63,10 @@ llm_image = (
         f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
         "xgrammar",  # XGrammar for constrained generation
         f"transformers=={TRANSFORMERS_VERSION}",  # Model support
-        f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework
+        f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework (includes pydantic)
         f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
         "hf-transfer",  # Fast downloads from HuggingFace (Rust-based)
         "flashinfer-python",  # Optimized top-p/top-k sampling (10-20% faster)
-        "pydantic>=2.0",  # Request validation (required for GenerateRequest)
     )
     .env(
         {
@@ -276,18 +263,15 @@ Generate the IR as valid JSON:
         return self._generate_impl(prompt, schema, max_tokens, temperature, top_p)
 
     @modal.fastapi_endpoint(method="POST", label="generate")
-    async def web_generate(self, request: GenerateRequest) -> dict:
+    async def web_generate(self, request: dict) -> dict:
         """
         HTTP endpoint for schema-constrained generation.
-
-        FastAPI automatically validates the request using Pydantic and returns
-        422 Unprocessable Entity if validation fails.
 
         Supports both:
         - Prompt → IR generation
         - IR → Code generation
 
-        POST body (validated by GenerateRequest model):
+        POST body:
         {
             "prompt": str,  # required
             "schema": dict,  # required
@@ -300,12 +284,18 @@ Generate the IR as valid JSON:
         - IR_JSON_SCHEMA → generates IR from natural language
         - CODE_GENERATION_SCHEMA → generates code implementation from IR
         """
+        # Validate required fields to prevent KeyError (P0 fix)
+        if "prompt" not in request:
+            return {"error": "Missing required field: prompt", "status": 400}
+        if "schema" not in request:
+            return {"error": "Missing required field: schema", "status": 400}
+
         return self._generate_impl(
-            prompt=request.prompt,
-            schema=request.schema,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-            top_p=request.top_p,
+            prompt=request["prompt"],
+            schema=request["schema"],
+            max_tokens=request.get("max_tokens", 2048),
+            temperature=request.get("temperature", 0.3),
+            top_p=request.get("top_p", 0.95),
         )
 
     @modal.fastapi_endpoint(method="GET", label="warmup")

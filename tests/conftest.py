@@ -467,3 +467,56 @@ def ir_recorder(fixtures_dir: Path):
         print(f"  Cache hits: {stats['cache_hits']}")
         print(f"  Cache misses: {stats['cache_misses']}")
         print(f"  Total cached IRs: {stats['num_cached_responses']}")
+
+
+@pytest.fixture
+def code_recorder(fixtures_dir: Path):
+    """
+    Provide response recorder for code generation.
+
+    Similar to ir_recorder but for GeneratedCode objects.
+    Handles code generation results from XGrammarCodeGenerator.
+
+    Usage:
+        async def test_code_generation(code_recorder):
+            code = await code_recorder.get_or_record(
+                key="test_sum_function",
+                generator_fn=lambda: generator.generate(ir)
+            )
+    """
+    from lift_sys.codegen.models import GeneratedCode
+    from tests.fixtures import SerializableResponseRecorder
+
+    record_mode = os.getenv("RECORD_FIXTURES", "false").lower() == "true"
+    fixture_file = fixtures_dir / "code_responses.json"
+
+    def serialize_code(code: GeneratedCode) -> dict:
+        """Convert GeneratedCode to JSON-serializable dict."""
+        return {
+            "source_code": code.source_code,
+            "language": code.language,
+            "ir_version": code.ir_version,
+            "metadata": code.metadata,
+            "warnings": code.warnings,
+        }
+
+    def deserialize_code(data: dict) -> GeneratedCode:
+        """Convert dict back to GeneratedCode object."""
+        return GeneratedCode(**data)
+
+    recorder = SerializableResponseRecorder(
+        fixture_file=fixture_file,
+        record_mode=record_mode,
+        auto_save=True,
+        serializer=serialize_code,
+        deserializer=deserialize_code,
+    )
+
+    yield recorder
+
+    if record_mode:
+        stats = recorder.get_stats()
+        print("\n📊 Code Recorder Stats:")
+        print(f"  Cache hits: {stats['cache_hits']}")
+        print(f"  Cache misses: {stats['cache_misses']}")
+        print(f"  Total cached codes: {stats['num_cached_responses']}")

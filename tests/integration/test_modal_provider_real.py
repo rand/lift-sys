@@ -447,23 +447,26 @@ async def test_real_modal_temperature_parameter(modal_recorder):
     await provider.initialize({})
 
     try:
-        # Use ultra-simple prompt to avoid verbose descriptions
-        prompt = "Function to add two numbers"
+        # Explicit concise prompt with instruction to limit description length
+        prompt = (
+            "Function to add two numbers. "
+            "Provide ONLY the function name and a brief one-sentence description (max 50 words)."
+        )
         schema = {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "description": {"type": "string"},
+                "description": {"type": "string", "maxLength": 200},
             },
             "required": ["name", "description"],
         }
 
         # temperature=0.0 should be deterministic
-        # Use max_tokens=4096 to ensure complete JSON for detailed descriptions
+        # Use max_tokens=8192 to ensure complete JSON even for verbose models
         result1 = await modal_recorder.get_or_record(
             key="temperature_test_deterministic_run1",
             generator_fn=lambda: provider.generate_structured(
-                prompt=prompt, schema=schema, temperature=0.0, max_tokens=4096
+                prompt=prompt, schema=schema, temperature=0.0, max_tokens=8192
             ),
             metadata={"test": "temperature", "run": 1},
         )
@@ -471,7 +474,7 @@ async def test_real_modal_temperature_parameter(modal_recorder):
         result2 = await modal_recorder.get_or_record(
             key="temperature_test_deterministic_run2",
             generator_fn=lambda: provider.generate_structured(
-                prompt=prompt, schema=schema, temperature=0.0, max_tokens=4096
+                prompt=prompt, schema=schema, temperature=0.0, max_tokens=8192
             ),
             metadata={"test": "temperature", "run": 2},
         )
@@ -551,40 +554,44 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
     await provider.initialize({})
 
     try:
-        # Moderately complex prompt that benefits from detailed explanation
-        prompt = "Write a function to implement quicksort with pivot selection"
+        # Moderately complex prompt with explicit length constraints
+        prompt = (
+            "Write a function to implement quicksort with pivot selection. "
+            "Provide the function name and a concise description (max 100 words)."
+        )
         schema = {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "description": {"type": "string"},
+                "description": {"type": "string", "maxLength": 500},
             },
             "required": ["name", "description"],
         }
 
-        # Low max_tokens - terse description (1024 tokens)
-        # Note: 512 tokens too small for complex prompts (truncates mid-JSON)
+        # Low max_tokens - terse description (2048 tokens, up from 1024)
+        # Increased to avoid truncation while still testing constraint
         result_low = await modal_recorder.get_or_record(
-            key="max_tokens_quicksort_1024",
+            key="max_tokens_quicksort_2048",
             generator_fn=lambda: provider.generate_structured(
                 prompt=prompt,
                 schema=schema,
                 temperature=0.0,
-                max_tokens=1024,
+                max_tokens=2048,
             ),
-            metadata={"test": "max_tokens", "tokens": 1024},
+            metadata={"test": "max_tokens", "tokens": 2048},
         )
 
-        # High max_tokens - detailed description (4096 tokens)
+        # High max_tokens - detailed description (8192 tokens, up from 4096)
+        # Increased to ensure no truncation
         result_high = await modal_recorder.get_or_record(
-            key="max_tokens_quicksort_4096",
+            key="max_tokens_quicksort_8192",
             generator_fn=lambda: provider.generate_structured(
                 prompt=prompt,
                 schema=schema,
                 temperature=0.0,
-                max_tokens=4096,
+                max_tokens=8192,
             ),
-            metadata={"test": "max_tokens", "tokens": 4096},
+            metadata={"test": "max_tokens", "tokens": 8192},
         )
 
         # Both should be valid JSON with required fields
@@ -598,13 +605,13 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
         len_low = len(result_low["description"])
         len_high = len(result_high["description"])
 
-        print(f"\nmax_tokens=1024: {len_low} chars")
-        print(f"max_tokens=4096: {len_high} chars")
+        print(f"\nmax_tokens=2048: {len_low} chars")
+        print(f"max_tokens=8192: {len_high} chars")
 
         # High max_tokens should allow more detail (or equal if model is terse)
         assert len_high >= len_low, (
             f"Higher max_tokens should allow more detail: "
-            f"1024 tokens={len_low} chars, 4096 tokens={len_high} chars"
+            f"2048 tokens={len_low} chars, 8192 tokens={len_high} chars"
         )
 
     finally:

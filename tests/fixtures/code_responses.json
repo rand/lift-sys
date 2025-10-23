@@ -75,6 +75,47 @@
       "warnings": []
     }
   },
+  "typescript_pipeline_array_filtering": {
+    "metadata": {
+      "feature": "array_methods",
+      "language": "typescript",
+      "prompt": "filter positive numbers",
+      "test": "typescript_pipeline_e2e"
+    },
+    "original_key": "typescript_pipeline_array_filtering",
+    "response": {
+      "ir_version": null,
+      "language": "typescript",
+      "metadata": {
+        "attempts": 1,
+        "generator": "typescript-xgrammar",
+        "has_lsp_context": false,
+        "ir_origin": "User request"
+      },
+      "source_code": "/**\n * Filter an array of numbers to keep only positive numbers\n * \n * This function is useful for processing numerical data to isolate positive values.\n *\n * @param numbers - Parameter of type Array<number>\n * @returns Array<number>\n */\nexport function filter_positive_numbers(numbers: Array<number>): Array<number> {\n  let result_list: Array<number>;\n\n  // Initialize an empty result list\n  result_list = []\n  // Iterate through all elements in the input list\n  for (let number of numbers)\n  // Check if the number is positive\n  if (number > 0)\n  // Append positive numbers to the result list\n  result_list.push(number)\n  // Return the result list after the loop completes\n  return result_list\n}",
+      "warnings": []
+    }
+  },
+  "typescript_pipeline_simple_addition": {
+    "metadata": {
+      "language": "typescript",
+      "prompt": "add two numbers",
+      "test": "typescript_pipeline_e2e"
+    },
+    "original_key": "typescript_pipeline_simple_addition",
+    "response": {
+      "ir_version": null,
+      "language": "typescript",
+      "metadata": {
+        "attempts": 2,
+        "generator": "typescript-xgrammar",
+        "has_lsp_context": false,
+        "ir_origin": "User's request"
+      },
+      "source_code": "/**\n * Add two numbers and return the result\n * \n * This function is a basic arithmetic operation that takes two numbers as input and returns their sum.\n *\n * @param first_number - Parameter of type number\n * @param second_number - Parameter of type number\n * @returns number\n */\nexport function add_two_numbers(first_number: number, second_number: number): number {\n  let sum: number;\n\n  // Add the first_number and second_number\n  sum = first_number + second_number\n  // Return the sum of the two numbers\n  return sum\n}",
+      "warnings": []
+    }
+  },
   "typescript_schema_compliance_test": {
     "metadata": {
       "language": "typescript",
@@ -86,12 +127,12 @@
       "ir_version": null,
       "language": "typescript",
       "metadata": {
-        "attempts": 2,
+        "attempts": 1,
         "generator": "typescript-xgrammar",
         "has_lsp_context": false,
         "ir_origin": "User Request"
       },
-      "source_code": "/**\n * Multiply two numbers\n * \n * To perform arithmetic multiplication of two numerical values\n *\n * @param first_number - Parameter of type number\n * @param second_number - Parameter of type number\n * @returns number\n */\nexport function multiply_numbers(first_number: number, second_number: number): number {\n  let product: number;\n\n  // Multiply the first number by the second number and store the result in the product variable.\n  product = first_number * second_number\n  // Return the product of the multiplication.\n  return product\n}",
+      "source_code": "/**\n * Multiply two numbers\n * \n * To perform arithmetic multiplication of two numerical inputs\n *\n * @param factor_one - Parameter of type number\n * @param factor_two - Parameter of type number\n * @returns number\n */\nexport function multiply_numbers(factor_one: number, factor_two: number): number {\n  let product: number;\n\n  // Multiply factor_one and factor_two and store the result in product\n  product = factor_one * factor_two\n  // Return the product of factor_one and factor_two\n  return product\n}",
       "warnings": []
     }
   }

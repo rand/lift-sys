@@ -238,7 +238,13 @@ def get_prompt_for_typescript_generation(
     )
     prompt_parts.append("- implementation.variables: Array of local variables (if needed)")
     prompt_parts.append("  Each variable has: name, type_hint, purpose, declaration_type")
-    prompt_parts.append("- imports: Array of imports (if needed) with module, names, import_type")
+    prompt_parts.append(
+        "\nIMPORTANT: If you declare variables in 'variables' array, do NOT redeclare them in body_statements."
+    )
+    prompt_parts.append(
+        "Use assignment (product = value) NOT const/let declarations (const product = value) for already-declared variables."
+    )
+    prompt_parts.append("\n- imports: Array of imports (if needed) with module, names, import_type")
     prompt_parts.append("- helper_functions: Array of helper functions (if needed)")
     prompt_parts.append("- type_definitions: Array of custom types/interfaces (if needed)")
     prompt_parts.append("\nGenerate clean, idiomatic TypeScript code.")

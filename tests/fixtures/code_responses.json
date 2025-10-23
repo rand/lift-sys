@@ -74,5 +74,25 @@
       "source_code": "def calculate_sum(x: int, y: int) -> int:\n    \"\"\"Calculate the sum of two numbers.\n    \n    Args:\n        x: Parameter value\n        y: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The algorithm simply adds two integers and returns the result.\n\n    # Calculate the sum of x and y\n    result = x + y\n    # Return the calculated sum\n    return result",
       "warnings": []
     }
+  },
+  "typescript_schema_compliance_test": {
+    "metadata": {
+      "language": "typescript",
+      "test": "typescript_pipeline_e2e",
+      "validation": "schema_compliance"
+    },
+    "original_key": "typescript_schema_compliance_test",
+    "response": {
+      "ir_version": null,
+      "language": "typescript",
+      "metadata": {
+        "attempts": 2,
+        "generator": "typescript-xgrammar",
+        "has_lsp_context": false,
+        "ir_origin": "User Request"
+      },
+      "source_code": "/**\n * Multiply two numbers\n * \n * To perform arithmetic multiplication of two numerical values\n *\n * @param first_number - Parameter of type number\n * @param second_number - Parameter of type number\n * @returns number\n */\nexport function multiply_numbers(first_number: number, second_number: number): number {\n  let product: number;\n\n  // Multiply the first number by the second number and store the result in the product variable.\n  product = first_number * second_number\n  // Return the product of the multiplication.\n  return product\n}",
+      "warnings": []
+    }
   }
 }

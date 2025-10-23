@@ -1,0 +1,774 @@
+{
+  "translator_ambiguous_test": {
+    "metadata": {
+      "prompt": "test",
+      "test": "ambiguous"
+    },
+    "original_key": "translator_ambiguous_test",
+    "response": {
+      "assertions": [
+        {
+          "holes": [],
+          "predicate": "input_value is an integer",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Test function"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+          },
+          "rationale": null
+        }
+      ],
+      "constraints": [
+        {
+          "description": "Function must return the computed 'value' value explicitly",
+          "requirement": "MUST_RETURN",
+          "severity": "error",
+          "type": "return_constraint",
+          "value_name": "value"
+        }
+      ],
+      "effects": [
+        {
+          "description": "Check if input_value is greater than 10",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Test function"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+          }
+        },
+        {
+          "description": "If input_value is greater than 10, return 1 (int)",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Test function"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+          }
+        },
+        {
+          "description": "If input_value is not greater than 10, return 0 (int)",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Test function"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+          }
+        }
+      ],
+      "intent": {
+        "holes": [],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Test function"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+        },
+        "rationale": "This function is a placeholder to show how the IR schema is structured and used.",
+        "summary": "A test function to demonstrate the IR schema"
+      },
+      "metadata": {
+        "evidence": [],
+        "language": "python",
+        "origin": "User's request",
+        "source_path": null
+      },
+      "signature": {
+        "holes": [],
+        "name": "test_function",
+        "parameters": [
+          {
+            "description": null,
+            "name": "input_value",
+            "type_hint": "int"
+          }
+        ],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Test function"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:59.141599+00:00Z"
+        },
+        "returns": "int"
+      }
+    }
+  },
+  "translator_email_validation": {
+    "metadata": {
+      "prompt": "validate_email",
+      "test": "email_validation"
+    },
+    "original_key": "translator_email_validation",
+    "response": {
+      "assertions": [
+        {
+          "holes": [],
+          "predicate": "email is a non-empty string",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          },
+          "rationale": null
+        },
+        {
+          "holes": [],
+          "predicate": "local_part is not empty",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          },
+          "rationale": null
+        },
+        {
+          "holes": [],
+          "predicate": "domain_part contains at least one '.'",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          },
+          "rationale": null
+        },
+        {
+          "holes": [],
+          "predicate": "domain_name is not empty",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          },
+          "rationale": null
+        },
+        {
+          "holes": [],
+          "predicate": "top_level_domain is at least two characters long",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          },
+          "rationale": null
+        }
+      ],
+      "constraints": [
+        {
+          "description": "Function must return the computed 'result' value explicitly",
+          "requirement": "MUST_RETURN",
+          "severity": "error",
+          "type": "return_constraint",
+          "value_name": "result"
+        },
+        {
+          "description": "Loop must return LAST match (accumulate until end)",
+          "requirement": "ACCUMULATE",
+          "search_type": "LAST_MATCH",
+          "severity": "error",
+          "type": "loop_constraint"
+        },
+        {
+          "description": "@ and . must not be immediately adjacent (e.g., reject 'test@.com')",
+          "elements": [
+            "@",
+            "."
+          ],
+          "min_distance": 1,
+          "requirement": "NOT_ADJACENT",
+          "severity": "error",
+          "type": "position_constraint"
+        }
+      ],
+      "effects": [
+        {
+          "description": "Check if the email contains exactly one '@' symbol",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Split the email into local part and domain part using '@'",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Check if the local part is not empty",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Check if the domain part contains at least one '.'",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Split the domain part into domain name and top-level domain using the last '.'",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Check if the domain name is not empty",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Check if the top-level domain is at least two characters long",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        },
+        {
+          "description": "Return True if all checks pass, False otherwise",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Validate email addresses"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+          }
+        }
+      ],
+      "intent": {
+        "holes": [],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Validate email addresses"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+        },
+        "rationale": "Ensure the email address conforms to a standard format",
+        "summary": "Validate email addresses"
+      },
+      "metadata": {
+        "evidence": [],
+        "language": "python",
+        "origin": "User request",
+        "source_path": null
+      },
+      "signature": {
+        "holes": [],
+        "name": "validate_email",
+        "parameters": [
+          {
+            "description": null,
+            "name": "email",
+            "type_hint": "str"
+          }
+        ],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Validate email addresses"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:35.181887+00:00Z"
+        },
+        "returns": "bool"
+      }
+    }
+  },
+  "translator_process_input_holes": {
+    "metadata": {
+      "prompt": "process_input",
+      "test": "typed_holes"
+    },
+    "original_key": "translator_process_input_holes",
+    "response": {
+      "assertions": [],
+      "effects": [
+        {
+          "description": "Perform some unspecified processing on the input",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Process some input"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:03:06.066337+00:00Z"
+          }
+        }
+      ],
+      "intent": {
+        "holes": [],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Process some input"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:03:06.066337+00:00Z"
+        },
+        "rationale": "The function will perform some unspecified processing on the input.",
+        "summary": "Process some input"
+      },
+      "metadata": {
+        "evidence": [],
+        "language": "python",
+        "origin": "User request",
+        "source_path": null
+      },
+      "signature": {
+        "holes": [],
+        "name": "process_input",
+        "parameters": [
+          {
+            "description": null,
+            "name": "input_data",
+            "type_hint": "TypedHole"
+          }
+        ],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Process some input"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:03:06.066337+00:00Z"
+        },
+        "returns": "TypedHole"
+      }
+    }
+  },
+  "translator_save_user": {
+    "metadata": {
+      "prompt": "database_write",
+      "test": "save_user"
+    },
+    "original_key": "translator_save_user",
+    "response": {
+      "assertions": [
+        {
+          "holes": [],
+          "predicate": "user_data is not None",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          },
+          "rationale": "User data must be provided to save"
+        },
+        {
+          "holes": [],
+          "predicate": "user_data is a dictionary",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          },
+          "rationale": "User data must be in dictionary format"
+        }
+      ],
+      "constraints": [
+        {
+          "description": "Function must return the computed 'result' value explicitly",
+          "requirement": "MUST_RETURN",
+          "severity": "error",
+          "type": "return_constraint",
+          "value_name": "result"
+        }
+      ],
+      "effects": [
+        {
+          "description": "Connect to the database",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          }
+        },
+        {
+          "description": "Insert user data into the database",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          }
+        },
+        {
+          "description": "Commit the transaction to save changes",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          }
+        },
+        {
+          "description": "Close the database connection",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          }
+        },
+        {
+          "description": "Return True if data is saved successfully, False otherwise (bool)",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Save user data to the database"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+          }
+        }
+      ],
+      "intent": {
+        "holes": [],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Save user data to the database"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+        },
+        "rationale": "To persist user information for future retrieval and processing",
+        "summary": "Save user data to the database"
+      },
+      "metadata": {
+        "evidence": [],
+        "language": "python",
+        "origin": "User request",
+        "source_path": null
+      },
+      "signature": {
+        "holes": [],
+        "name": "save_user_data",
+        "parameters": [
+          {
+            "description": null,
+            "name": "user_data",
+            "type_hint": "dict[str, Any]"
+          }
+        ],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Save user data to the database"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:02:48.018745+00:00Z"
+        },
+        "returns": "bool"
+      }
+    }
+  },
+  "translator_simple_function": {
+    "metadata": {
+      "prompt": "circle_area",
+      "test": "simple_function"
+    },
+    "original_key": "translator_simple_function",
+    "response": {
+      "assertions": [
+        {
+          "holes": [],
+          "predicate": "radius >= 0",
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Write a function to calculate the area of a circle"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:04:53.947961+00:00Z"
+          },
+          "rationale": "Radius cannot be negative"
+        }
+      ],
+      "constraints": [
+        {
+          "description": "Function must return the computed 'result' value explicitly",
+          "requirement": "MUST_RETURN",
+          "severity": "error",
+          "type": "return_constraint",
+          "value_name": "result"
+        }
+      ],
+      "effects": [
+        {
+          "description": "Calculate the area using the formula \u03c0r\u00b2",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Write a function to calculate the area of a circle"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:04:53.947961+00:00Z"
+          }
+        },
+        {
+          "description": "Return the calculated area (float)",
+          "holes": [],
+          "provenance": {
+            "author": "xgrammar_translator",
+            "confidence": 0.85,
+            "evidence_refs": [],
+            "metadata": {
+              "method": "xgrammar_constrained_generation",
+              "original_prompt": "Write a function to calculate the area of a circle"
+            },
+            "source": "agent",
+            "timestamp": "2025-10-23T04:04:53.947961+00:00Z"
+          }
+        }
+      ],
+      "intent": {
+        "holes": [],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Write a function to calculate the area of a circle"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:04:53.947961+00:00Z"
+        },
+        "rationale": "The area of a circle is calculated using the formula \u03c0r\u00b2, where r is the radius of the circle.",
+        "summary": "Calculate the area of a circle given its radius"
+      },
+      "metadata": {
+        "evidence": [],
+        "language": "python",
+        "origin": "User request",
+        "source_path": null
+      },
+      "signature": {
+        "holes": [],
+        "name": "calculate_circle_area",
+        "parameters": [
+          {
+            "description": null,
+            "name": "radius",
+            "type_hint": "float"
+          }
+        ],
+        "provenance": {
+          "author": "xgrammar_translator",
+          "confidence": 0.85,
+          "evidence_refs": [],
+          "metadata": {
+            "method": "xgrammar_constrained_generation",
+            "original_prompt": "Write a function to calculate the area of a circle"
+          },
+          "source": "agent",
+          "timestamp": "2025-10-23T04:04:53.947961+00:00Z"
+        },
+        "returns": "float"
+      }
+    }
+  }
+}

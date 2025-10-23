@@ -143,6 +143,9 @@ class ResponseRecorder:
             response = await generator_fn()
         else:
             response = generator_fn()
+            # Check if the result is a coroutine (e.g., from a lambda that returns async call)
+            if asyncio.iscoroutine(response):
+                response = await response
 
         # Record if in record mode
         if self.record_mode:

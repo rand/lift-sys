@@ -101,6 +101,19 @@ class TypeScriptGenerator:
                         complete_code
                     )
                     if not validation_result:
+                        # TEMPORARY DEBUG: Save failed code
+                        from datetime import datetime
+
+                        debug_path = f"/tmp/typescript_async_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{attempt}.ts"
+                        with open(debug_path, "w") as f:
+                            f.write(f"// Attempt {attempt + 1}\n")
+                            f.write(f"// TSC Error: {error_output}\n\n")
+                            f.write(complete_code)
+                        print(f"🔍 DEBUG: TypeScript validation failed (attempt {attempt + 1})")
+                        print(f"   Saved to: {debug_path}")
+                        print(f"   TSC Error: {error_output}")
+                        print(f"   Error length: {len(error_output)}")
+
                         # Validation failed, retry if attempts remaining
                         if attempt == max_retries - 1:
                             raise ValueError(
@@ -352,24 +365,18 @@ Use TypeScript syntax:
         params = [(p.name, p.type_hint) for p in ir.signature.parameters]
         return_type = ir.signature.returns
 
-        # Wrap return type with Promise<> if async
-        if needs_async and not return_type.startswith("Promise<"):
-            return_type = f"Promise<{return_type}>"
-
+        # Use format_function_signature with is_async parameter
+        # This will automatically handle Promise<> wrapping and async prefix
         signature = self.type_resolver.format_function_signature(
             ir.signature.name,
             params,
             return_type,
+            is_async=needs_async,
         )
 
-        # Convert to export function and add async if needed
-        if signature.startswith("function "):
-            if needs_async:
-                signature = "export async " + signature
-            else:
-                signature = "export " + signature
-        elif signature.startswith("async function "):
-            signature = "export async " + signature[6:]  # Skip "async "
+        # Convert to export function
+        if signature.startswith("function ") or signature.startswith("async function "):
+            signature = "export " + signature
 
         lines.append(signature + " {")
 
@@ -433,7 +440,8 @@ Use TypeScript syntax:
 
                 # tsc returns 0 for success
                 is_valid = result.returncode == 0
-                error_output = result.stderr if not is_valid else ""
+                # tsc outputs errors to stdout, not stderr
+                error_output = result.stdout if not is_valid else ""
                 return (is_valid, error_output)
 
             finally:

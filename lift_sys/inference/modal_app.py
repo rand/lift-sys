@@ -4,7 +4,7 @@ Modal.com inference endpoint with vLLM + XGrammar constrained generation.
 This module provides GPU-accelerated, schema-constrained IR generation using:
 - vLLM 0.9.2 for fast inference with PagedAttention
 - XGrammar (native in vLLM 0.9.2+) for JSON schema enforcement
-- Qwen2.5-Coder-7B-Instruct model
+- Qwen2.5-Coder-32B-Instruct model
 
 Development Workflow:
     # Development with hot-reload (recommended for testing)
@@ -19,11 +19,18 @@ Development Workflow:
 Endpoints:
     - Health: https://rand--health.modal.run (GET)
     - Generate: https://rand--generate.modal.run (POST)
+    - Warmup: https://rand--warmup.modal.run (GET)
 
 Performance:
-    - Cold start (first time): ~3-5 minutes (image build + model download)
-    - Cold start (subsequent): ~30-60 seconds (model loading from volume)
-    - Warm containers: 2-5 seconds response time
+    - Cold start (32B model): ~7 minutes (model loading + compilation)
+    - Warm containers: 2-10 seconds response time
+    - Recommended timeout: 600s (10 min) for cold starts
+
+Optimizations (2025-10-22):
+    - Added Pydantic request validation (prevents KeyError crashes)
+    - Using uv for 10-100x faster image builds
+    - Single endpoint pattern (removed duplicate endpoints)
+    - Warm-up endpoint to pre-load model
 
 For more info: https://modal.com/docs/guide/developing-with-llms
 
@@ -32,6 +39,7 @@ SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimi
 """
 
 import modal
+from pydantic import BaseModel, Field
 
 # Create Modal app
 app = modal.App("lift-sys-inference")
@@ -42,6 +50,18 @@ TRANSFORMERS_VERSION = "4.53.0"  # Must be >=4.51.1 (vLLM req) and <4.54.0 (aimv
 FASTAPI_VERSION = "0.115.12"
 HF_HUB_VERSION = "0.20.0"
 
+
+# Pydantic request models for validation
+class GenerateRequest(BaseModel):
+    """Validated request model for generate endpoint."""
+
+    prompt: str = Field(..., description="Natural language prompt for generation")
+    schema: dict = Field(..., description="JSON schema for XGrammar constraints")
+    max_tokens: int = Field(default=2048, ge=1, le=8192, description="Maximum tokens to generate")
+    temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Sampling temperature")
+    top_p: float = Field(default=0.95, ge=0.0, le=1.0, description="Nucleus sampling parameter")
+
+
 # Create optimized base image with all dependencies
 # Image version: v8 (vLLM 0.9.2 + XGrammar + FlashInfer on CUDA 12.4.1)
 llm_image = (
@@ -51,7 +71,7 @@ llm_image = (
         "git",  # Required for transformers cache
         "wget",  # Useful for downloading assets
     )
-    .pip_install(
+    .uv_pip_install(
         f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
         "xgrammar",  # XGrammar for constrained generation
         f"transformers=={TRANSFORMERS_VERSION}",  # Model support
@@ -255,18 +275,21 @@ Generate the IR as valid JSON:
         return self._generate_impl(prompt, schema, max_tokens, temperature, top_p)
 
     @modal.fastapi_endpoint(method="POST", label="generate")
-    async def web_generate(self, item: dict) -> dict:
+    async def web_generate(self, request: GenerateRequest) -> dict:
         """
         HTTP endpoint for schema-constrained generation.
+
+        FastAPI automatically validates the request using Pydantic and returns
+        422 Unprocessable Entity if validation fails.
 
         Supports both:
         - Prompt → IR generation
         - IR → Code generation
 
-        POST body:
+        POST body (validated by GenerateRequest model):
         {
-            "prompt": str,
-            "schema": dict,
+            "prompt": str,  # required
+            "schema": dict,  # required
             "max_tokens": int,  # optional, default 2048
             "temperature": float,  # optional, default 0.3
             "top_p": float,  # optional, default 0.95
@@ -277,46 +300,31 @@ Generate the IR as valid JSON:
         - CODE_GENERATION_SCHEMA → generates code implementation from IR
         """
         return self._generate_impl(
-            prompt=item["prompt"],
-            schema=item["schema"],
-            max_tokens=item.get("max_tokens", 2048),
-            temperature=item.get("temperature", 0.3),
-            top_p=item.get("top_p", 0.95),
+            prompt=request.prompt,
+            schema=request.schema,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature,
+            top_p=request.top_p,
         )
 
+    @modal.fastapi_endpoint(method="GET", label="warmup")
+    async def warmup(self) -> dict:
+        """
+        Warm-up endpoint to pre-load model without generating.
 
-# Web endpoint for generation - standalone function that calls GPU class
-@app.function(image=llm_image)
-@modal.fastapi_endpoint(method="POST", label="generate")
-def generate_web_endpoint(item: dict) -> dict:
-    """
-    HTTP POST endpoint for schema-constrained generation.
+        Call this endpoint to trigger model loading (7 min cold start for 32B model).
+        Subsequent requests will be fast (~2-10s).
 
-    POST body:
-    {
-        "prompt": str,
-        "schema": dict,
-        "max_tokens": int,  # optional, default 2048
-        "temperature": float,  # optional, default 0.3
-        "top_p": float,  # optional, default 0.95
-    }
-
-    Returns:
-    {
-        "ir_json": dict,  # Generated output matching schema
-        "tokens_used": int,
-        "generation_time_ms": float,
-        "finish_reason": str,
-    }
-    """
-    generator = ConstrainedIRGenerator()
-    return generator.generate.remote(
-        prompt=item["prompt"],
-        schema=item["schema"],
-        max_tokens=item.get("max_tokens", 2048),
-        temperature=item.get("temperature", 0.3),
-        top_p=item.get("top_p", 0.95),
-    )
+        Returns:
+            {"status": "warm", "model_loaded": True, "model": MODEL_NAME}
+        """
+        # Model is already loaded in @modal.enter(), just return status
+        return {
+            "status": "warm",
+            "model_loaded": True,
+            "model": MODEL_NAME,
+            "ready_for_requests": True,
+        }
 
 
 # Health check endpoint - separate from GPU class to avoid triggering model load

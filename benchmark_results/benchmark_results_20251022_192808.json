@@ -1,0 +1,668 @@
+{
+  "summary": {
+    "total_runs": 5,
+    "successful_runs": 5,
+    "failed_runs": 0,
+    "nlp_to_ir_mean": 8576.958866801579,
+    "nlp_to_ir_median": 8530.327166998177,
+    "nlp_to_ir_std": 936.5814890389579,
+    "ir_to_code_mean": 5243.433033199108,
+    "ir_to_code_median": 5024.6143330005,
+    "ir_to_code_std": 495.27891773895067,
+    "e2e_mean": 13820.391900000686,
+    "e2e_median": 13335.044791994733,
+    "e2e_std": 1091.265193473911,
+    "total_cost_usd": 0.01201699325000057,
+    "cost_per_request_mean": 0.0024033986500001142,
+    "memory_mean": 0.5582292556762696,
+    "memory_peak": 0.5636186599731445
+  },
+  "results": [
+    {
+      "test_name": "add_numbers",
+      "prompt": "Create a function that adds two numbers",
+      "timestamp": "2025-10-22T19:26:59.299157",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 9920.942792006826,
+        "memory_mb": 0.2740364074707031,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that adds two numbers",
+              "rationale": "The function will take two numbers as input and return their sum.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "add_two_numbers",
+              "parameters": [
+                {
+                  "name": "num1",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                },
+                {
+                  "name": "num2",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "position_constraint",
+                "description": "The function should take exactly two parameters.",
+                "severity": "error",
+                "elements": [
+                  "num1",
+                  "num2"
+                ],
+                "requirement": "NOT_ADJACENT",
+                "min_distance": 0,
+                "max_distance": null
+              },
+              {
+                "type": "return_constraint",
+                "description": "The function should return an integer.",
+                "severity": "error",
+                "value_name": "sum",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 5772.502874999191,
+        "memory_mb": 0.2845897674560547,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def add_two_numbers(num1: int, num2: int) -> int:\n    \"\"\"Create a function that adds two numbers.\n    \n    The function will take two numbers as input and return their sum.\n    \n    Args:\n        num1: Parameter value\n        num2: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The algorithm takes two integers as input, calculates their sum, and returns the result.\n\n    # Calculate the sum of num1 and num2\n    result = num1 + num2\n    # Return the calculated sum\n    return result",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 15693.445667006017,
+      "total_memory_mb": 0.5586261749267578,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002715574277834336,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that adds two numbers",
+          "rationale": "The function will take two numbers as input and return their sum.",
+          "holes": []
+        },
+        "signature": {
+          "name": "add_two_numbers",
+          "parameters": [
+            {
+              "name": "num1",
+              "type_hint": "int",
+              "description": null
+            },
+            {
+              "name": "num2",
+              "type_hint": "int",
+              "description": null
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "position_constraint",
+            "description": "The function should take exactly two parameters.",
+            "severity": "error",
+            "elements": [
+              "num1",
+              "num2"
+            ],
+            "requirement": "NOT_ADJACENT",
+            "min_distance": 0
+          },
+          {
+            "type": "return_constraint",
+            "description": "The function should return an integer.",
+            "severity": "error",
+            "value_name": "sum",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "multiply",
+      "prompt": "Create a function that multiplies two numbers",
+      "timestamp": "2025-10-22T19:27:14.992970",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 7522.408750002796,
+        "memory_mb": 0.2793893814086914,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that multiplies two numbers",
+              "rationale": "The function will take two numbers as input and return their product.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "multiply_numbers",
+              "parameters": [
+                {
+                  "name": "num1",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                },
+                {
+                  "name": "num2",
+                  "type_hint": "int",
+                  "description": null,
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "The function must return the product of num1 and num2.",
+                "severity": "error",
+                "value_name": "product",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 5783.420125000703,
+        "memory_mb": 0.2842292785644531,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def multiply_numbers(num1: int, num2: int) -> int:\n    \"\"\"Create a function that multiplies two numbers.\n    \n    The function will take two numbers as input and return their product.\n    \n    Args:\n        num1: Parameter value\n        num2: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: Multiply the two input integers and return the result.\n\n    # Multiply the two input numbers and store the result in a variable.\n    result = num1 * num2\n    # Return the result of the multiplication.\n    return result",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 13305.828875003499,
+      "total_memory_mb": 0.5636186599731445,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0023176381458339165,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that multiplies two numbers",
+          "rationale": "The function will take two numbers as input and return their product.",
+          "holes": []
+        },
+        "signature": {
+          "name": "multiply_numbers",
+          "parameters": [
+            {
+              "name": "num1",
+              "type_hint": "int",
+              "description": null
+            },
+            {
+              "name": "num2",
+              "type_hint": "int",
+              "description": null
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "The function must return the product of num1 and num2.",
+            "severity": "error",
+            "value_name": "product",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "string_length",
+      "prompt": "Create a function that returns the length of a string",
+      "timestamp": "2025-10-22T19:27:28.299056",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 7927.012707994436,
+        "memory_mb": 0.27344608306884766,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns the length of a string",
+              "rationale": "The function will take a string as input and return its length as an integer.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "get_string_length",
+              "parameters": [
+                {
+                  "name": "input_string",
+                  "type_hint": "str",
+                  "description": "The string whose length is to be calculated.",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "The function must return an integer representing the length of the input string.",
+                "severity": "error",
+                "value_name": "length",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 5024.6143330005,
+        "memory_mb": 0.28198719024658203,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def get_string_length(input_string: str) -> int:\n    \"\"\"Create a function that returns the length of a string.\n    \n    The function will take a string as input and return its length as an integer.\n    \n    Args:\n        input_string: The string whose length is to be calculated.\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The algorithm simply returns the length of the input string using Python's built-in len function, which is efficient and idiomatic for this purpose.\n\n    # Return the length of the input string using the built-in len function\n    return len(input_string)",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 12951.627040994936,
+      "total_memory_mb": 0.5554332733154297,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002258604506832489,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns the length of a string",
+          "rationale": "The function will take a string as input and return its length as an integer.",
+          "holes": []
+        },
+        "signature": {
+          "name": "get_string_length",
+          "parameters": [
+            {
+              "name": "input_string",
+              "type_hint": "str",
+              "description": "The string whose length is to be calculated."
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "The function must return an integer representing the length of the input string.",
+            "severity": "error",
+            "value_name": "length",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "max_of_two",
+      "prompt": "Create a function that returns the maximum of two numbers",
+      "timestamp": "2025-10-22T19:27:41.250973",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 8984.102917005657,
+        "memory_mb": 0.2733583450317383,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that returns the maximum of two numbers",
+              "rationale": "The function is needed to compare two numbers and return the larger one.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "get_maximum",
+              "parameters": [
+                {
+                  "name": "num1",
+                  "type_hint": "int",
+                  "description": "The first number to compare",
+                  "provenance": null
+                },
+                {
+                  "name": "num2",
+                  "type_hint": "int",
+                  "description": "The second number to compare",
+                  "provenance": null
+                }
+              ],
+              "returns": "int",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "The function must return the larger of the two input numbers.",
+                "severity": "error",
+                "value_name": "result",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4831.91020799859,
+        "memory_mb": 0.2815837860107422,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def get_maximum(num1: int, num2: int) -> int:\n    \"\"\"Create a function that returns the maximum of two numbers.\n    \n    The function is needed to compare two numbers and return the larger one.\n    \n    Args:\n        num1: The first number to compare\n        num2: The second number to compare\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: Compare the two input numbers and return the greater one using a conditional expression.\n\n    # Return the greater of the two numbers using a conditional expression\n    return num1 if num1 > num2 else num2",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 13816.013125004247,
+      "total_memory_mb": 0.5549421310424805,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.002402668854167374,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that returns the maximum of two numbers",
+          "rationale": "The function is needed to compare two numbers and return the larger one.",
+          "holes": []
+        },
+        "signature": {
+          "name": "get_maximum",
+          "parameters": [
+            {
+              "name": "num1",
+              "type_hint": "int",
+              "description": "The first number to compare"
+            },
+            {
+              "name": "num2",
+              "type_hint": "int",
+              "description": "The second number to compare"
+            }
+          ],
+          "returns": "int",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "The function must return the larger of the two input numbers.",
+            "severity": "error",
+            "value_name": "result",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    },
+    {
+      "test_name": "is_even",
+      "prompt": "Create a function that checks if a number is even",
+      "timestamp": "2025-10-22T19:27:55.067259",
+      "nlp_to_ir": {
+        "name": "nlp_to_ir",
+        "latency_ms": 8530.327166998177,
+        "memory_mb": 0.27617359161376953,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "intent": {
+              "summary": "Create a function that checks if a number is even",
+              "rationale": "To determine if a number is even, we need a function that takes an integer as input and returns a boolean value indicating whether the number is even.",
+              "holes": [],
+              "provenance": null
+            },
+            "signature": {
+              "name": "is_even",
+              "parameters": [
+                {
+                  "name": "number",
+                  "type_hint": "int",
+                  "description": "The integer to check for evenness",
+                  "provenance": null
+                }
+              ],
+              "returns": "bool",
+              "holes": [],
+              "provenance": null
+            },
+            "effects": [],
+            "assertions": [],
+            "metadata": {
+              "source_path": null,
+              "language": null,
+              "origin": null,
+              "evidence": []
+            },
+            "constraints": [
+              {
+                "type": "return_constraint",
+                "description": "The function should return True if the number is even, otherwise False",
+                "severity": "error",
+                "value_name": "number",
+                "requirement": "MUST_RETURN"
+              }
+            ]
+          }
+        }
+      },
+      "ir_to_code": {
+        "name": "ir_to_code",
+        "latency_ms": 4804.717624996556,
+        "memory_mb": 0.2823524475097656,
+        "success": true,
+        "error": null,
+        "metadata": {
+          "result": {
+            "source_code": "def is_even(number: int) -> bool:\n    \"\"\"Create a function that checks if a number is even.\n    \n    To determine if a number is even, we need a function that takes an integer as input and returns a boolean value indicating whether the number is even.\n    \n    Args:\n        number: The integer to check for evenness\n    \n    Returns:\n        bool\n    \"\"\"\n    # Algorithm: Check if the number is divisible by 2 without a remainder. If true, the number is even.\n\n    # Return True if the number is even, otherwise False\n    return number % 2 == 0",
+            "language": "python",
+            "ir_version": null,
+            "metadata": {
+              "ir_origin": null,
+              "generator": "xgrammar_constrained",
+              "attempts": 1,
+              "constrained_generation": true
+            },
+            "warnings": []
+          }
+        }
+      },
+      "total_latency_ms": 13335.044791994733,
+      "total_memory_mb": 0.5585260391235352,
+      "end_to_end_success": true,
+      "estimated_cost_usd": 0.0023225074653324554,
+      "provider_type": "modal",
+      "ir_output": {
+        "intent": {
+          "summary": "Create a function that checks if a number is even",
+          "rationale": "To determine if a number is even, we need a function that takes an integer as input and returns a boolean value indicating whether the number is even.",
+          "holes": []
+        },
+        "signature": {
+          "name": "is_even",
+          "parameters": [
+            {
+              "name": "number",
+              "type_hint": "int",
+              "description": "The integer to check for evenness"
+            }
+          ],
+          "returns": "bool",
+          "holes": []
+        },
+        "effects": [],
+        "assertions": [],
+        "metadata": {
+          "source_path": null,
+          "language": null,
+          "origin": null,
+          "evidence": []
+        },
+        "constraints": [
+          {
+            "type": "return_constraint",
+            "description": "The function should return True if the number is even, otherwise False",
+            "severity": "error",
+            "value_name": "number",
+            "requirement": "MUST_RETURN"
+          }
+        ]
+      },
+      "code_output": "<5 chars>",
+      "execution_tests": [],
+      "execution_success": false
+    }
+  ]
+}

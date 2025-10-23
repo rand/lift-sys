@@ -1,4 +1,15 @@
 {
+  "max_tokens_quicksort_2048": {
+    "metadata": {
+      "test": "max_tokens",
+      "tokens": 2048
+    },
+    "original_key": "max_tokens_quicksort_2048",
+    "response": {
+      "description": "Implements the quicksort algorithm with a pivot selection strategy. The pivot is chosen as the median of the first, middle, and last elements of the array. This function sorts the array in place and returns the sorted array. The function uses Python type hints for clarity and type checking. The implementation is efficient and handles edge cases such as empty arrays and arrays with duplicate elements. The function is designed to be easily readable and maintainable, with clear variable names and a",
+      "name": "quicksort_with_pivot_selection"
+    }
+  },
   "simple_ir_add_function": {
     "metadata": {
       "function": "add",
@@ -38,6 +49,28 @@
         ],
         "returns": "int"
       }
+    }
+  },
+  "temperature_test_deterministic_run1": {
+    "metadata": {
+      "run": 1,
+      "test": "temperature"
+    },
+    "original_key": "temperature_test_deterministic_run1",
+    "response": {
+      "description": "Function to add two integers and return their sum.",
+      "name": "add_two_numbers"
+    }
+  },
+  "temperature_test_deterministic_run2": {
+    "metadata": {
+      "run": 2,
+      "test": "temperature"
+    },
+    "original_key": "temperature_test_deterministic_run2",
+    "response": {
+      "description": "Function to add two integers and return their sum.",
+      "name": "add_two_numbers"
     }
   },
   "warmup_basic_function": {

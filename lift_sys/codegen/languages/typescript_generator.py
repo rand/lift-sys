@@ -11,6 +11,7 @@ from ...ir.models import IntermediateRepresentation
 from ...providers.base import BaseProvider
 from ..generator import CodeGeneratorConfig, GeneratedCode
 from ..lsp_context import LSPConfig, LSPSemanticContextProvider
+from .typescript_schema import TYPESCRIPT_GENERATION_SCHEMA, get_prompt_for_typescript_generation
 from .typescript_types import TypeScriptTypeResolver
 
 
@@ -134,7 +135,10 @@ class TypeScriptGenerator:
         attempt: int,
     ) -> dict[str, Any]:
         """
-        Generate implementation JSON using LLM.
+        Generate implementation JSON using schema-constrained generation (xgrammar).
+
+        Uses Modal provider's generate_structured() when available for guaranteed
+        schema compliance. Falls back to text generation for other providers.
 
         Args:
             ir: IR to implement
@@ -142,7 +146,7 @@ class TypeScriptGenerator:
             attempt: Current attempt number
 
         Returns:
-            Implementation as JSON dictionary
+            Implementation as JSON dictionary (guaranteed to match schema when using Modal)
         """
         # Build constraints from assertions
         constraints = []
@@ -152,21 +156,58 @@ class TypeScriptGenerator:
                 constraint_text += f" ({assertion.rationale})"
             constraints.append(constraint_text)
 
-        # Build prompt
-        prompt = self._build_generation_prompt(ir, semantic_context, constraints)
+        # Extract effects as implementation steps (like XGrammarCodeGenerator does)
+        effects = [effect.description for effect in ir.effects] if ir.effects else None
+
+        # Build TypeScript function signature
+        params = [(p.name, p.type_hint) for p in ir.signature.parameters]
+        signature = self.type_resolver.format_function_signature(
+            ir.signature.name,
+            params,
+            ir.signature.returns,
+        )
+
+        # Get generation prompt using schema helper
+        prompt = get_prompt_for_typescript_generation(
+            ir_summary=ir.intent.summary,
+            signature=signature,
+            constraints=constraints if constraints else None,
+            effects=effects,
+        )
+
+        # Add semantic context if available
+        if semantic_context:
+            prompt += "\n\nAvailable types from codebase:"
+            for type_info in semantic_context.available_types[:3]:
+                prompt += f"\n  - {type_info.name}: {type_info.description}"
 
         # Add retry feedback
         if attempt > 0:
-            prompt += f"\n\nPrevious attempt {attempt} failed. Please ensure valid JSON output."
+            prompt += f"\n\nPrevious attempt {attempt} failed. Please ensure correct TypeScript implementation."
 
-        # Generate using LLM
+        # Check if provider supports constrained generation (Modal with XGrammar)
+        if (
+            hasattr(self.provider, "generate_structured")
+            and hasattr(self.provider, "capabilities")
+            and self.provider.capabilities.structured_output
+        ):
+            # Use constrained generation - guaranteed to match schema
+            impl_json = await self.provider.generate_structured(
+                prompt=prompt,
+                schema=TYPESCRIPT_GENERATION_SCHEMA,
+                max_tokens=2000,
+                temperature=0.3,
+            )
+            return impl_json
+
+        # Fallback to text generation for providers without structured output
         response = await self.provider.generate_text(
             prompt=prompt,
             max_tokens=2000,
             temperature=0.3,
         )
 
-        # Extract JSON
+        # Extract JSON from response
         return self._extract_json(response)
 
     def _build_generation_prompt(

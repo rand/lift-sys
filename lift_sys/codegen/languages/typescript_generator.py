@@ -101,18 +101,6 @@ class TypeScriptGenerator:
                         complete_code
                     )
                     if not validation_result:
-                        # TEMPORARY DEBUG: Save failed code for async function investigation
-                        from datetime import datetime
-
-                        debug_path = f"/tmp/typescript_async_debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{attempt}.ts"
-                        with open(debug_path, "w") as f:
-                            f.write(f"// Attempt {attempt + 1}\n")
-                            f.write(f"// TSC Error: {error_output}\n\n")
-                            f.write(complete_code)
-                        print(f"🔍 DEBUG: TypeScript validation failed (attempt {attempt + 1})")
-                        print(f"   Saved to: {debug_path}")
-                        print(f"   TSC Error: {error_output}")
-
                         # Validation failed, retry if attempts remaining
                         if attempt == max_retries - 1:
                             raise ValueError(

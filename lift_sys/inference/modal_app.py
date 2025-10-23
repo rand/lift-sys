@@ -79,6 +79,7 @@ llm_image = (
         f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
         "hf-transfer",  # Fast downloads from HuggingFace (Rust-based)
         "flashinfer-python",  # Optimized top-p/top-k sampling (10-20% faster)
+        "pydantic>=2.0",  # Request validation (required for GenerateRequest)
     )
     .env(
         {

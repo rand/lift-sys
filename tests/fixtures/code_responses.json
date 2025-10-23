@@ -1,0 +1,78 @@
+{
+  "generator_circle_area": {
+    "metadata": {
+      "function": "calculate_circle_area",
+      "test": "circle_area"
+    },
+    "original_key": "generator_circle_area",
+    "response": {
+      "ir_version": null,
+      "language": "python",
+      "metadata": {
+        "attempts": 1,
+        "constrained_generation": true,
+        "generator": "xgrammar_constrained",
+        "ir_origin": "test"
+      },
+      "source_code": "def calculate_circle_area(radius: float) -> float:\n    \"\"\"Calculate the area of a circle given its radius.\n    \n    Args:\n        radius: Parameter value\n    \n    Returns:\n        float\n    \"\"\"\n    # Algorithm: Check if the radius is positive, raise an error if not, calculate the area using the formula \u03c0 * radius^2, and return the area.\n\n    # Check if the radius is non-positive and raise an error if so\n    if radius <= 0:\n        # Raise a ValueError with an appropriate message\n        raise ValueError('Radius must be positive')\n        # Calculate the area using the formula \u03c0 * radius^2\n        area = 3.141592653589793 * radius ** 2\n        # Return the calculated area\n        return area",
+      "warnings": []
+    }
+  },
+  "generator_email_validation": {
+    "metadata": {
+      "function": "validate_email",
+      "test": "with_imports"
+    },
+    "original_key": "generator_email_validation",
+    "response": {
+      "ir_version": null,
+      "language": "python",
+      "metadata": {
+        "attempts": 5,
+        "constrained_generation": true,
+        "generator": "xgrammar_constrained",
+        "ir_origin": "test"
+      },
+      "source_code": "from re import re\n\ndef validate_email(email: str) -> bool:\n    \"\"\"Validate an email address.\n    \n    Args:\n        email: Parameter value\n    \n    Returns:\n        bool\n    \"\"\"\n    # Algorithm: Compile a regular expression pattern for a valid email address and check if the input email matches the pattern.\n\n    # Import the regular expression module for pattern matching\n    import re\n    # Compile a regular expression pattern for a valid email address\n    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')\n    # Return True if the email matches the pattern, otherwise False\n    return bool(email_regex.match(email))",
+      "warnings": []
+    }
+  },
+  "generator_factorial": {
+    "metadata": {
+      "function": "factorial",
+      "test": "factorial"
+    },
+    "original_key": "generator_factorial",
+    "response": {
+      "ir_version": null,
+      "language": "python",
+      "metadata": {
+        "attempts": 1,
+        "constrained_generation": true,
+        "generator": "xgrammar_constrained",
+        "ir_origin": "test"
+      },
+      "source_code": "def factorial(n: int) -> int:\n    \"\"\"Calculate factorial of a number.\n    \n    Args:\n        n: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: Iterative approach to calculate the factorial of a non-negative integer by multiplying all integers from 1 to n.\n\n    # Check if the input is negative, which is not allowed for factorial\n    if n < 0:\n        # Raise an error if the input is negative\n        raise ValueError('Factorial is not defined for negative numbers')\n        # Initialize the result to 1, as the factorial of 0 is 1\n        result = 1\n        # Iterate from 1 to n to calculate the factorial\n        for i in range(1, n + 1):\n            # Multiply the current result by the loop variable to calculate the factorial\n            result *= i\n    # Return the calculated factorial\n    return result",
+      "warnings": []
+    }
+  },
+  "generator_simple_sum": {
+    "metadata": {
+      "function": "calculate_sum",
+      "test": "simple_sum"
+    },
+    "original_key": "generator_simple_sum",
+    "response": {
+      "ir_version": null,
+      "language": "python",
+      "metadata": {
+        "attempts": 1,
+        "constrained_generation": true,
+        "generator": "xgrammar_constrained",
+        "ir_origin": "test"
+      },
+      "source_code": "def calculate_sum(x: int, y: int) -> int:\n    \"\"\"Calculate the sum of two numbers.\n    \n    Args:\n        x: Parameter value\n        y: Parameter value\n    \n    Returns:\n        int\n    \"\"\"\n    # Algorithm: The algorithm simply adds two integers and returns the result.\n\n    # Calculate the sum of x and y\n    result = x + y\n    # Return the calculated sum\n    return result",
+      "warnings": []
+    }
+  }
+}

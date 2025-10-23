@@ -40,6 +40,13 @@ SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimi
 
 import modal
 
+# Option 1: Use custom base image (P2 optimization - fastest builds)
+# Uncomment to use pre-built base with CUDA deps (20-30s builds instead of 87s)
+# from lift_sys.inference.modal_base_image import base_image
+USE_CUSTOM_BASE = (
+    False  # Set to True after running: modal run lift_sys/inference/modal_base_image.py::build_base
+)
+
 # Create Modal app
 app = modal.App("lift-sys-inference")
 
@@ -49,38 +56,47 @@ TRANSFORMERS_VERSION = "4.53.0"  # Must be >=4.51.1 (vLLM req) and <4.54.0 (aimv
 FASTAPI_VERSION = "0.115.12"
 HF_HUB_VERSION = "0.20.0"
 
+if USE_CUSTOM_BASE:
+    # Option 1: Extend custom base image (fastest - only install vLLM and app deps)
+    # Build time: 20-30s (only vLLM + xgrammar + flashinfer)
+    from lift_sys.inference.modal_base_image import base_image
 
-# Create optimized base image with all dependencies
-# Image version: v8 (vLLM 0.9.2 + XGrammar + FlashInfer on CUDA 12.4.1)
-llm_image = (
-    # Use newer NVIDIA CUDA development image (12.4.1 fixes deprecation warnings)
-    modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
-    .apt_install(
-        "git",  # Required for transformers cache
-        "wget",  # Useful for downloading assets
-    )
-    .uv_pip_install(
+    llm_image = base_image.uv_pip_install(
         f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
         "xgrammar",  # XGrammar for constrained generation
-        f"transformers=={TRANSFORMERS_VERSION}",  # Model support
-        f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework (includes pydantic)
-        f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
-        "hf-transfer",  # Fast downloads from HuggingFace (Rust-based)
         "flashinfer-python",  # Optimized top-p/top-k sampling (10-20% faster)
     )
-    .env(
-        {
-            # CUDA paths
-            "CUDA_HOME": "/usr/local/cuda",
-            "PATH": "/usr/local/cuda/bin:${PATH}",
-            "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
-            # Performance optimizations
-            "HF_HUB_ENABLE_HF_TRANSFER": "1",
-            "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
-            "TOKENIZERS_PARALLELISM": "false",
-        }
+else:
+    # Option 2: Build from scratch (current - 87s builds with uv)
+    # Use this until custom base image is built
+    llm_image = (
+        modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
+        .apt_install(
+            "git",  # Required for transformers cache
+            "wget",  # Useful for downloading assets
+        )
+        .uv_pip_install(
+            f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
+            "xgrammar",  # XGrammar for constrained generation
+            f"transformers=={TRANSFORMERS_VERSION}",  # Model support
+            f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework (includes pydantic)
+            f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
+            "hf-transfer",  # Fast downloads from HuggingFace (Rust-based)
+            "flashinfer-python",  # Optimized top-p/top-k sampling (10-20% faster)
+        )
+        .env(
+            {
+                # CUDA paths
+                "CUDA_HOME": "/usr/local/cuda",
+                "PATH": "/usr/local/cuda/bin:${PATH}",
+                "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
+                # Performance optimizations
+                "HF_HUB_ENABLE_HF_TRANSFER": "1",
+                "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+                "TOKENIZERS_PARALLELISM": "false",
+            }
+        )
     )
-)
 
 # Model configuration
 # Using Qwen2.5-Coder-32B-Instruct for code generation

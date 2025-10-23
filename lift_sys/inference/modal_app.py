@@ -41,11 +41,8 @@ SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimi
 import modal
 
 # Option 1: Use custom base image (P2 optimization - fastest builds)
-# Uncomment to use pre-built base with CUDA deps (20-30s builds instead of 87s)
-# from lift_sys.inference.modal_base_image import base_image
-USE_CUSTOM_BASE = (
-    False  # Set to True after running: modal run lift_sys/inference/modal_base_image.py::build_base
-)
+# Custom base pre-built with CUDA deps (20-30s builds instead of 87s)
+USE_CUSTOM_BASE = True  # Base image built on 2025-10-22
 
 # Create Modal app
 app = modal.App("lift-sys-inference")

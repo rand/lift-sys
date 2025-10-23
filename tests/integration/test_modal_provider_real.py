@@ -424,6 +424,9 @@ async def test_real_modal_error_handling_missing_fields():
 @pytest.mark.integration
 @pytest.mark.real_modal
 @pytest.mark.asyncio
+@pytest.mark.skip(
+    reason="Modal/vLLM input tokenization bug: 0.29 toks/s (300x slower) for certain schemas. Hangs for 6+ minutes. See container logs 2025-10-22."
+)
 async def test_real_modal_temperature_parameter(modal_recorder):
     """
     Test that temperature parameter affects output variability.
@@ -529,6 +532,9 @@ async def test_real_modal_health_endpoint():
 @pytest.mark.integration
 @pytest.mark.real_modal
 @pytest.mark.asyncio
+@pytest.mark.skip(
+    reason="Modal/vLLM input tokenization bug: 0.29 toks/s (300x slower) for certain schemas. Hangs for 6+ minutes. See container logs 2025-10-22."
+)
 async def test_real_modal_max_tokens_parameter(modal_recorder):
     """
     Test max_tokens parameter constrains output length.

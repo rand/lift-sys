@@ -309,20 +309,23 @@ async def test_real_modal_xgrammar_constraint_enforcement(modal_recorder):
 @pytest.mark.integration
 @pytest.mark.real_modal
 @pytest.mark.asyncio
-async def test_real_modal_error_handling_malformed_schema():
+async def test_real_modal_schema_tolerance_and_validation():
     """
-    Test error handling for malformed JSON schema.
+    Test XGrammar's schema tolerance and constraint enforcement.
 
-    Validates that provider raises informative errors when schema is invalid.
+    Real-world scenario: XGrammar/vLLM gracefully handles minor schema variations
+    but still enforces required fields and types.
 
     Expected behavior:
-    - ValueError raised for malformed schema
-    - Error message is descriptive
-    - No hanging or timeout
+    - Minimal schema (missing "type": "object") works (inferred)
+    - Required fields are enforced by XGrammar
+    - Type constraints are respected
+    - Output matches schema structure
 
     Validates:
-    - Error handling for invalid schemas
-    - Error message quality
+    - Schema tolerance (production robustness)
+    - Constraint enforcement (correctness)
+    - Real XGrammar behavior (not idealized expectations)
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
@@ -332,26 +335,31 @@ async def test_real_modal_error_handling_malformed_schema():
     await provider.initialize({})
 
     try:
-        prompt = "Write a function"
+        prompt = "Write a sorting function"
 
-        # Note: XGrammar/vLLM is tolerant of minor schema issues.
-        # A schema missing "type": "object" still works (type is inferred).
-        # To trigger an actual error, we'd need to use malformed JSON itself,
-        # but that would cause a Python error before reaching Modal.
-
-        # Instead, test that a minimal but valid schema works gracefully
+        # Minimal schema (XGrammar infers "type": "object")
         minimal_schema = {
-            "properties": {"name": {"type": "string"}},
-            "required": ["name"],
+            "properties": {
+                "name": {"type": "string"},
+                "complexity": {"type": "string", "enum": ["O(n)", "O(n log n)", "O(n^2)"]},
+            },
+            "required": ["name", "complexity"],
         }
 
-        # This should succeed (not raise error) due to XGrammar's tolerance
         result = await provider.generate_structured(
             prompt=prompt, schema=minimal_schema, temperature=0.0
         )
 
-        # Should generate valid JSON with required field
+        # Validate XGrammar enforced required fields
         assert "name" in result
+        assert "complexity" in result
+
+        # Validate type constraints
+        assert isinstance(result["name"], str)
+        assert isinstance(result["complexity"], str)
+
+        # Validate enum constraint (XGrammar should enforce this)
+        assert result["complexity"] in ["O(n)", "O(n log n)", "O(n^2)"]
 
     finally:
         await provider.aclose()
@@ -520,16 +528,20 @@ async def test_real_modal_health_endpoint():
 @pytest.mark.asyncio
 async def test_real_modal_max_tokens_parameter(modal_recorder):
     """
-    Test max_tokens parameter limits output length.
+    Test max_tokens parameter constrains output length.
+
+    Real-world scenario: max_tokens limits verbosity while maintaining valid JSON.
 
     Expected behavior:
-    - max_tokens is respected by Modal endpoint
-    - Lower max_tokens produces shorter responses
-    - Response still valid JSON matching schema
+    - Lower max_tokens produces shorter descriptions
+    - Higher max_tokens allows more detailed descriptions
+    - Both produce valid JSON matching schema
+    - XGrammar ensures completion despite token limits
 
     Validates:
-    - max_tokens parameter works
-    - Truncated output is still valid
+    - max_tokens parameter works correctly
+    - Output length correlation with token limit
+    - JSON validity maintained at different limits
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
@@ -539,8 +551,8 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
     await provider.initialize({})
 
     try:
-        # Use ultra-simple prompt that fits in small token budget
-        prompt = "Function returns true"
+        # Moderately complex prompt that benefits from detailed explanation
+        prompt = "Write a function to implement quicksort with pivot selection"
         schema = {
             "type": "object",
             "properties": {
@@ -550,24 +562,49 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
             "required": ["name", "description"],
         }
 
-        # Low max_tokens (should still produce valid JSON for simple prompt)
-        # 512 tokens is enough for minimal JSON with simple description
-        result = await modal_recorder.get_or_record(
-            key="max_tokens_low_512",
+        # Low max_tokens - terse description
+        result_low = await modal_recorder.get_or_record(
+            key="max_tokens_quicksort_512",
             generator_fn=lambda: provider.generate_structured(
                 prompt=prompt,
                 schema=schema,
                 temperature=0.0,
-                max_tokens=512,  # Low but sufficient for simple prompt
+                max_tokens=512,
             ),
             metadata={"test": "max_tokens", "tokens": 512},
         )
 
-        # Should still be valid JSON with required fields
-        assert "name" in result
-        assert "description" in result
-        # Verify it's a short description (constrained by token limit)
-        assert len(result["description"]) < 1000  # Reasonable length for 512 tokens
+        # High max_tokens - detailed description
+        result_high = await modal_recorder.get_or_record(
+            key="max_tokens_quicksort_2048",
+            generator_fn=lambda: provider.generate_structured(
+                prompt=prompt,
+                schema=schema,
+                temperature=0.0,
+                max_tokens=2048,
+            ),
+            metadata={"test": "max_tokens", "tokens": 2048},
+        )
+
+        # Both should be valid JSON with required fields
+        assert "name" in result_low
+        assert "description" in result_low
+        assert "name" in result_high
+        assert "description" in result_high
+
+        # Low max_tokens should produce shorter description
+        # (Token limit constrains verbosity)
+        len_low = len(result_low["description"])
+        len_high = len(result_high["description"])
+
+        print(f"\nmax_tokens=512: {len_low} chars")
+        print(f"max_tokens=2048: {len_high} chars")
+
+        # High max_tokens should allow more detail (or equal if prompt is simple)
+        assert len_high >= len_low, (
+            f"Higher max_tokens should allow more detail: "
+            f"512 tokens={len_low} chars, 2048 tokens={len_high} chars"
+        )
 
     finally:
         await provider.aclose()

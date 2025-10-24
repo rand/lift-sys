@@ -230,7 +230,7 @@ print(f"🔍 Modal returned: {json.dumps(impl_json, indent=2)}")
 
 ## Root Cause Analysis
 
-### Primary Issue: Modal XGrammar Not Working
+### Primary Issue: Constrained Generation Not Working
 **Evidence**:
 1. Schema-constrained generation enabled (`use_xgrammar=True`)
 2. Valid JSON schemas defined for all 4 languages
@@ -238,7 +238,12 @@ print(f"🔍 Modal returned: {json.dumps(impl_json, indent=2)}")
 4. Modal JSON doesn't match schema (required fields missing)
 5. This happens consistently (11/21 tests, 52%)
 
-**Conclusion**: XGrammar in Modal's vLLM 0.9.2+ deployment is not enforcing JSON schemas.
+**Important Clarification**: XGrammar is an open-source project, not Modal's technology. The issues we're experiencing may be due to:
+- Our schema definitions not being XGrammar-compatible
+- Modal's deployment/configuration of XGrammar
+- Integration challenges in our code
+
+**Conclusion**: The XGrammar-based constrained generation via Modal is not reliably enforcing our JSON schemas, regardless of root cause.
 
 ### Secondary Issue: Modal API Reliability
 **Evidence**:
@@ -393,4 +398,20 @@ However, the **underlying Modal XGrammar API is fundamentally broken**, with:
 
 **User Requirement**: "ALL languages must work reliable, with real and robust tests, working against modal"
 **Current Status**: ❌ **NOT MET** (4.8% success rate)
-**Path Forward**: Debug Modal or change provider - decision needed urgently.
+**Path Forward**: Migrate to llguidance/Guidance for constrained generation
+
+## Migration Path
+
+**Recommended Solution**: Switch to llguidance/Guidance for constrained generation.
+
+See comprehensive migration plan: **`LLGUIDANCE_MIGRATION_PLAN.md`**
+
+**Why llguidance**:
+- Predictable performance (~50μs per token vs unpredictable XGrammar pre-computation)
+- Native Python API (easier debugging and local development)
+- Provider-agnostic (not locked to Modal's infrastructure)
+- Mature, proven technology with broad adoption
+- Supports JSON schemas, regex, and context-free grammars
+
+**Timeline**: 2-3 weeks for complete migration
+**Next Step**: POC validation (1-2 days)

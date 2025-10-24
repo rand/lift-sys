@@ -1,11 +1,35 @@
 # Lift-Sys IR 0.9 Adoption Plan
 
-**Date**: 2025-10-20
-**Status**: Planning
+**Date**: 2025-10-23 (Updated)
+**Status**: Month 4 of 20 (DSPy meta-framework in progress, IR 0.9 Phase 1 upcoming)
 **Related Documents**:
 - [IR Specification v0.9](../IR_SPECIFICATION.md)
 - [DSPy Migration Plan](DSPY_MIGRATION_PLAN.md)
+- [DSPy Pydantic AI Architecture Proposal](DSPY_PYDANTIC_AI_ARCHITECTURE_PROPOSAL.md)
 - [Semantic IR Roadmap](../../SEMANTIC_IR_ROADMAP.md)
+- [Session State (Meta-Framework)](SESSION_STATE.md)
+
+---
+
+## Current Status (2025-10-23)
+
+### Meta-Framework Progress (Prerequisite for IR 0.9)
+
+**DSPy + Pydantic AI Architecture**:
+- ✅ Phase 1, 2, 3, 7 COMPLETE (10/19 holes = 52.6%)
+- ✅ Critical path 100% complete (H6 → H1 → H10 → H8 → H17)
+- ✅ 277/278 tests passing across all phases
+- ✅ ProviderAdapter (H1), StatePersistence (H2), ExecutionHistory (H11) - All ready for IR 0.9 features
+- ✅ Dual-provider routing architecture (ADR 001)
+
+**Current IR Foundation** (compatible with IR 0.9 migration):
+- Basic typed holes (HoleKind: INTENT | SIGNATURE | EFFECT | ASSERTION)
+- Pydantic models (immutable, JSON serializable)
+- Supabase storage with migrations
+- XGrammar-constrained generation
+- Multi-language code generation (TypeScript, Rust, Go, Java complete)
+
+**Ready to Start**: IR 0.9 Phase 1 (types & refinements) can begin alongside remaining meta-framework phases (4, 5, 6).
 
 ---
 
@@ -13,24 +37,25 @@
 
 This plan details the adoption of the new IR 0.9 specification (from `/docs/IR_SPECIFICATION.md`) into the lift-sys codebase. The new IR is dramatically more ambitious than the current implementation, introducing:
 
-- **Typed holes** (terms, types, specs, entities, functions, modules)
-- **Dependent types** with refinements
-- **IntentSpec ↔ FuncSpec alignment** with drift detection
-- **Solver integration** (CSP/SAT/SMT) for verification
-- **Hole closures** for partial evaluation
-- **Human-friendly surface syntax** (Spec-IR in Markdown)
-- **Provenance tracking** and intent ledger
-- **Safety/deployability manifests**
+- **Typed holes** (terms, types, specs, entities, functions, modules) - PARTIAL (4 kinds exist)
+- **Dependent types** with refinements - PLANNED (Phase 1)
+- **IntentSpec ↔ FuncSpec alignment** with drift detection - PLANNED (Phase 5)
+- **Solver integration** (CSP/SAT/SMT) for verification - PLANNED (Phase 2)
+- **Hole closures** for partial evaluation - PLANNED (Phase 3)
+- **Human-friendly surface syntax** (Spec-IR in Markdown) - PLANNED (Phase 4)
+- **Provenance tracking** and intent ledger - PARTIAL (H11 ExecutionHistory provides foundation)
+- **Safety/deployability manifests** - PLANNED (Phase 6)
 
-**Timeline**: 18-24 months (phased approach)
+**Timeline**: 20 months total (Month 4 of 20 as of 2025-10-23)
 **Complexity**: High - This is a fundamental architectural evolution
-**Risk**: Medium-High - Large scope, but can be built incrementally
+**Risk**: Medium - Large scope, but **meta-framework provides systematic migration path**
+**Dependencies**: Meta-framework Phases 4-6 (in progress), multi-language generators (complete)
 
 ---
 
 ## 0. Current State Analysis
 
-### What We Have (October 2025)
+### What We Have (October 2025 - Updated 2025-10-23)
 
 **Current IR** (`lift_sys/ir/models.py`):
 ```python
@@ -53,25 +78,28 @@ TypedHole:
   - kind: HoleKind (INTENT|SIGNATURE|EFFECT|ASSERTION)
 ```
 
-**Capabilities**:
-- ✅ Basic IR generation (NL → IR)
-- ✅ Code generation (IR → Code)
-- ✅ Simple typed holes
-- ✅ XGrammar-constrained generation
-- ✅ Modal deployment
-- ✅ Supabase storage
-- ✅ Performance optimization (44% latency reduction)
+**Capabilities** (Updated 2025-10-23):
+- ✅ Basic IR generation (NL → IR) via ModalProvider
+- ✅ **Multi-language code generation** (TypeScript, Rust, Go, Java) with Python/Zig/C++ next
+- ✅ Simple typed holes (4 kinds, extensible to 6)
+- ✅ XGrammar-constrained generation (schema-validated JSON)
+- ✅ Modal deployment with Qwen2.5-Coder-32B-Instruct
+- ✅ Supabase storage with migrations (9 migrations complete)
+- ✅ **DSPy ProviderAdapter** (H1) - Ready for declarative signatures
+- ✅ **StatePersistence** (H2) - Ready for graph state serialization
+- ✅ **ExecutionHistory** (H11) - Provenance tracking foundation
+- ✅ **OptimizationMetrics** (H10) - IR/code quality scoring
+- ✅ **Dual-provider routing** (ADR 001) - Best Available + Modal Inference
+- ✅ Fixture-based testing (71x speedup, real LLM validation)
+- ✅ **TokDrift robustness framework** (Phase 1 complete)
 
-**Gaps vs IR 0.9**:
-- ❌ No dependent types
-- ❌ No refinement types `{x:T | φ}`
-- ❌ No solver integration (CSP/SAT/SMT)
-- ❌ No hole closures / partial evaluation
-- ❌ No IntentSpec ↔ FuncSpec alignment map
-- ❌ No surface syntax (Spec-IR)
-- ❌ No entity resolution / semantic metadata
-- ❌ No provenance tracking / intent ledger
-- ❌ No safety manifests / deployability gates
+**Gaps vs IR 0.9** (Prioritized by Phase):
+- ❌ **Phase 1**: No dependent types, no refinement types `{x:T | φ}` (3 months)
+- ❌ **Phase 2**: No solver integration (CSP/SAT/SMT) (3 months)
+- ❌ **Phase 3**: No hole closures / partial evaluation (4 months)
+- ❌ **Phase 4**: No surface syntax (Spec-IR) (4 months)
+- ❌ **Phase 5**: No IntentSpec ↔ FuncSpec alignment map (4 months)
+- ❌ **Phase 6**: No safety manifests / deployability gates (2 months)
 
 ---
 
@@ -79,16 +107,34 @@ TypedHole:
 
 ### Philosophy: Incremental Enhancement
 
-Rather than a "big bang" rewrite, we adopt IR 0.9 features incrementally:
+Rather than a "big bang" rewrite, we adopt IR 0.9 features incrementally **in parallel with meta-framework completion**:
 
-1. **Phase 1 (3 months)**: Core Types & Refinements
-2. **Phase 2 (3 months)**: Solver Integration (SMT first)
-3. **Phase 3 (4 months)**: Hole Closures & Partial Evaluation
-4. **Phase 4 (4 months)**: Surface Syntax & Parsing
-5. **Phase 5 (4 months)**: IntentSpec/FuncSpec Alignment & Provenance
-6. **Phase 6 (2 months)**: Safety Manifests & Production Hardening
+**Timeline** (20 months total, Month 4 of 20 as of 2025-10-23):
 
-**Total**: ~20 months (parallel work possible, 18-24 month range)
+| Phase | Duration | Timeline | Dependencies | Status |
+|-------|----------|----------|--------------|--------|
+| **Phase 1** | 3 months | Months 4-6 (Nov 2025 - Jan 2026) | Meta-framework H2 (✅ done) | Ready to start |
+| **Phase 2** | 3 months | Months 7-9 (Feb - Apr 2026) | Phase 1, formal skills (Z3/SAT) | Planned |
+| **Phase 3** | 4 months | Months 10-13 (May - Aug 2026) | Phase 2, meta-framework H4/H5 | Planned |
+| **Phase 4** | 4 months | Months 14-17 (Sep - Dec 2026) | Phase 3 | Planned |
+| **Phase 5** | 4 months | Months 18-21 (Jan - Apr 2027) | Phase 4 | Planned |
+| **Phase 6** | 2 months | Months 22-23 (May - Jun 2027) | Phase 5 | Planned |
+
+**Phases**:
+1. **Phase 1 (Months 4-6)**: Core Types & Refinements
+2. **Phase 2 (Months 7-9)**: Solver Integration (SMT first)
+3. **Phase 3 (Months 10-13)**: Hole Closures & Partial Evaluation
+4. **Phase 4 (Months 14-17)**: Surface Syntax & Parsing
+5. **Phase 5 (Months 18-21)**: IntentSpec/FuncSpec Alignment & Provenance
+6. **Phase 6 (Months 22-23)**: Safety Manifests & Production Hardening
+
+**Total**: ~20 months (18-24 month range with parallel work)
+
+**Current Focus** (Month 4):
+- Complete meta-framework Phases 4-6 (H3, H4, H5, H7, H13, H15, H16, H18, H19)
+- Expand multi-language generators (Python, Zig, C++ high priority)
+- TokDrift Phase 2 (robustness benchmarking)
+- **IR 0.9 Phase 1 can start concurrently** (types & refinements are independent)
 
 ---
 

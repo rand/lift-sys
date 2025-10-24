@@ -41,7 +41,8 @@ def run_guidance_poc():
     import json
     import time
 
-    from guidance import gen, models
+    from guidance import json as guidance_json
+    from guidance import models
 
     results = {
         "success": False,
@@ -165,9 +166,9 @@ Respond with a JSON object describing the function."""
         # Apply prompt
         lm += prompt
 
-        # Generate with schema constraints
+        # Generate with schema constraints (using guidance.json())
         print("Generating TypeScript function with schema constraints...")
-        lm += gen(name="output", schema=typescript_schema, max_tokens=200)
+        lm += guidance_json(name="output", schema=typescript_schema)
 
         gen_time = time.time() - start_gen
         print(f"✅ Generation completed in {gen_time:.2f}s")

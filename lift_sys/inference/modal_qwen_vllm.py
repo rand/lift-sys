@@ -62,13 +62,13 @@ import modal
 app = modal.App("qwen-vllm-inference")
 
 # Dependency versions
-VLLM_VERSION = "0.9.2"  # v0.9.2+ has native XGrammar support
+VLLM_VERSION = "0.11.0"  # Latest version with improved model support
 FASTAPI_VERSION = "0.115.12"
 HF_HUB_VERSION = "0.20.0"
 
 # Build optimized image for vLLM inference
 # Using CUDA 12.4.1 for H100 compatibility
-# CRITICAL: Installing transformers from source for Qwen3-Next architecture support
+# Using vLLM 0.11.0 which is compatible with latest transformers
 llm_image = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
     .apt_install(
@@ -76,15 +76,14 @@ llm_image = (
         "wget",  # Useful for downloads
     )
     .uv_pip_install(
-        f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
+        f"vllm=={VLLM_VERSION}",  # vLLM 0.11.0 with improved compatibility
         "xgrammar",  # XGrammar for constrained generation
         f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework
         f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
         "hf-transfer",  # Fast downloads from HuggingFace
         "flashinfer-python",  # Optimized sampling (10-20% faster)
     )
-    # Install transformers from source for latest model architectures (qwen3_next)
-    .run_commands("pip install --no-cache-dir git+https://github.com/huggingface/transformers.git")
+    # vLLM 0.11.0 ships with compatible transformers, no need for git install
     .env(
         {
             # CUDA paths

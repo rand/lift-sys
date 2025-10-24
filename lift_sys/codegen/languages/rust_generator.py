@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+# DSPy Architecture Integration (Phase A: Minimal Integration)
+from ...dspy_signatures.provider_adapter import ProviderAdapter, ProviderConfig
 from ...ir.models import IntermediateRepresentation
 from ...providers.base import BaseProvider
 from ..generator import CodeGeneratorConfig, GeneratedCode
@@ -51,6 +53,17 @@ class RustGenerator:
                 metrics_enabled=True,
             )
             self.context_provider = LSPSemanticContextProvider(lsp_config)
+
+        # DSPy Architecture Integration: Create ProviderAdapter for dual routing
+        # This enables resource tracking (H14) and prepares for DSPy signature integration
+        self.adapter = ProviderAdapter(
+            provider=provider,
+            config=ProviderConfig(
+                max_tokens=2000,
+                temperature=0.3,
+                use_xgrammar=True,  # Enable XGrammar constraints when available
+            ),
+        )
 
     async def generate(
         self,
@@ -192,30 +205,29 @@ class RustGenerator:
                 f"\n\nPrevious attempt {attempt} failed. Please ensure correct Rust implementation."
             )
 
-        # Check if provider supports constrained generation (Modal with XGrammar)
-        if (
-            hasattr(self.provider, "generate_structured")
-            and hasattr(self.provider, "capabilities")
-            and self.provider.capabilities.structured_output
-        ):
-            # Use constrained generation - guaranteed to match schema
-            impl_json = await self.provider.generate_structured(
-                prompt=prompt,
-                schema=RUST_GENERATION_SCHEMA,
-                max_tokens=2000,
-                temperature=0.3,
-            )
-            return impl_json
-
-        # Fallback to text generation for providers without structured output
-        response = await self.provider.generate_text(
+        # DSPy Architecture Integration: Use ProviderAdapter for dual routing
+        # ProviderAdapter automatically:
+        # - Routes to Modal (XGrammar) when schema provided and supported
+        # - Falls back to best available provider otherwise
+        # - Tracks token usage and LLM calls (H14 ResourceLimits)
+        # - Prepares for future DSPy signature integration
+        prediction = await self.adapter(
             prompt=prompt,
+            schema=RUST_GENERATION_SCHEMA,
             max_tokens=2000,
             temperature=0.3,
         )
 
-        # Extract JSON from response
-        return self._extract_json(response)
+        # Extract implementation dict from dspy.Prediction
+        # ProviderAdapter returns prediction with fields: implementation, imports, lifetimes, etc.
+        # Convert back to dict for compatibility with existing code
+        impl_json = {
+            k: v
+            for k, v in prediction.__dict__.items()
+            if not k.startswith("_")  # Filter out internal dspy attributes
+        }
+
+        return impl_json
 
     def _build_rust_code(
         self,

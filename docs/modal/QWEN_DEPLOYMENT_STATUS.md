@@ -22,13 +22,18 @@ Both Qwen models are successfully deployed on Modal with vLLM 0.11.0 after resol
 - **Problem:** 480B model OOM on 4x H100 (320GB insufficient for ~240GB model)
 - **Solution:** Increased to 8x H100 (640GB) + reduced context to 32K
 
+### Issue 3: 80B Model OOM ❌ → ✅
+- **Problem:** 80B model weights (75GB) exceed single H100 (80GB), leaving negative KV cache memory
+- **Root cause:** MoE loads ALL expert weights into VRAM (~75GB), not just active ones
+- **Solution:** Increased to 2x H100 (160GB) with tensor_parallel_size=2
+
 ## Current Deployment
 
 ### Configuration Summary
 
 | Model | GPUs | Cost/hr | Context | Status |
 |-------|------|---------|---------|--------|
-| 80B | H100 x1 | $4 | 8K | ✅ Deployed |
+| 80B | H100 x2 | $8 | 8K | ✅ Deployed |
 | 480B | H100 x8 | $32 | 32K | ✅ Deployed |
 
 ### Endpoints (All Live)
@@ -84,9 +89,9 @@ print(result)
 ```
 
 **Cost estimate:**
-- 80B cold start (~10min) + 1 request: ~$1
-- 480B cold start (~25min) + 1 request: ~$15
-- **Total: ~$16-20**
+- 80B cold start (~10min) + 1 request: ~$2 (2x H100 @ $8/hour)
+- 480B cold start (~25min) + 1 request: ~$15 (8x H100 @ $32/hour)
+- **Total: ~$17-20**
 
 ### Phase 3: Quality Assessment (~60 minutes, ~$60)
 **Only if Phase 2 successful**
@@ -104,7 +109,7 @@ Compare with current Qwen2.5-Coder-32B on:
 **Adopt if:**
 - ✅ Generates successfully
 - ✅ Quality > Qwen2.5-Coder-32B
-- ✅ Cost justified ($4/hour acceptable)
+- ✅ Cost justified ($8/hour acceptable for 2x H100)
 
 **Reject if:**
 - ❌ Quality not better than 32B
@@ -162,7 +167,7 @@ Models auto-scale down after 10min idle, but manual stop ensures no lingering co
 **80B Config:**
 - gpu_memory_utilization: 0.85
 - max_model_len: 8192
-- tensor_parallel_size: 1
+- tensor_parallel_size: 2
 
 **480B Config:**
 - gpu_memory_utilization: 0.80
@@ -184,8 +189,8 @@ experiment/qwen-vllm-models (6 commits)
 ## Recommendation
 
 **My assessment:**
-- ✅ **80B model:** Worth testing ($4/hour reasonable, could be good fit)
-- ⚠️ **480B model:** Test cautiously (very expensive, likely not viable)
+- ⚠️ **80B model:** Worth testing but note $8/hour cost (2x H100 required due to MoE weight size)
+- ⚠️ **480B model:** Test cautiously (very expensive at $32/hour, likely not viable)
 
 **Most likely outcome:** Neither model significantly outperforms current 32B model enough to justify switching. But 80B is worth a quick test to confirm.
 

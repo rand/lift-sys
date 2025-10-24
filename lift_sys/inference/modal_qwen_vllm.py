@@ -118,7 +118,7 @@ torch_cache_volume = modal.Volume.from_name("qwen-vllm-torch-cache", create_if_m
 
 @app.cls(
     image=llm_image,
-    gpu="H100",  # Single H100 80GB
+    gpu="H100:2",  # 2x H100 80GB with tensor parallelism
     volumes={
         MODELS_DIR: volume,
         TORCH_COMPILE_CACHE_DIR: torch_cache_volume,
@@ -132,9 +132,9 @@ class Qwen80BGenerator:
     Qwen3-Next-80B-A3B inference with vLLM + XGrammar.
 
     Model: Qwen/Qwen3-Next-80B-A3B-Instruct-FP8
-    GPU: H100 80GB x1
-    Memory: ~40-50GB (FP8)
-    Tensor parallel: 1
+    GPU: H100 80GB x2 (tensor parallel)
+    Memory: ~75GB model weights (MoE loads all experts)
+    Tensor parallel: 2
     """
 
     @modal.enter()
@@ -145,7 +145,7 @@ class Qwen80BGenerator:
 
         print(f"Loading model: {QWEN_80B_MODEL}")
         print(f"Model cache directory: {MODELS_DIR}")
-        print("GPU: Single H100 80GB")
+        print("GPU: 2x H100 80GB (tensor parallel)")
         start = time.time()
 
         # Set HuggingFace cache to Modal volume
@@ -160,16 +160,16 @@ class Qwen80BGenerator:
             print("⚡ Eager execution mode enabled (no torch.compile)")
 
         # Initialize vLLM for 80B FP8 model
-        # - FP8 reduces memory by ~2x vs BF16
-        # - MoE with ~3B active parameters
-        # - Should fit comfortably on single H100 80GB
+        # - FP8 quantization but MoE loads ALL expert weights (~75GB)
+        # - Requires 2x H100 to fit model + KV cache
+        # - Tensor parallelism splits weights across GPUs
         self.llm = LLM(
             model=QWEN_80B_MODEL,
             trust_remote_code=True,
             dtype="auto",  # Use FP8 as specified in model config
             gpu_memory_utilization=0.85,  # Conservative for stability
             max_model_len=8192,  # Sufficient for most tasks
-            tensor_parallel_size=1,  # Single GPU
+            tensor_parallel_size=2,  # Split across 2 GPUs
             guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
             enforce_eager=enforce_eager,
         )

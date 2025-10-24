@@ -50,10 +50,11 @@ Both models use:
 - Memory requirement: ~240GB (all experts loaded)
 
 **Infrastructure:**
-- GPU: H100 80GB x4 (tensor parallel)
-- Total VRAM: 320GB (accommodates 240GB model + KV cache)
-- Tensor parallel: 4
-- Cold start: ~15-20 minutes (first load)
+- GPU: H100 80GB x8 (tensor parallel)
+- Total VRAM: 640GB (accommodates 240GB model + KV cache)
+- Tensor parallel: 8
+- Context length: 32K (reduced from 262K to avoid OOM)
+- Cold start: ~20-30 minutes (first load)
 - Warm inference: 3-8 seconds
 
 **Use Cases:**
@@ -267,10 +268,22 @@ temperature: float = 0.3        # Sampling temperature (0.0 = deterministic)
 top_p: float = 0.95            # Nucleus sampling parameter
 
 # Model loading
-gpu_memory_utilization: float = 0.90  # 80B model
-gpu_memory_utilization: float = 0.85  # 480B model
-max_model_len: int = 8192       # Context length
+gpu_memory_utilization: float = 0.85  # 80B model
+gpu_memory_utilization: float = 0.80  # 480B model
+max_model_len: int = 8192       # 80B context length
+max_model_len: int = 32768      # 480B context (reduced to avoid OOM)
 ```
+
+### Transformers Version
+
+**CRITICAL**: These models require bleeding-edge transformers for `qwen3_next` architecture support.
+
+The image installs transformers from source:
+```bash
+pip install git+https://github.com/huggingface/transformers.git
+```
+
+This adds ~2-3 minutes to initial image build time but is **required** for model compatibility.
 
 ### Environment Variables
 
@@ -321,34 +334,39 @@ scaledown_window=600  # Keep warm for 10 minutes after last request
 
 **GPU Costs (Modal pricing):**
 - H100 80GB: ~$4.00/hour
-- 4x H100 80GB: ~$16.00/hour
+- 8x H100 80GB: ~$32.00/hour
 
 **Example scenarios:**
 
 **Development/Testing:**
 - 80B model, 2 hours testing: ~$8
-- 480B model, 1 hour testing: ~$16
-- Total daily testing budget: ~$50-100
+- 480B model, 1 hour testing: ~$32
+- Total daily testing budget: ~$100-200
 
 **Production (light traffic):**
 - 80B model, scaledown_window=300s: ~$4-8/hour (depending on traffic)
-- 480B model: Use only for critical, high-value tasks
+- 480B model: EXPENSIVE - Use only for critical, high-value tasks
 
 **Production (high traffic):**
 - Consider `keep_warm=1` to eliminate cold starts
 - 80B: ~$96/day (24 hours)
-- 480B: ~$384/day (24 hours)
+- 480B: ~$768/day (24 hours) - ⚠️ Very expensive!
 
 ## Troubleshooting
 
 ### Model fails to load
 
+**Error:** `model type 'qwen3_next' but Transformers does not recognize this architecture`
+
+**Solution:** Image now installs transformers from source. Rebuild image if you see this error.
+
 **Error:** Out of memory (OOM)
 
 **Solutions:**
-1. Check GPU configuration (80B needs H100 x1, 480B needs H100 x4)
-2. Reduce `gpu_memory_utilization` (try 0.80)
-3. Reduce `max_model_len` (try 4096)
+1. Check GPU configuration (80B needs H100 x1, 480B needs H100 x8)
+2. Reduce `gpu_memory_utilization` (already at 0.80-0.85)
+3. Reduce `max_model_len` (already 32K for 480B)
+4. For 480B: Consider if model is too large for practical use
 
 ### Slow cold starts
 

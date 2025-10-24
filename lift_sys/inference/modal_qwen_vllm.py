@@ -33,9 +33,9 @@ Model Specifications:
     Qwen3-Coder-480B:
     - Model: Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8
     - Memory: ~240GB (FP8, all MoE experts loaded)
-    - GPU: H100 80GB x4
-    - Tensor parallel: 4
-    - Cold start: ~15-20 minutes
+    - GPU: H100 80GB x8
+    - Tensor parallel: 8
+    - Cold start: ~20-30 minutes
 
 Endpoints:
     80B Model:
@@ -63,27 +63,28 @@ app = modal.App("qwen-vllm-inference")
 
 # Dependency versions
 VLLM_VERSION = "0.9.2"  # v0.9.2+ has native XGrammar support
-TRANSFORMERS_VERSION = "4.53.0"  # Compatible with vLLM 0.9.2
 FASTAPI_VERSION = "0.115.12"
 HF_HUB_VERSION = "0.20.0"
 
 # Build optimized image for vLLM inference
 # Using CUDA 12.4.1 for H100 compatibility
+# CRITICAL: Installing transformers from source for Qwen3-Next architecture support
 llm_image = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
     .apt_install(
-        "git",  # Required for transformers cache
+        "git",  # Required for transformers cache and git install
         "wget",  # Useful for downloads
     )
     .uv_pip_install(
         f"vllm=={VLLM_VERSION}",  # vLLM with PagedAttention
         "xgrammar",  # XGrammar for constrained generation
-        f"transformers=={TRANSFORMERS_VERSION}",  # Model support
         f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework
         f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
         "hf-transfer",  # Fast downloads from HuggingFace
         "flashinfer-python",  # Optimized sampling (10-20% faster)
     )
+    # Install transformers from source for latest model architectures (qwen3_next)
+    .run_commands("pip install --no-cache-dir git+https://github.com/huggingface/transformers.git")
     .env(
         {
             # CUDA paths
@@ -167,7 +168,7 @@ class Qwen80BGenerator:
             model=QWEN_80B_MODEL,
             trust_remote_code=True,
             dtype="auto",  # Use FP8 as specified in model config
-            gpu_memory_utilization=0.90,  # Conservative for first run
+            gpu_memory_utilization=0.85,  # Conservative for stability
             max_model_len=8192,  # Sufficient for most tasks
             tensor_parallel_size=1,  # Single GPU
             guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
@@ -338,23 +339,23 @@ def health_80b():
 
 @app.cls(
     image=llm_image,
-    gpu="H100:4",  # 4x H100 80GB with tensor parallelism
+    gpu="H100:8",  # 8x H100 80GB with tensor parallelism (640GB total VRAM)
     volumes={
         MODELS_DIR: volume,
         TORCH_COMPILE_CACHE_DIR: torch_cache_volume,
     },
-    timeout=2400,  # 40 minutes for first download/load
+    timeout=3600,  # 60 minutes for first download/load
     scaledown_window=600,  # Keep warm for 10 minutes
 )
-@modal.concurrent(max_inputs=5)  # Fewer concurrent for large model
+@modal.concurrent(max_inputs=3)  # Fewer concurrent for large model
 class Qwen480BGenerator:
     """
     Qwen3-Coder-480B-A35B inference with vLLM + XGrammar.
 
     Model: Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8
-    GPU: H100 80GB x4 (tensor parallel)
+    GPU: H100 80GB x8 (tensor parallel)
     Memory: ~240GB (FP8, all experts loaded)
-    Tensor parallel: 4
+    Tensor parallel: 8
     """
 
     @modal.enter()
@@ -365,7 +366,7 @@ class Qwen480BGenerator:
 
         print(f"Loading model: {QWEN_480B_MODEL}")
         print(f"Model cache directory: {MODELS_DIR}")
-        print("GPU: 4x H100 80GB (tensor parallel)")
+        print("GPU: 8x H100 80GB (tensor parallel)")
         start = time.time()
 
         # Set HuggingFace cache to Modal volume
@@ -382,14 +383,15 @@ class Qwen480BGenerator:
         # Initialize vLLM for 480B FP8 MoE model
         # - FP8 reduces memory by ~2x vs BF16
         # - MoE loads all experts (~480B params) but only ~35B active
-        # - Need 4x H100 80GB (320GB total) for ~240GB model + KV cache
+        # - Need 8x H100 80GB (640GB total) for ~240GB model + KV cache
+        # - Using 32K context as recommended in docs to avoid OOM
         self.llm = LLM(
             model=QWEN_480B_MODEL,
             trust_remote_code=True,
             dtype="auto",  # Use FP8 as specified in model config
-            gpu_memory_utilization=0.85,  # Conservative for multi-GPU
-            max_model_len=8192,  # Sufficient for most tasks
-            tensor_parallel_size=4,  # Distribute across 4 H100s
+            gpu_memory_utilization=0.80,  # Conservative for multi-GPU stability
+            max_model_len=32768,  # Reduced from 262K to avoid OOM (per docs)
+            tensor_parallel_size=8,  # Distribute across 8 H100s
             guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
             enforce_eager=enforce_eager,
         )
@@ -397,7 +399,7 @@ class Qwen480BGenerator:
         load_time = time.time() - start
         print(f"✅ Model loaded in {load_time:.2f}s")
         print(f"Model: {QWEN_480B_MODEL}")
-        print("Tensor parallel: 4 GPUs")
+        print("Tensor parallel: 8 GPUs")
         print("XGrammar backend enabled for structured outputs")
 
         # Commit volume changes
@@ -534,7 +536,7 @@ class Qwen480BGenerator:
             "status": "warm",
             "model_loaded": True,
             "model": QWEN_480B_MODEL,
-            "gpu": "H100 x4 (tensor parallel)",
+            "gpu": "H100 x8 (tensor parallel)",
             "ready_for_requests": True,
         }
 
@@ -547,7 +549,7 @@ def health_480b():
     return {
         "status": "healthy",
         "model": QWEN_480B_MODEL,
-        "gpu": "H100 x4 (tensor parallel)",
+        "gpu": "H100 x8 (tensor parallel)",
         "backend": f"vLLM {VLLM_VERSION} with XGrammar",
     }
 

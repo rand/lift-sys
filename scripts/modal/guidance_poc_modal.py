@@ -27,7 +27,7 @@ hf_secret = modal.Secret.from_name("huggingface")
 
 @app.function(
     image=image,
-    gpu="T4",  # T4 for cost-effective POC (can upgrade to L40S if needed)
+    gpu="A100",  # A100 for 32B model (matches production setup)
     secrets=[hf_secret],
     timeout=1800,  # 30 minutes max
 )
@@ -83,13 +83,13 @@ def run_guidance_poc():
     print("\n" + "=" * 70)
     print("  Step 1: Model Loading")
     print("=" * 70)
-    print("Loading model: TinyLlama/TinyLlama-1.1B-Chat-v1.0 (GPU mode)")
-    print("NOTE: Using TinyLlama for faster POC validation")
+    print("Loading model: Qwen/Qwen2.5-Coder-32B-Instruct (GPU mode)")
+    print("NOTE: Using PRODUCTION model for realistic comparison")
 
     try:
         start_load = time.time()
         lm = models.Transformers(
-            "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            "Qwen/Qwen2.5-Coder-32B-Instruct",
             device_map="auto",  # Auto-select GPU
             trust_remote_code=True,
             token=hf_token,
@@ -99,7 +99,7 @@ def run_guidance_poc():
         results["steps"]["model_load"] = {
             "success": True,
             "time": load_time,
-            "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
         }
     except Exception as e:
         error_msg = f"Model loading failed: {e}"

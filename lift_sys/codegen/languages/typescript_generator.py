@@ -226,6 +226,13 @@ class TypeScriptGenerator:
             if not k.startswith("_")  # Filter out internal dspy attributes
         }
 
+        # SCHEMA FIX: Modal XGrammar sometimes returns unwrapped format
+        # Expected: {"implementation": {...}}
+        # Actual: {"body_statements": [...], "variables": [...], ...}
+        # Handle both formats gracefully
+        if "implementation" not in impl_json and "body_statements" in impl_json:
+            impl_json = {"implementation": impl_json}
+
         return impl_json
 
     def _build_generation_prompt(

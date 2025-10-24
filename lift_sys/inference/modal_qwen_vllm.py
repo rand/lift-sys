@@ -154,15 +154,17 @@ class Qwen80BGenerator:
         # Import vLLM
         from vllm import LLM
 
-        # Check eager mode setting
-        enforce_eager = os.getenv("VLLM_EAGER", "0") == "1"
-        if enforce_eager:
-            print("⚡ Eager execution mode enabled (no torch.compile)")
+        # Force eager mode to work around CUDA graph bug with Qwen3-Next
+        # Issue: custom_all_reduce.cuh:455 'invalid argument' during graph capture
+        # This makes inference slower but allows the model to work
+        enforce_eager = True
+        print("⚡ Eager execution mode enabled (workaround for CUDA graph bug)")
 
         # Initialize vLLM for 80B FP8 model
         # - FP8 quantization but MoE loads ALL expert weights (~75GB)
         # - Requires 2x H100 to fit model + KV cache
         # - Tensor parallelism splits weights across GPUs
+        # - enforce_eager=True: Workaround for vLLM bug with Qwen3-Next + tensor parallelism
         self.llm = LLM(
             model=QWEN_80B_MODEL,
             trust_remote_code=True,
@@ -171,7 +173,7 @@ class Qwen80BGenerator:
             max_model_len=8192,  # Sufficient for most tasks
             tensor_parallel_size=2,  # Split across 2 GPUs
             guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
-            enforce_eager=enforce_eager,
+            enforce_eager=True,  # REQUIRED: Disables CUDA graphs to avoid crash
         )
 
         load_time = time.time() - start
@@ -374,16 +376,18 @@ class Qwen480BGenerator:
         # Import vLLM
         from vllm import LLM
 
-        # Check eager mode setting
-        enforce_eager = os.getenv("VLLM_EAGER", "0") == "1"
-        if enforce_eager:
-            print("⚡ Eager execution mode enabled (no torch.compile)")
+        # Force eager mode to work around CUDA graph bug with Qwen3-Coder
+        # Issue: custom_all_reduce.cuh:455 'invalid argument' during graph capture
+        # This makes inference slower but allows the model to work
+        enforce_eager = True
+        print("⚡ Eager execution mode enabled (workaround for CUDA graph bug)")
 
         # Initialize vLLM for 480B FP8 MoE model
         # - FP8 reduces memory by ~2x vs BF16
         # - MoE loads all experts (~480B params) but only ~35B active
         # - Need 8x H100 80GB (640GB total) for ~240GB model + KV cache
         # - Using 32K context as recommended in docs to avoid OOM
+        # - enforce_eager=True: Workaround for vLLM bug with Qwen3-Coder + tensor parallelism
         self.llm = LLM(
             model=QWEN_480B_MODEL,
             trust_remote_code=True,
@@ -392,7 +396,7 @@ class Qwen480BGenerator:
             max_model_len=32768,  # Reduced from 262K to avoid OOM (per docs)
             tensor_parallel_size=8,  # Distribute across 8 H100s
             guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
-            enforce_eager=enforce_eager,
+            enforce_eager=True,  # REQUIRED: Disables CUDA graphs to avoid crash
         )
 
         load_time = time.time() - start

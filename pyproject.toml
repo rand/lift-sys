@@ -37,6 +37,7 @@ dependencies = [
     "nltk>=3.8.0",
     "networkx>=3.2.0",
     "scipy>=1.11.0",
+    "guidance>=0.3.0",
 ]
 
 [project.optional-dependencies]

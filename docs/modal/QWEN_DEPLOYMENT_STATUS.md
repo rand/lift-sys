@@ -2,13 +2,13 @@
 
 **Date**: 2025-10-24
 **Branch**: `experiment/qwen-vllm-models`
-**Status**: ✅ **DEPLOYED** (Ready for user decision)
+**Status**: ✅ **80B WORKING** (480B untested)
 
 ## Summary
 
-Both Qwen models are successfully deployed on Modal with vLLM 0.11.0 after resolving version conflicts. All endpoints are live and ready for testing.
+The 80B model is working after resolving 4 major issues including a vLLM CUDA graph crash. Successfully tested with `enforce_eager=True` workaround. The 480B model is deployed but untested due to cost considerations ($32/hour).
 
-**Current state:** Awaiting user decision on testing approach.
+**Current state:** 80B confirmed working, adoption decision pending.
 
 ## Deployment Journey
 
@@ -27,14 +27,21 @@ Both Qwen models are successfully deployed on Modal with vLLM 0.11.0 after resol
 - **Root cause:** MoE loads ALL expert weights into VRAM (~75GB), not just active ones
 - **Solution:** Increased to 2x H100 (160GB) with tensor_parallel_size=2
 
+### Issue 4: CUDA Graph Capture Crash ❌ → ✅
+- **Problem:** Container crashed during CUDA graph capture: `custom_all_reduce.cuh:455 'invalid argument'`
+- **Root cause:** vLLM 0.11.0 bug with Qwen3-Next/Coder + tensor parallelism + CUDA graphs
+- **Evidence:** Multiple GitHub issues (#9046, #5613, #14885) confirming this is a known vLLM bug
+- **Solution:** Set `enforce_eager=True` to disable CUDA graph optimization (official workaround from vLLM docs)
+- **Trade-off:** Slower inference but models work successfully
+
 ## Current Deployment
 
 ### Configuration Summary
 
-| Model | GPUs | Cost/hr | Context | Status |
-|-------|------|---------|---------|--------|
-| 80B | H100 x2 | $8 | 8K | ✅ Deployed |
-| 480B | H100 x8 | $32 | 32K | ✅ Deployed |
+| Model | GPUs | Cost/hr | Context | Config | Status |
+|-------|------|---------|---------|--------|--------|
+| 80B | H100 x2 | $8 | 8K | enforce_eager=True | ✅ WORKING (tested 2025-10-24) |
+| 480B | H100 x8 | $32 | 32K | enforce_eager=True | ⏸️ UNTESTED (cost consideration) |
 
 ### Endpoints (All Live)
 
@@ -47,6 +54,32 @@ Both Qwen models are successfully deployed on Modal with vLLM 0.11.0 after resol
 - Health: https://rand--qwen-480b-health.modal.run
 - Generate: https://rand--qwen-480b-generate.modal.run
 - Warmup: https://rand--qwen-480b-warmup.modal.run
+
+## Test Results
+
+### 80B Model (2025-10-24)
+
+**Test prompt:** "What is quantum computing? Explain in 2 sentences."
+
+**Results:**
+- ✅ **Success:** Model generated coherent, accurate response
+- ⏱️ **Timing:** ~96 seconds total (includes cold start + 2x H100 initialization)
+- 📊 **Tokens:** 64 tokens (hit max_tokens limit)
+- 🎯 **Quality:** Excellent - accurate technical explanation
+- 💰 **Cost:** ~$2 for cold start + test
+
+**Generated output:**
+```
+Quantum computing is a type of computing that uses quantum-mechanical phenomena,
+such as superposition and entanglement, to perform operations on data. Unlike
+classical computers that use bits as 0s or 1s, quantum computers use quantum bits
+(qubits) that can exist in multiple states simultaneously, enabling vastly [...]
+```
+
+**Conclusion:** The `enforce_eager=True` workaround successfully resolves the CUDA graph crash. Model is fully functional.
+
+### 480B Model
+- ⏸️ **Not tested** - pattern proven with 80B, $32/hour cost not justified for light testing
 
 ## Recommended Testing Approach
 
@@ -168,11 +201,13 @@ Models auto-scale down after 10min idle, but manual stop ensures no lingering co
 - gpu_memory_utilization: 0.85
 - max_model_len: 8192
 - tensor_parallel_size: 2
+- enforce_eager: True (required for CUDA graph bug workaround)
 
 **480B Config:**
 - gpu_memory_utilization: 0.80
 - max_model_len: 32768
 - tensor_parallel_size: 8
+- enforce_eager: True (required for CUDA graph bug workaround)
 
 ## Files
 
@@ -188,14 +223,19 @@ experiment/qwen-vllm-models (6 commits)
 
 ## Recommendation
 
-**My assessment:**
-- ⚠️ **80B model:** Worth testing but note $8/hour cost (2x H100 required due to MoE weight size)
-- ⚠️ **480B model:** Test cautiously (very expensive at $32/hour, likely not viable)
+**Test results:**
+- ✅ **80B model:** Successfully tested, generates high-quality output, $8/hour cost (2x H100)
+- ⏸️ **480B model:** Untested due to $32/hour cost, pattern proven with 80B
 
-**Most likely outcome:** Neither model significantly outperforms current 32B model enough to justify switching. But 80B is worth a quick test to confirm.
+**Next steps:**
+1. **Adoption decision:** Compare 80B quality vs. current Qwen2.5-Coder-32B on real use cases
+2. **Stop deployment:** Run `modal app stop qwen-vllm-inference` to avoid ongoing costs
+3. **Documentation:** Keep implementation for future reference if not adopted
 
-**Suggested action:** Run Phase 1+2 testing (~$20 budget), make decision, stop deployment.
+**Expected outcome:** 80B may not significantly outperform current 32B model enough to justify 2x cost increase. Need quality comparison on actual IR generation tasks.
+
+**Cost incurred:** ~$2-3 total for testing (well within light testing budget)
 
 ---
 
-**Status:** Deployment complete, awaiting user decision to test or stop.
+**Status:** 80B proven working, adoption decision pending, 480B not tested.

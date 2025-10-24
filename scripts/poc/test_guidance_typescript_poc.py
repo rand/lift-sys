@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -26,6 +27,13 @@ try:
 except ImportError:
     print("❌ ERROR: Guidance library not installed")
     print("Install with: uv add guidance")
+    sys.exit(1)
+
+try:
+    from huggingface_hub import login
+except ImportError:
+    print("❌ ERROR: huggingface_hub library not installed")
+    print("Install with: uv add huggingface-hub")
     sys.exit(1)
 
 from lift_sys.codegen.languages.typescript_schema import (
@@ -58,11 +66,45 @@ async def test_typescript_poc() -> bool:
     print_section("Guidance TypeScript POC - Phase 1")
 
     # ============================================================================
+    # Step 0: HuggingFace Authentication
+    # ============================================================================
+    print_section("Step 0: HuggingFace Authentication")
+
+    hf_token = os.environ.get("HF_TOKEN")
+    if not hf_token:
+        print("❌ ERROR: HF_TOKEN environment variable not set")
+        print("\nHuggingFace authentication is required to download models.")
+        print("\nTo fix this:")
+        print("  1. Get a token from: https://huggingface.co/settings/tokens")
+        print("     - Click 'New token'")
+        print("     - Select 'Read' access (or 'Write' for fine-grained)")
+        print("     - Copy the token (starts with 'hf_')")
+        print("  2. Set the environment variable:")
+        print("     export HF_TOKEN='hf_YourTokenHere'")
+        print("  3. Re-run this script:")
+        print("     uv run python scripts/poc/test_guidance_typescript_poc.py")
+        print("\nNote: You can also add HF_TOKEN to your shell profile (~/.bashrc, ~/.zshrc)")
+        return False
+
+    try:
+        login(token=hf_token)
+        print("✅ Authenticated with HuggingFace")
+        print(f"   Token: {hf_token[:10]}...{hf_token[-5:]} (hidden for security)")
+    except Exception as e:
+        print(f"❌ FAILED to authenticate with HuggingFace: {e}")
+        print("\nTroubleshooting:")
+        print("  1. Check token is valid (not expired/revoked)")
+        print("  2. Verify token has 'Read' access")
+        print("  3. Get new token from: https://huggingface.co/settings/tokens")
+        return False
+
+    # ============================================================================
     # Step 1: Model Loading
     # ============================================================================
     print_section("Step 1: Model Loading")
     print("Loading model: microsoft/phi-2 (CPU mode for POC)")
     print("NOTE: This is a small model for testing. Production will use larger models.")
+    print("NOTE: First download may take several minutes (model will be cached)")
 
     try:
         start_load = time.time()
@@ -72,6 +114,7 @@ async def test_typescript_poc() -> bool:
             "microsoft/phi-2",
             device_map="cpu",  # Use CPU for POC to avoid GPU setup
             trust_remote_code=True,
+            token=hf_token,  # Pass token for authentication
         )
         load_time = time.time() - start_load
         print(f"✅ Model loaded in {load_time:.2f}s")
@@ -80,7 +123,9 @@ async def test_typescript_poc() -> bool:
         print("\nTroubleshooting:")
         print("  1. Ensure transformers is installed: uv add transformers torch")
         print("  2. Check model availability: microsoft/phi-2")
-        print("  3. Try alternative model: TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+        print("  3. Verify HF_TOKEN has proper permissions")
+        print("  4. Try alternative model: TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+        print("  5. Check HuggingFace status: https://status.huggingface.co/")
         return False
 
     # ============================================================================

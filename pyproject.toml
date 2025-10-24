@@ -41,6 +41,7 @@ dependencies = [
     "transformers>=4.57.0",
     "torch>=2.8.0",
     "accelerate>=1.11.0",
+    "huggingface-hub>=0.35.3",
 ]
 
 [project.optional-dependencies]

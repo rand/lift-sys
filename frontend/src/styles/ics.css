@@ -305,6 +305,122 @@
   height: 0;
 }
 
+/* ===== Semantic Tooltip ===== */
+.semantic-tooltip {
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tooltip-content {
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  max-width: 300px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.tooltip-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.tooltip-confidence {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+.tooltip-severity {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tooltip-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.tooltip-status.status-unresolved {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.tooltip-status.status-in_progress {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.tooltip-status.status-resolved {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.tooltip-body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.tooltip-label {
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.tooltip-value {
+  color: hsl(var(--foreground));
+  margin-bottom: 0.25rem;
+}
+
+.tooltip-hint {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.tooltip-expression {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: hsl(var(--muted));
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.tooltip-list {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.tooltip-list li {
+  margin: 0.125rem 0;
+}
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .ProseMirror {
@@ -315,4 +431,8 @@
   .constraint { filter: brightness(1.1); }
   .hole { filter: brightness(1.15); }
   .reference { filter: brightness(1.2); }
+
+  .tooltip-content {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
 }

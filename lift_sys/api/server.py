@@ -54,6 +54,7 @@ from .middleware.rate_limiting import rate_limiter
 from .routes import auth as auth_routes
 from .routes import generate as generate_routes
 from .routes import health as health_routes
+from .routes import ics as ics_routes
 from .routes import providers as provider_routes
 from .schemas import (
     AnalysisResponse,
@@ -117,6 +118,7 @@ app.include_router(auth_router)
 app.include_router(auth_routes.router)
 app.include_router(provider_routes.router)
 app.include_router(generate_routes.router)
+app.include_router(ics_routes.router)
 
 
 LOGGER = logging.getLogger(__name__)

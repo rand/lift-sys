@@ -24,6 +24,7 @@ import {
 } from '@/lib/ics/autocomplete';
 import { AutocompletePopup } from './AutocompletePopup';
 import { SemanticTooltip, type TooltipElement } from './SemanticTooltip';
+import { analyzeText, checkBackendHealth } from '@/lib/ics/api';
 import { generateMockAnalysis } from '@/lib/ics/mockSemanticAnalysis';
 import '@/styles/ics.css';
 
@@ -54,7 +55,10 @@ export function SemanticEditor({
   const [tooltipElement, setTooltipElement] = useState<TooltipElement | null>(null);
   const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { setSpecification, specificationText, semanticAnalysis, selectHole, updateSemanticAnalysis } = useICSStore();
+  // Backend availability state
+  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null);
+
+  const { setSpecification, specificationText, semanticAnalysis, selectHole, updateSemanticAnalysis, setIsAnalyzing } = useICSStore();
 
   // Autocomplete handlers
   const handleAutocompleteTrigger = useCallback(async (state: AutocompleteState) => {
@@ -284,19 +288,53 @@ export function SemanticEditor({
     }
   }, [semanticAnalysis]);
 
-  // Trigger mock semantic analysis when text changes (debounced)
+  // Check backend availability on mount
+  useEffect(() => {
+    checkBackendHealth().then(setBackendAvailable).catch(() => setBackendAvailable(false));
+  }, []);
+
+  // Trigger semantic analysis when text changes (debounced)
   useEffect(() => {
     if (!specificationText || specificationText.length < 3) {
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      const analysis = generateMockAnalysis(specificationText);
-      updateSemanticAnalysis(analysis);
+    const timeoutId = setTimeout(async () => {
+      setIsAnalyzing(true);
+
+      try {
+        let analysis;
+
+        if (backendAvailable) {
+          // Try backend API first
+          try {
+            analysis = await analyzeText(specificationText);
+            console.log('✅ Using backend NLP pipeline');
+          } catch (error) {
+            console.warn('⚠️ Backend unavailable, falling back to mock:', error);
+            // Fall back to mock if backend fails
+            analysis = generateMockAnalysis(specificationText);
+            setBackendAvailable(false); // Mark backend as unavailable
+          }
+        } else {
+          // Use mock analysis if backend is known to be unavailable
+          analysis = generateMockAnalysis(specificationText);
+          console.log('📝 Using mock analysis (backend unavailable)');
+        }
+
+        updateSemanticAnalysis(analysis);
+      } catch (error) {
+        console.error('Analysis failed:', error);
+        // Use mock as last resort
+        const analysis = generateMockAnalysis(specificationText);
+        updateSemanticAnalysis(analysis);
+      } finally {
+        setIsAnalyzing(false);
+      }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [specificationText, updateSemanticAnalysis]);
+  }, [specificationText, backendAvailable, updateSemanticAnalysis, setIsAnalyzing]);
 
   return (
     <div className="ics-editor-container">

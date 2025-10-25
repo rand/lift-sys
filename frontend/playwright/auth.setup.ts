@@ -35,7 +35,8 @@ setup('authenticate', async ({ page }) => {
 
   // Verify we're authenticated by checking for main app UI elements
   // (The sidebar with navigation should be visible)
-  await expect(page.getByRole('button', { name: /Configuration/i })).toBeVisible({ timeout: 10000 });
+  // Use nav#navigation to avoid ambiguity with "Save Configuration" button in content
+  await expect(page.locator('nav#navigation').getByRole('button', { name: /Configuration/i })).toBeVisible({ timeout: 10000 });
 
   // Verify user info is displayed
   await expect(page.getByText(/Signed in as/i)).toBeVisible();

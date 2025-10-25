@@ -1,8 +1,8 @@
 # ICS Phase 1 Progress Report
 
 **Date**: 2025-10-25
-**Status**: Phase 1 - 95% Complete (Highlighting + Autocomplete Implemented)
-**Commits**: `2c89650`, `2dbfd62`, `d5326ca`
+**Status**: Phase 1 - 100% COMPLETE ✅
+**Commits**: `2c89650`, `2dbfd62`, `d5326ca`, `a0f8fb8`, `44446e9`
 
 ---
 
@@ -141,16 +141,24 @@ Phase 1 of the CodeLift Integrated Context Studio (ICS) has been successfully im
 - Styles: 1
 
 **Build Output**:
-- ICS Bundle: 286KB (88KB gzipped) - increased due to decorations + autocomplete
-- Build time: ~2.1 seconds
+- ICS Bundle: 293KB (89.66KB gzipped) - final size with all Phase 1 features
+- Build time: ~2.04 seconds
 - No errors or warnings
 
-**New Files Added (d5326ca)**:
-- `frontend/src/lib/ics/decorations.ts` (305 lines)
-- `frontend/src/lib/ics/autocomplete.ts` (240 lines)
-- `frontend/src/lib/ics/mockSemanticAnalysis.ts` (167 lines)
-- `frontend/src/components/ics/AutocompletePopup.tsx` (90 lines)
-- Updated: `frontend/src/components/ics/SemanticEditor.tsx` (+110 lines)
+**New Files Added**:
+- Phase 1.0 (Commits 2c89650, 2dbfd62): 11 components, schema, store, styles (~2,200 lines)
+- Phase 1.5 (Commit d5326ca): Decorations, autocomplete, mock analysis (~900 lines)
+  - `frontend/src/lib/ics/decorations.ts` (305 lines)
+  - `frontend/src/lib/ics/autocomplete.ts` (240 lines)
+  - `frontend/src/lib/ics/mockSemanticAnalysis.ts` (167 lines)
+  - `frontend/src/components/ics/AutocompletePopup.tsx` (90 lines)
+  - Updated: `frontend/src/components/ics/SemanticEditor.tsx` (+110 lines)
+- Phase 1.9 (Commit 44446e9): Tooltips (~250 lines)
+  - `frontend/src/components/ics/SemanticTooltip.tsx` (229 lines)
+  - Updated: `frontend/src/components/ics/SemanticEditor.tsx` (+110 lines)
+  - Updated: `frontend/src/styles/ics.css` (+130 lines tooltip styles)
+
+**Total Lines Added**: ~3,350 lines across Phase 1
 
 ---
 
@@ -200,9 +208,9 @@ Phase 1 of the CodeLift Integrated Context Studio (ICS) has been successfully im
 
 ---
 
-## ✅ Recently Completed (Commit d5326ca)
+## ✅ Phase 1 Implementation Complete
 
-### Semantic Highlighting (COMPLETE)
+### Semantic Highlighting (COMPLETE - Commit d5326ca)
 - ✅ ProseMirror decorations plugin implementation
 - ✅ Entity highlighting (technical, person, org, function types)
 - ✅ Constraint, ambiguity, contradiction highlighting
@@ -212,7 +220,7 @@ Phase 1 of the CodeLift Integrated Context Studio (ICS) has been successfully im
 - ✅ Real-time highlighting updates (debounced 500ms)
 - ✅ Decoration updates when semantic analysis changes
 
-### Autocomplete (COMPLETE)
+### Autocomplete (COMPLETE - Commit d5326ca)
 - ✅ File reference autocomplete (`#filename`)
 - ✅ Symbol reference autocomplete (`@symbol`)
 - ✅ Trigger detection using regex patterns
@@ -221,24 +229,41 @@ Phase 1 of the CodeLift Integrated Context Studio (ICS) has been successfully im
 - ✅ Mouse selection support
 - ✅ Mock file and symbol search
 
-### Mock Data & Testing (COMPLETE)
+### Hover Tooltips (COMPLETE - Commit 44446e9)
+- ✅ SemanticTooltip component with type-specific tooltips
+- ✅ Entity tooltips (type, confidence, description)
+- ✅ Constraint tooltips (type, severity, description)
+- ✅ Hole tooltips (kind, status, dependencies)
+- ✅ Ambiguity tooltips (reason, suggestions)
+- ✅ Contradiction tooltips (conflicts, resolution)
+- ✅ Modal operator tooltips (modality, description)
+- ✅ Hover detection with 300ms delay
+- ✅ Automatic tooltip positioning (stays on screen)
+- ✅ Fade-in animation
+
+### Mock Data & Testing (COMPLETE - Commit d5326ca)
 - ✅ Mock semantic analysis generator
 - ✅ Pattern-based entity detection
 - ✅ Modal operator detection (must, should, may, cannot)
 - ✅ Typed hole detection (??? syntax)
 - ✅ Ambiguity and contradiction detection
-- ✅ Build passing with no errors (286KB bundle, 88KB gzipped)
+- ✅ Build passing with no errors (293KB bundle, 89.66KB gzipped)
 
-## ⏳ Remaining Phase 1 Tasks (5%)
+## 🎯 Phase 1 Complete - All Tasks Done
 
-### Hover Tooltips
-- ⏳ Hover tooltips for entities/constraints/holes
-- ⏳ Tooltip positioning and content rendering
+All Phase 1 tasks have been completed successfully. The ICS now has:
+- ✅ Complete UI foundation (11 components)
+- ✅ Real-time semantic highlighting
+- ✅ File and symbol autocomplete
+- ✅ Interactive hover tooltips
+- ✅ Mock semantic analysis pipeline
+- ✅ Full keyboard navigation support
 
-### Testing (Optional for Phase 1)
-- ⏳ Unit tests for schema
-- ⏳ Integration tests for editor
-- ⏳ Component tests for all UI components
+### Future Enhancements (Phase 2+)
+- Unit tests for schema
+- Integration tests for editor
+- Component tests for all UI components
+- Backend NLP pipeline integration
 
 ---
 
@@ -461,6 +486,93 @@ Focus returns to editor
 - Balance between responsiveness and performance
 - Production will use WebSocket streaming (Phase 2)
 
+### Tooltip System Architecture
+
+**File**: `frontend/src/components/ics/SemanticTooltip.tsx` (229 lines)
+
+**Component Structure**:
+```typescript
+// Main tooltip component
+<SemanticTooltip visible={bool} position={{x, y}} element={TooltipElement} />
+
+// Type-specific tooltip variants
+EntityTooltip
+ConstraintTooltip
+HoleTooltip
+AmbiguityTooltip
+ContradictionTooltip
+ModalTooltip
+TextTooltip (fallback)
+
+// Tooltip element union type
+type TooltipElement =
+  | { type: 'entity'; data: Entity }
+  | { type: 'constraint'; data: Constraint }
+  | { type: 'hole'; data: TypedHole }
+  | ...
+```
+
+**Hover Detection Flow**:
+```
+User hovers over semantic element
+  ↓
+mousemove event → handleMouseMove callback
+  ↓
+Check target element's data attributes (data-entity-id, data-constraint-id, etc.)
+  ↓
+Find matching semantic element in semanticAnalysis store
+  ↓
+Set 300ms timeout
+  ↓
+After delay: setTooltipVisible(true), setTooltipElement(data)
+  ↓
+SemanticTooltip renders at cursor position
+  ↓
+Auto-adjust position if near screen edge
+  ↓
+Fade-in animation (150ms)
+  ↓
+User moves away → mouseleave → hide tooltip
+```
+
+**Position Adjustment Logic**:
+```typescript
+// Check if tooltip would go off-screen
+if (x + 300 > window.innerWidth) {
+  x = position.x - 310; // Show to the left
+}
+if (y + 200 > window.innerHeight) {
+  y = position.y - 210; // Show above
+}
+```
+
+**Why 300ms hover delay?**
+- Prevents tooltip flickering during cursor movement
+- Industry standard delay (similar to VS Code, GitHub)
+- Balances discoverability with non-intrusiveness
+
+**Tooltip Content by Type**:
+- **Entity**: Type badge, confidence %, description, type-specific hint
+- **Constraint**: Type badge, severity color, description, expression
+- **Hole**: Kind badge, status badge, type hint, dependency counts
+- **Ambiguity**: Issue description, suggestion list
+- **Contradiction**: Conflict list, resolution (if available)
+- **Modal**: Modality badge, description, scope
+
+**CSS Implementation**:
+- Fixed positioning (z-index: 9999)
+- `pointer-events: none` (allows hover through tooltip)
+- Fade-in animation using `@keyframes`
+- Responsive max-width (300px)
+- Dark mode support with adjusted shadows
+- Type-specific color coding for badges and severity
+
+**Why fixed positioning?**
+- Tooltips need to overlay entire viewport
+- Absolute positioning would be constrained by editor container
+- Fixed allows tooltip to escape scrolling containers
+- Simplifies boundary detection logic
+
 ---
 
 ## 🏗️ Architecture Highlights
@@ -565,36 +677,60 @@ App
 
 ## 🎉 Summary
 
-Phase 1 is **95% complete** with all major UI components, semantic highlighting, and autocomplete fully implemented. The foundation is solid and ready for Phase 2 (NLP Pipeline) and Phase 3 (Constraint Graph).
+**Phase 1 is 100% COMPLETE!** ✅
 
-The ICS is now accessible via the App navigation menu and demonstrates the full layout and component structure with working semantic highlighting. Users can:
+All major UI components, semantic highlighting, autocomplete, and hover tooltips are fully implemented. The foundation is solid and ready for Phase 2 (NLP Pipeline) and Phase 3 (Constraint Graph).
+
+The ICS is now accessible via the App navigation menu and demonstrates the full layout and component structure with working semantic highlighting, autocomplete, and interactive tooltips. Users can:
 - See the 4-panel layout
 - Resize panels
 - Toggle panel visibility
 - Navigate tabs
-- **Type specifications with real-time semantic highlighting** (NEW)
-- **Use #file and @symbol autocomplete** (NEW)
-- **See entities, constraints, ambiguities, and holes highlighted** (NEW)
+- **Type specifications with real-time semantic highlighting**
+- **Use #file and @symbol autocomplete**
+- **See entities, constraints, ambiguities, and holes highlighted**
+- **Hover over highlighted elements to see detailed tooltips** (NEW!)
 - Select holes and see detailed information
 - Interact with the AI chat
 - Browse the file tree
 
-**Key Features Working**:
-- ✅ Semantic highlighting: entities (technical, person, org, function)
-- ✅ Constraint highlighting: temporal constraints detected
-- ✅ Ambiguity warnings: uncertain phrasing highlighted
-- ✅ Modal operators: must, should, may, cannot highlighted
-- ✅ Typed holes: ??? syntax creates clickable hole widgets
-- ✅ File autocomplete: Type # to search files
-- ✅ Symbol autocomplete: Type @ to search symbols
-- ✅ Keyboard navigation: Arrow keys + Enter in autocomplete
-- ✅ Real-time analysis: 500ms debounced semantic analysis
+**All Phase 1 Features Working**:
+- ✅ **Semantic highlighting**: entities (technical, person, org, function)
+- ✅ **Constraint highlighting**: temporal constraints detected
+- ✅ **Ambiguity warnings**: uncertain phrasing highlighted
+- ✅ **Modal operators**: must, should, may, cannot highlighted
+- ✅ **Typed holes**: ??? syntax creates clickable hole widgets
+- ✅ **File autocomplete**: Type # to search files
+- ✅ **Symbol autocomplete**: Type @ to search symbols
+- ✅ **Keyboard navigation**: Arrow keys + Enter in autocomplete
+- ✅ **Real-time analysis**: 500ms debounced semantic analysis
+- ✅ **Hover tooltips**: Context-aware tooltips for all semantic elements
+- ✅ **Smart positioning**: Tooltips automatically stay on screen
+- ✅ **Type-specific info**: Each semantic type shows relevant details
 
-Next priority: Add hover tooltips for semantic elements (final 5%), then move to backend NLP integration in Phase 2.
+**Tooltip Features**:
+- Entity tooltips: Show type, confidence score, and description
+- Constraint tooltips: Show type, severity level, and description
+- Hole tooltips: Show kind, status, dependencies (blocks/blocked by)
+- Ambiguity tooltips: Show reason and suggestions for clarity
+- Contradiction tooltips: Show conflicting statements and resolution
+- Modal operator tooltips: Show modality type and description
+- 300ms hover delay for smooth UX
+- Fade-in animation
+- Automatic boundary detection (stays on screen)
+
+Next priority: Phase 2 - Backend NLP integration (spaCy + HuggingFace + DSPy).
 
 ---
 
-**Total Development Time**: ~6 hours (4h initial + 2h highlighting/autocomplete)
+**Total Development Time**: ~7 hours
+- 4h: Initial UI components and foundation
+- 2h: Semantic highlighting and autocomplete
+- 1h: Hover tooltips and final polish
+
 **Code Quality**: TypeScript strict mode, ESLint passing, no build warnings
-**Git**: 3 commits, all changes tracked
-**Lines Added**: ~2,200 lines initial + ~900 lines highlighting/autocomplete = ~3,100 lines total
+**Git**: 5 commits, all changes tracked
+**Lines Added**: ~3,350 lines total
+- Phase 1.0: ~2,200 lines (UI foundation)
+- Phase 1.5: ~900 lines (highlighting + autocomplete)
+- Phase 1.9: ~250 lines (tooltips)

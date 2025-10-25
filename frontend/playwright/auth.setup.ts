@@ -7,9 +7,12 @@
  */
 
 import { test as setup, expect } from '@playwright/test';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const authFile = path.join(__dirname, '.auth', 'user.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const authFile = join(__dirname, '.auth', 'user.json');
 
 setup('authenticate', async ({ page }) => {
   // Navigate to the app
@@ -21,23 +24,13 @@ setup('authenticate', async ({ page }) => {
   // The app should show the sign-in page
   await expect(page.getByText(/Welcome to lift-sys/i)).toBeVisible({ timeout: 10000 });
 
-  // Set up demo mode authentication by injecting the demo user into localStorage
-  // This simulates what happens when clicking "Continue with Google" in demo mode
-  await page.evaluate(() => {
-    const demoUser = {
-      id: 'demo:e2e-test-user',
-      provider: 'google',
-      email: 'e2e-test@playwright.dev',
-      name: 'E2E Test User',
-      avatarUrl: null,
-    };
-    localStorage.setItem('demo_user', JSON.stringify(demoUser));
-  });
+  // Click "Continue with Google" button to trigger demo mode authentication
+  // This is the most realistic approach - actually clicking the button like a user would
+  const googleButton = page.getByRole('button', { name: /Continue with Google/i });
+  await expect(googleButton).toBeVisible();
+  await googleButton.click();
 
-  // Reload the page to trigger the auth state refresh
-  await page.reload();
-
-  // Wait for the app to recognize the authenticated state
+  // Wait for authentication to complete and app to load
   await page.waitForLoadState('networkidle');
 
   // Verify we're authenticated by checking for main app UI elements
@@ -47,10 +40,10 @@ setup('authenticate', async ({ page }) => {
   // Verify user info is displayed
   await expect(page.getByText(/Signed in as/i)).toBeVisible();
 
-  // Save the authenticated state
+  // Save the authenticated state (includes localStorage with demo_user)
   await page.context().storageState({ path: authFile });
 
   console.log('✅ Authentication setup complete');
-  console.log('   User: E2E Test User (e2e-test@playwright.dev)');
+  console.log('   Method: Clicked "Continue with Google" (demo mode)');
   console.log('   Auth state saved to:', authFile);
 });

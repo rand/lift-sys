@@ -44,6 +44,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
+      testDir: './',  // Look for setup files in root, not just e2e/
     },
 
     // Chromium tests with authenticated state

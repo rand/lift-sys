@@ -17,3 +17,8 @@ logs/
 
 # Temporary/untracked session files
 SESSION_SUMMARY.md
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

@@ -105,11 +105,14 @@ await expect(tooltip).toBeVisible();
 
 ## Authentication Handling
 
-**TODO**: Currently tests assume direct access to the app. If authentication is required:
+**✅ IMPLEMENTED**: Tests use the app's demo mode for realistic authentication:
 
-1. Add auth fixture or setup script
-2. Use Playwright's [authentication](https://playwright.dev/docs/auth) features
-3. Store authenticated state in `playwright/.auth/`
+1. **Setup script** (`playwright/auth.setup.ts`) runs before all tests
+2. Creates an authenticated demo user in localStorage
+3. Saves auth state to `playwright/.auth/user.json`
+4. All tests reuse this authenticated state
+
+This provides **realistic system behavior** by using the actual auth code paths with demo data.
 
 ## CI/CD Integration
 
@@ -149,11 +152,10 @@ Add to GitHub Actions workflow:
 
 1. **Ambiguity detection**: Probabilistic (30% sampling), tests may be flaky
 2. **Backend dependency**: Tests work with or without backend (graceful fallback)
-3. **Auth**: Not yet implemented in tests (TODO)
 
 ## Future Improvements
 
-- [ ] Add authentication handling
+- [x] Add authentication handling (COMPLETED - using demo mode)
 - [ ] Add visual regression tests (Playwright screenshots)
 - [ ] Add accessibility tests (`@axe-core/playwright`)
 - [ ] Add performance tests (measure analysis latency)

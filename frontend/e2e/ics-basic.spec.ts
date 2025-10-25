@@ -8,11 +8,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('ICS Basic Layout', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to app (assumes dev server is running)
+    // Navigate to app (authenticated via auth.setup.ts)
     await page.goto('/');
-
-    // TODO: Handle authentication if required
-    // For now, assume we can access the app directly
   });
 
   test('should navigate to ICS section', async ({ page }) => {

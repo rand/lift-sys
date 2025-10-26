@@ -131,13 +131,10 @@ class ControlFlowExtractor(ast.NodeVisitor):
     def visit_If(self, node: ast.If) -> None:
         """Extract control flow edges for if/elif/else statements.
 
-        Creates edges from condition variables to:
-        - Variables/effects in the 'if' body
-        - Variables/effects in the 'else' body
+        Creates edges showing conditional execution of branches.
+        Strategy: Link nodes in if-body to nodes in else-body to show
+        they are mutually exclusive control paths.
         """
-        # Get nodes involved in the condition
-        condition_nodes = self._extract_condition_nodes(node.test)
-
         # Get the line range for the if body
         if_body_start = node.body[0].lineno if node.body else node.lineno + 1
         if_body_end = node.body[-1].end_lineno if node.body else if_body_start
@@ -145,12 +142,40 @@ class ControlFlowExtractor(ast.NodeVisitor):
         # Get nodes in the if body
         if_body_nodes = self._get_nodes_in_range(if_body_start, if_body_end)
 
-        # Create edges from condition to if body
-        for cond_node in condition_nodes:
-            for body_node in if_body_nodes:
-                # Don't create self-edges
-                if cond_node.id != body_node.id:
-                    self._add_edge(cond_node.id, body_node.id)
+        # Try to get nodes in condition for linking
+        condition_nodes = self._extract_condition_nodes(node.test)
+
+        # Create edges from condition variables to if body nodes
+        if condition_nodes:
+            for cond_node in condition_nodes:
+                for body_node in if_body_nodes:
+                    if cond_node.id != body_node.id:
+                        self._add_edge(cond_node.id, body_node.id)
+        elif if_body_nodes:
+            # No condition nodes - look for nodes before the if statement
+            # and link them to if-body to show conditional execution
+            nodes_before_if = []
+            for line in range(node.lineno - 1, 0, -1):
+                nodes_at_line = self._get_nodes_at_line(line)
+                # Find nodes in same scope
+                scope = self._current_scope()
+                for n in nodes_at_line:
+                    if n.metadata.get("scope") == scope:
+                        nodes_before_if.append(n)
+                        break
+                if nodes_before_if:
+                    break
+
+            if nodes_before_if:
+                # Link most recent node before if to if-body
+                for body_node in if_body_nodes[:1]:  # Just first body node
+                    if nodes_before_if[0].id != body_node.id:
+                        self._add_edge(nodes_before_if[0].id, body_node.id)
+            elif len(if_body_nodes) > 1:
+                # No previous nodes - link body nodes sequentially
+                for i in range(len(if_body_nodes) - 1):
+                    if if_body_nodes[i].id != if_body_nodes[i + 1].id:
+                        self._add_edge(if_body_nodes[i].id, if_body_nodes[i + 1].id)
 
         # Handle else/elif
         if node.orelse:
@@ -159,15 +184,30 @@ class ControlFlowExtractor(ast.NodeVisitor):
 
             # If orelse is another If (elif), recursively handle it
             if isinstance(node.orelse[0], ast.If):
-                # Let the recursive visit handle it
-                pass
+                # For elif, connect if-body to elif condition variables
+                elif_condition_nodes = self._extract_condition_nodes(node.orelse[0].test)
+                if elif_condition_nodes and if_body_nodes:
+                    # Link first if-body node to elif condition (showing alternate path)
+                    for if_node in if_body_nodes[:1]:  # Just first node to avoid explosion
+                        for elif_cond in elif_condition_nodes[:1]:
+                            if if_node.id != elif_cond.id:
+                                self._add_edge(if_node.id, elif_cond.id)
             else:
-                # It's an else block
+                # It's an else block - link to show alternate path
                 else_nodes = self._get_nodes_in_range(else_start, else_end)
-                for cond_node in condition_nodes:
-                    for else_node in else_nodes:
-                        if cond_node.id != else_node.id:
-                            self._add_edge(cond_node.id, else_node.id)
+
+                if condition_nodes:
+                    # Link condition to else block
+                    for cond_node in condition_nodes:
+                        for else_node in else_nodes:
+                            if cond_node.id != else_node.id:
+                                self._add_edge(cond_node.id, else_node.id)
+                elif if_body_nodes and else_nodes:
+                    # No condition nodes found, link if and else bodies to show mutual exclusion
+                    for if_node in if_body_nodes[:1]:
+                        for else_node in else_nodes[:1]:
+                            if if_node.id != else_node.id:
+                                self._add_edge(if_node.id, else_node.id)
 
         # Continue visiting children
         self.generic_visit(node)
@@ -176,8 +216,8 @@ class ControlFlowExtractor(ast.NodeVisitor):
         """Extract control flow edges for while loops.
 
         Creates edges from:
-        - Loop condition to loop body
-        - Loop body back to condition (cycle detection handled elsewhere)
+        - Loop condition to loop body (if condition nodes found)
+        - Or link body nodes in sequence to show repeated execution
         """
         # Get nodes involved in the condition
         condition_nodes = self._extract_condition_nodes(node.test)
@@ -190,10 +230,17 @@ class ControlFlowExtractor(ast.NodeVisitor):
         body_nodes = self._get_nodes_in_range(body_start, body_end)
 
         # Create edges from condition to loop body
-        for cond_node in condition_nodes:
-            for body_node in body_nodes:
-                if cond_node.id != body_node.id:
-                    self._add_edge(cond_node.id, body_node.id)
+        if condition_nodes:
+            for cond_node in condition_nodes:
+                for body_node in body_nodes:
+                    if cond_node.id != body_node.id:
+                        self._add_edge(cond_node.id, body_node.id)
+        elif body_nodes:
+            # No condition nodes - create internal loop structure
+            # Link consecutive nodes to show execution flow
+            for i in range(len(body_nodes) - 1):
+                if body_nodes[i].id != body_nodes[i + 1].id:
+                    self._add_edge(body_nodes[i].id, body_nodes[i + 1].id)
 
         # Handle else clause (executed when loop completes without break)
         if node.orelse:
@@ -201,10 +248,16 @@ class ControlFlowExtractor(ast.NodeVisitor):
             else_end = node.orelse[-1].end_lineno if node.orelse else else_start
             else_nodes = self._get_nodes_in_range(else_start, else_end)
 
-            for cond_node in condition_nodes:
-                for else_node in else_nodes:
-                    if cond_node.id != else_node.id:
-                        self._add_edge(cond_node.id, else_node.id)
+            if condition_nodes:
+                for cond_node in condition_nodes:
+                    for else_node in else_nodes:
+                        if cond_node.id != else_node.id:
+                            self._add_edge(cond_node.id, else_node.id)
+            elif body_nodes and else_nodes:
+                # Link last body node to else clause
+                for else_node in else_nodes[:1]:
+                    if body_nodes[-1].id != else_node.id:
+                        self._add_edge(body_nodes[-1].id, else_node.id)
 
         # Continue visiting children
         self.generic_visit(node)
@@ -213,15 +266,12 @@ class ControlFlowExtractor(ast.NodeVisitor):
         """Extract control flow edges for for loops.
 
         Creates edges from:
-        - Iterator expression to loop variable
-        - Loop variable to loop body
+        - Iterator expression to loop body (if iterator nodes found)
+        - Or link body nodes in sequence to show iteration
         """
         # Get the iterator expression line
         iter_line = node.iter.lineno if hasattr(node.iter, "lineno") else node.lineno
         iter_nodes = self._get_nodes_at_line(iter_line)
-
-        # Get the loop variable assignment (should be at loop line)
-        loop_var_nodes = self._get_nodes_at_line(node.lineno)
 
         # Get the line range for the loop body
         body_start = node.body[0].lineno if node.body else node.lineno + 1
@@ -231,16 +281,34 @@ class ControlFlowExtractor(ast.NodeVisitor):
         body_nodes = self._get_nodes_in_range(body_start, body_end)
 
         # Create edges from iterator to loop body
-        for iter_node in iter_nodes:
-            for body_node in body_nodes:
-                if iter_node.id != body_node.id:
-                    self._add_edge(iter_node.id, body_node.id)
+        if iter_nodes:
+            for iter_node in iter_nodes:
+                for body_node in body_nodes:
+                    if iter_node.id != body_node.id:
+                        self._add_edge(iter_node.id, body_node.id)
+        elif body_nodes:
+            # No iterator nodes - look for nodes before loop
+            nodes_before_loop = []
+            for line in range(node.lineno - 1, 0, -1):
+                nodes_at_line = self._get_nodes_at_line(line)
+                scope = self._current_scope()
+                for n in nodes_at_line:
+                    if n.metadata.get("scope") == scope:
+                        nodes_before_loop.append(n)
+                        break
+                if nodes_before_loop:
+                    break
 
-        # Create edges from loop variable to body (if we found it)
-        for loop_var in loop_var_nodes:
-            for body_node in body_nodes:
-                if loop_var.id != body_node.id:
-                    self._add_edge(loop_var.id, body_node.id)
+            if nodes_before_loop:
+                # Link most recent node before loop to loop body
+                for body_node in body_nodes[:1]:
+                    if nodes_before_loop[0].id != body_node.id:
+                        self._add_edge(nodes_before_loop[0].id, body_node.id)
+            elif len(body_nodes) > 1:
+                # No previous nodes - link body nodes in sequence
+                for i in range(len(body_nodes) - 1):
+                    if body_nodes[i].id != body_nodes[i + 1].id:
+                        self._add_edge(body_nodes[i].id, body_nodes[i + 1].id)
 
         # Handle else clause
         if node.orelse:
@@ -248,10 +316,39 @@ class ControlFlowExtractor(ast.NodeVisitor):
             else_end = node.orelse[-1].end_lineno if node.orelse else else_start
             else_nodes = self._get_nodes_in_range(else_start, else_end)
 
-            for iter_node in iter_nodes:
-                for else_node in else_nodes:
-                    if iter_node.id != else_node.id:
-                        self._add_edge(iter_node.id, else_node.id)
+            if iter_nodes:
+                for iter_node in iter_nodes:
+                    for else_node in else_nodes:
+                        if iter_node.id != else_node.id:
+                            self._add_edge(iter_node.id, else_node.id)
+            elif body_nodes and else_nodes:
+                # Link last body node to else clause
+                for else_node in else_nodes[:1]:
+                    if body_nodes[-1].id != else_node.id:
+                        self._add_edge(body_nodes[-1].id, else_node.id)
+            elif else_nodes:
+                # No body or iter nodes - look for nodes before loop
+                nodes_before = []
+                for line in range(node.lineno - 1, 0, -1):
+                    nodes_at_line = self._get_nodes_at_line(line)
+                    scope = self._current_scope()
+                    for n in nodes_at_line:
+                        if n.metadata.get("scope") == scope:
+                            nodes_before.append(n)
+                            break
+                    if nodes_before:
+                        break
+
+                if nodes_before:
+                    # Link node before loop to else clause
+                    for else_node in else_nodes[:1]:
+                        if nodes_before[0].id != else_node.id:
+                            self._add_edge(nodes_before[0].id, else_node.id)
+                elif len(else_nodes) > 1:
+                    # No nodes before - link else nodes sequentially
+                    for i in range(len(else_nodes) - 1):
+                        if else_nodes[i].id != else_nodes[i + 1].id:
+                            self._add_edge(else_nodes[i].id, else_nodes[i + 1].id)
 
         # Continue visiting children
         self.generic_visit(node)

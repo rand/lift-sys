@@ -191,12 +191,14 @@ def test_extract_for_else():
     """Test extraction of for loop with else clause."""
     code = """
 def find_index(items, target):
+    result = None
     for i, item in enumerate(items):
         if item == target:
+            result = i
             break
     else:
-        i = -1
-    return i
+        result = -1
+    return result
 """
     tree = ast.parse(code)
     nodes = extract_nodes(tree)

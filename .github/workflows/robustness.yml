@@ -46,9 +46,9 @@ jobs:
 
       - name: Download spaCy model
         run: |
-          # Install sp aCy model into uv environment using uv run with pip
-          # This allows pip to use its wheel resolution while installing into uv's venv
-          uv run pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+          # Install spaCy model using uv pip (direct environment management)
+          # --no-deps prevents dependency resolution (deps already installed via uv sync)
+          uv pip install --no-deps https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
       - name: Download NLTK data
         run: |

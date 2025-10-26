@@ -41,7 +41,6 @@ export function SemanticEditor({
 }: SemanticEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const semanticAnalysisRef = useRef<typeof semanticAnalysis>(semanticAnalysis);
   const [isFocused, setIsFocused] = useState(false);
 
   // Autocomplete state
@@ -60,6 +59,9 @@ export function SemanticEditor({
   const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null);
 
   const { setSpecification, specificationText, semanticAnalysis, selectHole, updateSemanticAnalysis, setIsAnalyzing } = useICSStore();
+
+  // Create ref after getting semanticAnalysis from store
+  const semanticAnalysisRef = useRef<typeof semanticAnalysis>(semanticAnalysis);
 
   // Autocomplete handlers
   const handleAutocompleteTrigger = useCallback(async (state: AutocompleteState) => {

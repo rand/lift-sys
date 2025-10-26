@@ -19,6 +19,7 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ConstraintPropagationView } from './ConstraintPropagationView';
+import { SolutionSpaceNarrowingView } from './SolutionSpaceNarrowingView';
 
 export function HoleInspector() {
   const { selectedHole, holes, constraintPropagationHistory } = useICSStore();
@@ -190,19 +191,8 @@ export function HoleInspector() {
               Solution Space
             </button>
             {expandedSections.solutionSpace && (
-              <div className="pl-5 space-y-2 text-xs">
-                <div>
-                  <p className="text-muted-foreground">Before:</p>
-                  <p className="font-medium">{hole.solutionSpace.before}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">After:</p>
-                  <p className="font-medium">{hole.solutionSpace.after}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Reduction:</p>
-                  <Badge variant="secondary">{hole.solutionSpace.reduction}%</Badge>
-                </div>
+              <div className="pl-5 space-y-2">
+                <SolutionSpaceNarrowingView hole={hole} />
               </div>
             )}
           </div>

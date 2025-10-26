@@ -12,6 +12,7 @@ import networkx as nx
 
 from .controlflow_extractor import extract_controlflow_edges
 from .dataflow_extractor import extract_dataflow_edges
+from .edge_pruner import prune_non_causal_edges, validate_dag, validate_graph_structure
 from .node_extractor import extract_nodes
 
 
@@ -106,7 +107,13 @@ class CausalGraphBuilder:
         for source_id, target_id in control_edges:
             graph.add_edge(source_id, target_id, type="control_flow")
 
-        # STEP-05: Prune non-causal edges (⏳ pending STEP-03/04)
-        # TODO: Implement edge pruning
+        # STEP-05: Prune non-causal edges (✅ implemented)
+        graph = prune_non_causal_edges(graph, nodes)
+
+        # Validate graph structure
+        validate_dag(graph)  # Raises CyclicGraphError if cyclic
+        validation = validate_graph_structure(graph)
+        if not all(validation.values()):
+            raise GraphBuildError(f"Graph validation failed: {validation}")
 
         return graph

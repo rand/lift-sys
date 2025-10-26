@@ -209,6 +209,11 @@ class EquivalenceChecker:
         desc1 = [e.description for e in effects1]
         desc2 = [e.description for e in effects2]
 
+        # Normalize identifiers in descriptions if normalize_naming is enabled
+        if self.normalize_naming:
+            desc1 = [self._normalize_text_identifiers(d) for d in desc1]
+            desc2 = [self._normalize_text_identifiers(d) for d in desc2]
+
         if self.check_effect_order:
             # Order matters - must be exact match
             return desc1 == desc2
@@ -239,6 +244,11 @@ class EquivalenceChecker:
         pred1 = {a.predicate for a in assertions1}
         pred2 = {a.predicate for a in assertions2}
 
+        # Normalize identifiers in predicates if normalize_naming is enabled
+        if self.normalize_naming:
+            pred1 = {self._normalize_text_identifiers(p) for p in pred1}
+            pred2 = {self._normalize_text_identifiers(p) for p in pred2}
+
         return pred1 == pred2
 
     def _normalize_name(self, name: str) -> str:
@@ -254,6 +264,56 @@ class EquivalenceChecker:
         from lift_sys.robustness.utils import convert_naming_style
 
         return convert_naming_style(name, NamingStyle.SNAKE_CASE)
+
+    def _normalize_text_identifiers(self, text: str) -> str:
+        """
+        Normalize identifiers within free-form text to snake_case.
+
+        Similar to IRVariantGenerator._rewrite_identifiers_in_text() but
+        used for equivalence comparison. Finds Python identifiers in text
+        and normalizes them to snake_case for consistent comparison.
+
+        Args:
+            text: Text containing identifiers (e.g., "Validate email format")
+
+        Returns:
+            Text with normalized identifiers (e.g., "validate email format")
+        """
+        # Pattern: match Python identifiers (word chars, underscores, not starting with digit)
+        pattern = r"\b[a-zA-Z_][a-zA-Z0-9_]*\b"
+
+        def replace_identifier(match):
+            word = match.group(0)
+            # Don't convert reserved words or single characters
+            if (
+                word.lower()
+                in {
+                    "len",
+                    "is",
+                    "not",
+                    "and",
+                    "or",
+                    "in",
+                    "true",
+                    "false",
+                    "none",
+                    "if",
+                    "else",
+                    "for",
+                    "while",
+                    "def",
+                    "class",
+                    "return",
+                    "import",
+                    "from",
+                    "as",
+                }
+                or len(word) == 1
+            ):
+                return word
+            return self._normalize_name(word)
+
+        return re.sub(pattern, replace_identifier, text)
 
     def code_equivalent(
         self,

@@ -41,9 +41,14 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Install spaCy with binary wheels only
+        run: |
+          # Install spaCy and dependencies as binary wheels to avoid compilation errors
+          uv pip install --only-binary :all: spacy thinc blis cymem preshed murmurhash wasabi
+
       - name: Download spaCy model
         run: |
-          uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+          uv pip install en_core_web_sm@https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
       - name: Download NLTK data
         run: |

@@ -123,8 +123,8 @@ class TestIRVariantRobustness:
         """Test robustness to combined IR transformations."""
         # Generate multiple types of variants
         naming_variants = ir_variant_generator.generate_naming_variants(complex_ir)
-        effect_variants = ir_variant_generator.generate_effect_orderings(complex_ir, max_variants=3)
-        assertion_variants = ir_variant_generator.rephrase_assertions(complex_ir)
+        effect_variants = ir_variant_generator.generate_effect_orderings(complex_ir)
+        assertion_variants = ir_variant_generator.generate_assertion_variants(complex_ir)
 
         # Combine all variants
         all_variants = [*naming_variants, *effect_variants, *assertion_variants]

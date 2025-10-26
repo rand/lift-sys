@@ -258,7 +258,7 @@ def test_generate_random_inputs():
 
 
 def test_async_function():
-    """Test that async functions are compiled but fail execution (expected)."""
+    """Test that async functions are rejected (not supported)."""
     graph = nx.DiGraph([("x", "y")])
     code = {
         "y": """
@@ -269,10 +269,9 @@ async def double(x):
 
     collector = TraceCollector(random_seed=42)
 
-    # Async functions compile successfully but fail at execution
-    # (calling async function returns coroutine, not result)
-    # Should raise ExecutionError due to too many failures
-    with pytest.raises(ExecutionError, match="Too many failed samples"):
+    # Async functions should be detected and rejected during compilation
+    # (they return coroutines, not usable numeric values)
+    with pytest.raises(TraceCollectionError, match="Async functions not supported"):
         collector.collect_traces(graph, code, num_samples=10)
 
 

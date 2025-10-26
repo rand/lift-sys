@@ -191,6 +191,12 @@ class TraceCollector:
         if not func_def:
             raise TraceCollectionError(f"No function definition found in {node_id}")
 
+        # Check for async functions (not supported - would return coroutines)
+        if isinstance(func_def, ast.AsyncFunctionDef):
+            raise TraceCollectionError(
+                f"Async functions not supported for trace collection: {node_id}"
+            )
+
         # Extract parameters
         params = [arg.arg for arg in func_def.args.args]
         self.function_signatures[node_id] = params

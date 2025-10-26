@@ -52,6 +52,7 @@ class ParaphraseGenerator:
         self._cache: dict[str, list[str]] = {}
         self._nlp: Any = None
         self._wordnet: Any = None
+        self._sentence_model: Any = None  # Lazy-loaded sentence transformer
         self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
@@ -90,6 +91,15 @@ class ParaphraseGenerator:
             self._wordnet = wordnet
         except Exception as e:
             raise RuntimeError(f"Failed to load NLTK resources: {e}") from e
+
+    @property
+    def sentence_model(self):
+        """Lazy-load sentence transformer model for semantic similarity."""
+        if self._sentence_model is None:
+            from sentence_transformers import SentenceTransformer
+
+            self._sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+        return self._sentence_model
 
     def generate(
         self,
@@ -540,6 +550,11 @@ class ParaphraseGenerator:
         """
         from sklearn.metrics.pairwise import cosine_similarity
 
+        # Reject multi-word synonyms that contain the original word
+        # Example: "numbers" → "Book of Numbers" (wrong sense!)
+        if " " in synonym and original_word.lower() in synonym.lower():
+            return False
+
         # Create variant with synonym
         variant_text = original_text.replace(original_word, synonym, 1)
 
@@ -550,5 +565,7 @@ class ParaphraseGenerator:
         # Compute similarity
         similarity = cosine_similarity(emb1, emb2)[0][0]
 
-        # Require high similarity (>= 0.85) to accept synonym
-        return similarity >= 0.85
+        # Require high similarity (>= 0.80) to accept synonym
+        # Lower threshold allows more useful synonyms while still filtering
+        # semantically incorrect ones (e.g., "Book of Numbers", "role")
+        return similarity >= 0.80

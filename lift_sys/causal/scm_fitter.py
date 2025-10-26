@@ -11,6 +11,7 @@ import ast
 import networkx as nx
 import pandas as pd
 
+from .dowhy_client import DoWhyClient, DoWhySubprocessError
 from .static_inference import infer_mechanism
 
 # DoWhy import will be via subprocess (Python 3.11 venv)
@@ -107,8 +108,13 @@ class SCMFitter:
             return self._fit_static(causal_graph, source_code or {})
 
         if traces is not None:
-            # STEP-08: Dynamic mode ⏳
-            raise NotImplementedError("Dynamic fitting (STEP-08) not yet implemented")
+            # STEP-08: Dynamic mode ✅
+            return self._fit_dynamic(
+                causal_graph,
+                traces,
+                quality="GOOD",
+                r2_threshold=0.7,
+            )
 
         raise FittingError("Must provide either traces or source_code for fitting")
 
@@ -143,3 +149,95 @@ class SCMFitter:
 
         self.mechanisms = mechanisms
         return {"mechanisms": mechanisms, "mode": "static", "graph": causal_graph}
+
+    def _fit_dynamic(
+        self,
+        causal_graph: nx.DiGraph,
+        traces: pd.DataFrame,
+        quality: str = "GOOD",
+        r2_threshold: float = 0.7,
+    ) -> dict:
+        """Fit mechanisms using dynamic execution traces (STEP-08).
+
+        Args:
+            causal_graph: Causal DAG
+            traces: Execution traces (DataFrame with columns = node names)
+            quality: DoWhy quality setting ("GOOD", "BETTER", "BEST")
+            r2_threshold: R² threshold for validation (default: 0.7)
+
+        Returns:
+            Dict with fitted model structure and validation results
+
+        Raises:
+            DataError: If traces don't match graph nodes
+            ValidationError: If R² < threshold
+            FittingError: If DoWhy subprocess fails
+        """
+        # Validate traces match graph
+        graph_nodes = set(causal_graph.nodes())
+        trace_columns = set(traces.columns)
+
+        if graph_nodes != trace_columns:
+            missing_in_traces = graph_nodes - trace_columns
+            missing_in_graph = trace_columns - graph_nodes
+            raise DataError(
+                f"Graph nodes and trace columns do not match.\n"
+                f"  Missing in traces: {missing_in_traces}\n"
+                f"  Missing in graph: {missing_in_graph}"
+            )
+
+        # Initialize DoWhy client
+        try:
+            client = DoWhyClient(timeout=60.0)
+        except FileNotFoundError as e:
+            raise FittingError(
+                f"DoWhy subprocess not available: {e}\n"
+                f"Make sure .venv-dowhy exists and scripts/dowhy/fit_scm.py is present"
+            )
+
+        # Fit SCM using DoWhy subprocess
+        try:
+            result = client.fit_scm(
+                graph=causal_graph,
+                traces=traces,
+                quality=quality,
+                validate_r2=True,
+                r2_threshold=r2_threshold,
+                test_size=0.2,  # 80/20 train/test split
+            )
+        except DoWhySubprocessError as e:
+            raise FittingError(f"DoWhy fitting failed: {e}")
+        except Exception as e:
+            raise FittingError(f"Unexpected error during DoWhy fitting: {e}")
+
+        # Check validation status
+        status = result.get("status")
+        validation = result.get("validation", {})
+
+        if status == "validation_failed":
+            # R² below threshold
+            mean_r2 = validation.get("mean_r2", 0.0)
+            failed_nodes = validation.get("failed_nodes", [])
+            raise ValidationError(
+                f"Model validation failed: mean R²={mean_r2:.4f} "
+                f"(threshold={r2_threshold})\n"
+                f"Failed nodes: {failed_nodes}"
+            )
+
+        if status == "error":
+            error_msg = result.get("error", "Unknown error")
+            raise FittingError(f"DoWhy subprocess error: {error_msg}")
+
+        # Store mechanisms for inspection
+        scm_data = result.get("scm", {})
+        self.mechanisms = scm_data.get("mechanisms", {})
+
+        # Return full result including validation
+        return {
+            "mode": "dynamic",
+            "graph": causal_graph,
+            "scm": scm_data,
+            "validation": validation,
+            "metadata": result.get("metadata", {}),
+            "status": status,
+        }

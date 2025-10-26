@@ -236,6 +236,7 @@ class SCMFitter:
         return {
             "mode": "dynamic",
             "graph": causal_graph,
+            "traces": traces,  # Include for intervention queries (STEP-11)
             "scm": scm_data,
             "validation": validation,
             "metadata": result.get("metadata", {}),

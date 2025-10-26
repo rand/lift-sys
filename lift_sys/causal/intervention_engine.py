@@ -10,12 +10,14 @@ from typing import Any
 
 import networkx as nx
 
+from .dowhy_client import DoWhyClient, DoWhySubprocessError
 from .intervention_spec import (
     HardIntervention,
     InterventionResult,
     InterventionSpec,
     SoftIntervention,
     deserialize_intervention,
+    serialize_intervention,
 )
 
 logger = logging.getLogger(__name__)
@@ -313,5 +315,49 @@ class InterventionEngine:
         # Validate
         self.validate_intervention(spec, graph)
 
-        # Execute via DoWhy subprocess (STEP-11)
-        raise NotImplementedError("STEP-11: Counterfactual query execution not yet implemented")
+        # Extract traces from SCM (required for refitting in subprocess)
+        traces = scm.get("traces")
+        if traces is None:
+            raise InterventionError(
+                "SCM dict must contain 'traces' for intervention queries. "
+                "This is automatically included when using SCMFitter.fit() in dynamic mode."
+            )
+
+        # Serialize interventions to DoWhy format
+        interventions_list = [serialize_intervention(i) for i in spec.interventions]
+
+        # Execute query via DoWhy subprocess
+        try:
+            client = DoWhyClient(timeout=60.0)
+        except FileNotFoundError as e:
+            raise InterventionError(
+                f"DoWhy subprocess not available: {e}\n"
+                f"Make sure .venv-dowhy exists and scripts/dowhy/query_fitted_scm.py is present"
+            ) from e
+
+        try:
+            result = client.query_scm(
+                graph=graph,
+                traces=traces,
+                interventions=interventions_list,
+                query_nodes=spec.query_nodes,
+                num_samples=spec.num_samples,
+                quality="GOOD",
+            )
+        except DoWhySubprocessError as e:
+            raise InterventionError(f"DoWhy intervention query failed: {e}") from e
+        except Exception as e:
+            raise InterventionError(f"Unexpected error during intervention query: {e}") from e
+
+        # Check status
+        if result.get("status") != "success":
+            error_msg = result.get("error", "Unknown error")
+            raise InterventionError(f"Intervention query failed: {error_msg}")
+
+        # Convert to InterventionResult
+        return InterventionResult(
+            samples=result["samples"],
+            statistics=result["statistics"],
+            metadata=result["metadata"],
+            intervention_spec=spec,
+        )

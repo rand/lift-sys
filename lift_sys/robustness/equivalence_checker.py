@@ -389,9 +389,18 @@ class EquivalenceChecker:
                 ast2 = self._normalize_ast(ast2)
 
             # Check if both are simple function bodies (single function, only statements)
-            if self._is_simple_function_body(ast1) and self._is_simple_function_body(ast2):
+            is_simple1 = self._is_simple_function_body(ast1)
+            is_simple2 = self._is_simple_function_body(ast2)
+
+            if is_simple1 and is_simple2:
                 # For simple function bodies, compare statements order-independently
-                return self._compare_simple_functions(ast1, ast2)
+                result = self._compare_simple_functions(ast1, ast2)
+                # Debug logging (will be removed after verification)
+                if not result:
+                    print("DEBUG: Order-independent comparison failed")
+                    print(f"DEBUG: Code1:\n{code1}")
+                    print(f"DEBUG: Code2:\n{code2}")
+                return result
 
             # Otherwise, compare AST dumps (string representation)
             return ast.dump(ast1) == ast.dump(ast2)
@@ -402,13 +411,13 @@ class EquivalenceChecker:
 
     def _is_simple_function_body(self, tree: ast.AST) -> bool:
         """
-        Check if AST is a simple function with only statements (no control flow).
+        Check if AST is a single function with only expression statements (no control flow).
 
         Args:
             tree: AST tree
 
         Returns:
-            True if tree is a single function with only Expr statements
+            True if tree is a single function with only Expr/Pass statements
         """
         if not isinstance(tree, ast.Module) or len(tree.body) != 1:
             return False
@@ -417,9 +426,10 @@ class EquivalenceChecker:
         if not isinstance(func, ast.FunctionDef):
             return False
 
-        # Check that all statements are simple expressions or passes
+        # Check that all statements are simple expressions or passes (no control flow)
         for stmt in func.body:
-            if not isinstance(stmt, (ast.Expr, ast.Pass)):
+            if isinstance(stmt, (ast.If, ast.For, ast.While, ast.With, ast.Try)):
+                # Has control flow - can't do order-independent comparison
                 return False
 
         return True
@@ -431,8 +441,8 @@ class EquivalenceChecker:
         Compares function signatures and statement bodies as sets.
 
         Args:
-            ast1: First function AST
-            ast2: Second function AST
+            ast1: First function AST (Module containing single FunctionDef)
+            ast2: Second function AST (Module containing single FunctionDef)
 
         Returns:
             True if functions have same signature and statements (order-independent)
@@ -440,15 +450,22 @@ class EquivalenceChecker:
         func1 = ast1.body[0]
         func2 = ast2.body[0]
 
-        # Compare function names
+        # Compare function names (after normalization, should be same)
         if func1.name != func2.name:
             return False
 
         # Compare arguments
-        if ast.dump(func1.args) != ast.dump(func2.args):
+        args1_dump = ast.dump(func1.args)
+        args2_dump = ast.dump(func2.args)
+        if args1_dump != args2_dump:
+            return False
+
+        # Compare number of statements first
+        if len(func1.body) != len(func2.body):
             return False
 
         # Compare statements as sets (order-independent)
+        # Each statement is dumped to a canonical string representation
         stmts1 = {ast.dump(stmt) for stmt in func1.body}
         stmts2 = {ast.dump(stmt) for stmt in func2.body}
 

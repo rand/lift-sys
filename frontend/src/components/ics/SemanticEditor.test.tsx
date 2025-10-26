@@ -122,24 +122,20 @@ describe('SemanticEditor Integration Tests', () => {
     expect(state.isAnalyzing).toBe(false);
 
     // Fast-forward time by 400ms (before debounce completes)
-    await act(async () => {
+    act(() => {
       vi.advanceTimersByTime(400);
     });
 
     state = useICSStore.getState();
     expect(state.isAnalyzing).toBe(false);
 
-    // Fast-forward remaining 100ms to trigger debounce
+    // Fast-forward remaining 100ms to trigger debounce and run all pending promises
     await act(async () => {
       vi.advanceTimersByTime(100);
+      await vi.runAllTimersAsync();
     });
 
-    // Wait for analysis to start and complete
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-    }, { timeout: 1000 });
-
+    // Analysis should be complete
     state = useICSStore.getState();
     expect(state.isAnalyzing).toBe(false);
     expect(state.semanticAnalysis).not.toBeNull();
@@ -160,19 +156,15 @@ describe('SemanticEditor Integration Tests', () => {
       useICSStore.getState().setSpecification(mockDoc, text);
     });
 
-    // Fast-forward debounce
+    // Fast-forward debounce and run all async operations
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
-
-    // Wait for analysis to complete
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-    }, { timeout: 1000 });
 
     // Check that semantic analysis contains expected elements
     const state = useICSStore.getState();
+    expect(state.semanticAnalysis).not.toBeNull();
     expect(state.semanticAnalysis?.modalOperators.length).toBeGreaterThan(0);
     expect(state.semanticAnalysis?.entities.length).toBeGreaterThan(0);
 
@@ -223,19 +215,15 @@ describe('SemanticEditor Integration Tests', () => {
     let state = useICSStore.getState();
     expect(state.specificationText.length).toBeGreaterThan(500);
 
-    // Trigger analysis
+    // Trigger analysis and run all async operations
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
-
-    // Wait for analysis
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-    }, { timeout: 1000 });
 
     // Verify analysis contains multiple elements
     state = useICSStore.getState();
+    expect(state.semanticAnalysis).not.toBeNull();
     expect(state.semanticAnalysis?.entities.length).toBeGreaterThan(5);
     expect(state.semanticAnalysis?.modalOperators.length).toBeGreaterThan(5);
 
@@ -282,7 +270,7 @@ describe('SemanticEditor Integration Tests', () => {
     });
 
     // Advance 300ms
-    await act(async () => {
+    act(() => {
       vi.advanceTimersByTime(300);
     });
 
@@ -293,7 +281,7 @@ describe('SemanticEditor Integration Tests', () => {
     });
 
     // Advance 300ms again
-    await act(async () => {
+    act(() => {
       vi.advanceTimersByTime(300);
     });
 
@@ -301,16 +289,15 @@ describe('SemanticEditor Integration Tests', () => {
     let state = useICSStore.getState();
     expect(state.isAnalyzing).toBe(false);
 
-    // Now wait full 500ms without changes
+    // Now wait full 500ms without changes and run all async operations
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
 
     // Analysis should complete
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-    }, { timeout: 1000 });
+    state = useICSStore.getState();
+    expect(state.semanticAnalysis).not.toBeNull();
 
     vi.useRealTimers();
   });
@@ -332,20 +319,16 @@ describe('SemanticEditor Integration Tests', () => {
       useICSStore.getState().setSpecification(mockDoc, 'Test input for backend fallback');
     });
 
-    // Trigger analysis
+    // Trigger analysis and run all async operations
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
 
     // Should fall back to mock analysis without throwing
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-      expect(state.isAnalyzing).toBe(false);
-    }, { timeout: 1000 });
-
-    // Verify mock analysis was used
     const state = useICSStore.getState();
+    expect(state.semanticAnalysis).not.toBeNull();
+    expect(state.isAnalyzing).toBe(false);
     expect(state.semanticAnalysis?.entities).toBeDefined();
 
     vi.useRealTimers();
@@ -362,16 +345,13 @@ describe('SemanticEditor Integration Tests', () => {
       useICSStore.getState().setSpecification(mockDoc, 'Hi');
     });
 
-    // Fast-forward debounce
+    // Fast-forward debounce and run timers
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
 
     // Analysis should NOT start
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    });
-
     let state = useICSStore.getState();
     expect(state.isAnalyzing).toBe(false);
     expect(state.semanticAnalysis).toBeNull();
@@ -382,16 +362,15 @@ describe('SemanticEditor Integration Tests', () => {
       useICSStore.getState().setSpecification(mockDoc, 'Hi!');
     });
 
-    // Fast-forward debounce
+    // Fast-forward debounce and run timers
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
 
     // Now analysis should complete
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.semanticAnalysis).not.toBeNull();
-    }, { timeout: 1000 });
+    state = useICSStore.getState();
+    expect(state.semanticAnalysis).not.toBeNull();
 
     vi.useRealTimers();
   });
@@ -407,19 +386,18 @@ describe('SemanticEditor Integration Tests', () => {
       useICSStore.getState().setSpecification(mockDoc, 'Test analysis flag');
     });
 
-    // Trigger debounce
+    // Trigger debounce and run async operations
     await act(async () => {
       vi.advanceTimersByTime(500);
+      await vi.runAllTimersAsync();
     });
 
     // Should set isAnalyzing to true at some point
     // Note: This is tricky to test precisely because the mock is fast,
     // but we can verify the final state is correct
-    await waitFor(() => {
-      const state = useICSStore.getState();
-      expect(state.isAnalyzing).toBe(false); // Should be done
-      expect(state.semanticAnalysis).not.toBeNull(); // And have results
-    }, { timeout: 1000 });
+    const state = useICSStore.getState();
+    expect(state.isAnalyzing).toBe(false); // Should be done
+    expect(state.semanticAnalysis).not.toBeNull(); // And have results
 
     vi.useRealTimers();
   });

@@ -10,6 +10,8 @@ import ast
 
 import networkx as nx
 
+from .node_extractor import extract_nodes
+
 
 class GraphBuildError(Exception):
     """Base exception for graph building errors."""
@@ -78,4 +80,27 @@ class CausalGraphBuilder:
         Edge Attributes:
             type: 'data_flow' | 'control_flow' | 'call'
         """
-        raise NotImplementedError("H20 not yet resolved (Week 1: STEP-02 to STEP-05)")
+        # Initialize graph
+        graph = nx.DiGraph()
+
+        # STEP-02: Extract nodes from AST (✅ implemented)
+        nodes = extract_nodes(ast_tree)
+        for node in nodes:
+            graph.add_node(
+                node.id,
+                name=node.name,
+                type=node.type.value,
+                line=node.line,
+                **node.metadata,
+            )
+
+        # STEP-03: Extract data flow edges (⏳ next)
+        # TODO: Implement data flow analysis
+
+        # STEP-04: Extract control flow edges (⏳ next)
+        # TODO: Implement control flow analysis
+
+        # STEP-05: Prune non-causal edges (⏳ pending STEP-03/04)
+        # TODO: Implement edge pruning
+
+        return graph

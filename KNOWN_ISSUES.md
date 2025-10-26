@@ -44,29 +44,58 @@
 
 ---
 
-### 2. ICS Blocker: H5 - Autocomplete Popup Bug (lift-sys-316)
+### 2. ✅ RESOLVED: ICS Blocker: H5 - Autocomplete Popup Bug (lift-sys-316)
 
 **Discovered**: 2025-10-25 (ICS Phase 4 planning)
-**Severity**: **P2 CRITICAL** (blocks ICS autocomplete)
-**Status**: Identified, fix pending
+**Resolved**: 2025-10-25
+**Severity**: **P2 CRITICAL** (was blocking ICS autocomplete)
+**Status**: ✅ **RESOLVED**
 
 **Details**:
 - Autocomplete popup not displaying correctly
-- Blocks STEP-09 in ICS execution plan (3-hour fix estimated)
-- Blocks autocomplete testing and E2E preparation
+- Root cause: Mock searchFiles() had no files containing "test" for E2E test query
+- AutocompletePopup returns null when items.length === 0
+
+**Resolution**:
+- Added test files to mock data (tests/test_ir.py, tests/test_validation.py, frontend/src/lib/ics/decorations.test.ts)
+- E2E autocomplete filtering test now passing
+- 21/22 E2E tests passing after fix
+
+**Documentation**: Commit 51531f8
+**Tracking**: Beads issue lift-sys-316 (closed)
+
+---
+
+### 3. ✅ RESOLVED: ICS Blocker: H11 - Tooltip Rendering Bug (lift-sys-318)
+
+**Discovered**: 2025-10-25 (After H5 fix)
+**Resolved**: 2025-10-25
+**Severity**: **P2** (was blocking 1 E2E test)
+**Status**: ✅ **RESOLVED**
+
+**Details**:
+- Tooltip not appearing on typed hole hover
+- Root cause: HoleTooltip component trying to access `hole.dependencies` which doesn't exist on TypedHole type
+- Runtime error prevented tooltip from rendering
+
+**Resolution**:
+- Removed invalid `hole.dependencies.blocks` and `hole.dependencies.blockedBy` references
+- Show `hole.description` instead (more useful for users)
+- All 22 E2E tests now passing
 
 **Impact**:
-- ICS autocomplete feature non-functional
-- User experience for typed hole resolution degraded
+- ✅ All ICS E2E tests passing (22/22)
+- ✅ Tooltip functionality fully working
+- ✅ Both H5 and H11 blockers resolved
 
-**Priority**: **P1** (high priority blocker)
-**Tracking**: Beads issue lift-sys-316, ICS execution plan STEP-09
+**Documentation**: Commit fb2eeea
+**Tracking**: Beads issue lift-sys-318 (closed)
 
 ---
 
 ## Backend Persistent Failures
 
-### 3. find_index - Off-by-One Error
+### 4. find_index - Off-by-One Error
 
 **Severity**: **P1** (80% success rate degraded)
 **Status**: Root cause identified, fix pending
@@ -86,7 +115,7 @@
 
 ---
 
-### 4. get_type_name - Type Handling
+### 5. get_type_name - Type Handling
 
 **Severity**: **P1** (80% success rate degraded)
 **Status**: Root cause identified, fix pending
@@ -106,7 +135,7 @@
 
 ---
 
-### 5. is_valid_email - Edge Case Validation
+### 6. is_valid_email - Edge Case Validation
 
 **Severity**: **P2** (specific edge cases)
 **Status**: Root cause identified, fix pending
@@ -128,7 +157,7 @@
 
 ## Infrastructure Uncertainty
 
-### 6. XGrammar Status Unclear
+### 7. XGrammar Status Unclear
 
 **Discovered**: 2025-10-25 (cleanup review)
 **Severity**: **P1** (foundation uncertainty)
@@ -152,7 +181,7 @@
 
 ## Known Gaps (132 Backend Issues)
 
-### 7. Backend Implementation Gaps
+### 8. Backend Implementation Gaps
 
 **Discovered**: 2025-10-25 (Beads triage)
 **Severity**: **P2** (systematic gaps)

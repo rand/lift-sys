@@ -392,6 +392,14 @@ class EquivalenceChecker:
             is_simple1 = self._is_simple_function_body(ast1)
             is_simple2 = self._is_simple_function_body(ast2)
 
+            # Debug logging
+            if not (is_simple1 and is_simple2):
+                print(
+                    f"DEBUG: Simple function check failed: is_simple1={is_simple1}, is_simple2={is_simple2}"
+                )
+                print(f"DEBUG: Code1 (first 100 chars):\n{code1[:100]}")
+                print(f"DEBUG: Code2 (first 100 chars):\n{code2[:100]}")
+
             if is_simple1 and is_simple2:
                 # For simple function bodies, compare statements order-independently
                 result = self._compare_simple_functions(ast1, ast2)

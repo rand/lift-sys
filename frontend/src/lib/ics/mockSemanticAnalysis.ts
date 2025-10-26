@@ -117,6 +117,8 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
       source: 'text_analysis',
       impact: 'Execution order dependency',
       locked: false,
+      from: constMatch.index,
+      to: constMatch.index + constMatch[0].length,
     });
   }
 

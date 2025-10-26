@@ -41,7 +41,7 @@ export function SemanticEditor({
 }: SemanticEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const semanticAnalysisRef = useRef<typeof semanticAnalysis>(null);
+  const semanticAnalysisRef = useRef<typeof semanticAnalysis>(semanticAnalysis);
   const [isFocused, setIsFocused] = useState(false);
 
   // Autocomplete state

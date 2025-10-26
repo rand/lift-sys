@@ -131,10 +131,14 @@ export function buildDecorations(
     }
   }
 
-  // Add constraint decorations (with background)
+  // Add constraint decorations
   for (const constraint of analysis.constraints) {
-    // Constraints apply to specific holes, but we can highlight constraint-related text
-    // For now, skip inline constraint decorations (they're shown in SymbolsPanel)
+    // Check if constraint has position data (from/to fields)
+    if ('from' in constraint && 'to' in constraint &&
+        typeof constraint.from === 'number' && typeof constraint.to === 'number' &&
+        constraint.from >= 0 && constraint.to <= doc.content.size) {
+      decorations.push(createConstraintDecoration(constraint.from, constraint.to, constraint));
+    }
   }
 
   // Add ambiguity decorations

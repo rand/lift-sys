@@ -125,7 +125,7 @@ def serialize_intervention(intervention: HardIntervention | SoftIntervention) ->
         return {"type": "hard", "node": intervention.node, "value": intervention.value}
 
     elif isinstance(intervention, SoftIntervention):
-        result = {
+        result: dict[str, Any] = {
             "type": "soft",
             "node": intervention.node,
             "transform": intervention.transform,

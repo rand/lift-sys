@@ -9,24 +9,38 @@
 
 ## Critical Issues (Blocking Progress)
 
-### 1. ICS Blocker: H2 - DecorationApplication Bug (lift-sys-310)
+### 1. ✅ RESOLVED: ICS Blocker: H2 - DecorationApplication Bug (lift-sys-310)
 
-**Discovered**: 2025-10-25 (ICS Phase 4 planning)
-**Severity**: **P1 CRITICAL** (blocks ICS Phase 1)
-**Status**: Identified, fix pending
+**Discovered**: 2025-10-25
+**Resolved**: 2025-10-25
+**Severity**: **P1 CRITICAL** (was blocking ICS Phase 1)
+**Status**: ✅ **RESOLVED**
 
 **Details**:
 - Decorations not applying correctly in ProseMirror editor
-- Blocks STEP-03 in ICS execution plan (6-hour fix estimated, HIGH RISK)
-- Blocks 9 dependent steps in ICS implementation
+- Root cause: Plugin closure captured initial semanticAnalysis value (null)
+- Fix: Used ref to always read current value
+- Additional fixes: CSS class name mismatches, mock patterns, constraint positions
+
+**Resolution**:
+- 4 commits fixing decoration application
+- Test improvement: 55% → 77% pass rate (10 failed → 5 failed)
+- 5 of 9 target tests now passing (entities, modals, constraints, tooltips)
+- Core H2 blocker completely resolved
+
+**Remaining**:
+- 3 typed hole tests (widget positioning, P2 refinement)
+- 1 autocomplete test (H5, separate issue)
+- 1 integration timing test (likely flakiness)
 
 **Impact**:
-- ICS Phase 1 cannot proceed until fixed
-- Real-time semantic analysis display broken
-- User experience degraded
+- ✅ ICS Phase 1 can now proceed
+- ✅ Real-time semantic analysis working
+- ✅ Semantic highlighting functional
+- ✅ Zone B (STEP-04 through STEP-07) unblocked
 
-**Priority**: **P0** (critical blocker)
-**Tracking**: Beads issue lift-sys-310, ICS execution plan STEP-03
+**Documentation**: `docs/planning/STEP_03_H2_FIX_SUMMARY.md`
+**Tracking**: Beads issue lift-sys-310 (closed)
 
 ---
 

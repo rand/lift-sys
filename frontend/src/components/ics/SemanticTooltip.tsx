@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import type {
   Entity,
   Constraint,
-  TypedHole,
+  TooltipHoleData,
   Ambiguity,
   Contradiction,
   ModalOperator,
@@ -21,7 +21,7 @@ interface SemanticTooltipProps {
 export type TooltipElement =
   | { type: 'entity'; data: Entity }
   | { type: 'constraint'; data: Constraint }
-  | { type: 'hole'; data: TypedHole }
+  | { type: 'hole'; data: TooltipHoleData }
   | { type: 'ambiguity'; data: Ambiguity }
   | { type: 'contradiction'; data: Contradiction }
   | { type: 'modal'; data: ModalOperator }
@@ -128,7 +128,7 @@ function ConstraintTooltip({ constraint }: { constraint: Constraint }) {
   );
 }
 
-function HoleTooltip({ hole }: { hole: TypedHole }) {
+function HoleTooltip({ hole }: { hole: TooltipHoleData }) {
   return (
     <div className="tooltip-content">
       <div className="tooltip-header">
@@ -136,15 +136,62 @@ function HoleTooltip({ hole }: { hole: TypedHole }) {
         <span className={`tooltip-status status-${hole.status}`}>
           {hole.status}
         </span>
+        {hole.priority && (
+          <span className={`tooltip-priority priority-${hole.priority}`}>
+            {hole.priority}
+          </span>
+        )}
       </div>
       <div className="tooltip-body">
         <div className="tooltip-label">Typed Hole:</div>
         <div className="tooltip-value">{hole.identifier}</div>
+
         {hole.typeHint && hole.typeHint !== 'unknown' && (
           <div className="tooltip-hint">Type: {hole.typeHint}</div>
         )}
+
         {hole.description && (
           <div className="tooltip-hint">{hole.description}</div>
+        )}
+
+        {hole.confidence !== undefined && (
+          <div className="tooltip-hint">
+            Confidence: {Math.round(hole.confidence * 100)}%
+          </div>
+        )}
+
+        {hole.blocks && hole.blocks.length > 0 && (
+          <div className="tooltip-section">
+            <div className="tooltip-label">Blocks ({hole.blocks.length}):</div>
+            <ul className="tooltip-list">
+              {hole.blocks.slice(0, 3).map((dep) => (
+                <li key={dep.id}>{dep.name}</li>
+              ))}
+              {hole.blocks.length > 3 && (
+                <li className="tooltip-more">+{hole.blocks.length - 3} more</li>
+              )}
+            </ul>
+          </div>
+        )}
+
+        {hole.blockedBy && hole.blockedBy.length > 0 && (
+          <div className="tooltip-section">
+            <div className="tooltip-label">Blocked by ({hole.blockedBy.length}):</div>
+            <ul className="tooltip-list">
+              {hole.blockedBy.slice(0, 3).map((dep) => (
+                <li key={dep.id}>{dep.name}</li>
+              ))}
+              {hole.blockedBy.length > 3 && (
+                <li className="tooltip-more">+{hole.blockedBy.length - 3} more</li>
+              )}
+            </ul>
+          </div>
+        )}
+
+        {hole.constraintCount !== undefined && hole.constraintCount > 0 && (
+          <div className="tooltip-hint">
+            {hole.constraintCount} constraint{hole.constraintCount !== 1 ? 's' : ''}
+          </div>
         )}
       </div>
     </div>

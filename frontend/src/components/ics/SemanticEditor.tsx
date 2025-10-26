@@ -26,6 +26,7 @@ import { AutocompletePopup } from './AutocompletePopup';
 import { SemanticTooltip, type TooltipElement } from './SemanticTooltip';
 import { analyzeText, checkBackendHealth } from '@/lib/ics/api';
 import { generateMockAnalysis } from '@/lib/ics/mockSemanticAnalysis';
+import type { TooltipHoleData } from '@/types/ics/semantic';
 import '@/styles/ics.css';
 
 interface SemanticEditorProps {
@@ -58,7 +59,7 @@ export function SemanticEditor({
   // Backend availability state
   const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null);
 
-  const { setSpecification, specificationText, semanticAnalysis, selectHole, updateSemanticAnalysis, setIsAnalyzing } = useICSStore();
+  const { setSpecification, specificationText, semanticAnalysis, holes, selectHole, updateSemanticAnalysis, setIsAnalyzing } = useICSStore();
 
   // Create ref after getting semanticAnalysis from store
   const semanticAnalysisRef = useRef<typeof semanticAnalysis>(semanticAnalysis);
@@ -142,7 +143,27 @@ export function SemanticEditor({
     else if (target.dataset.holeId && semanticAnalysis) {
       const hole = semanticAnalysis.typedHoles.find(h => h.id === target.dataset.holeId);
       if (hole) {
-        tooltipData = { type: 'hole', data: hole };
+        // Combine TypedHole (semantic analysis) with HoleDetails (store metadata)
+        const holeDetails = holes.get(target.dataset.holeId);
+
+        const tooltipHoleData: TooltipHoleData = {
+          // Always available from TypedHole
+          id: hole.id,
+          identifier: hole.identifier,
+          kind: hole.kind,
+          typeHint: hole.typeHint,
+          description: hole.description,
+          status: hole.status,
+          confidence: hole.confidence,
+
+          // Optional from HoleDetails when available
+          blocks: holeDetails?.blocks,
+          blockedBy: holeDetails?.blockedBy,
+          constraintCount: holeDetails?.constraints?.length,
+          priority: holeDetails?.priority,
+        };
+
+        tooltipData = { type: 'hole', data: tooltipHoleData };
       }
     }
     // Check for ambiguity
@@ -186,7 +207,7 @@ export function SemanticEditor({
       setTooltipVisible(false);
       setTooltipElement(null);
     }
-  }, [semanticAnalysis]);
+  }, [semanticAnalysis, holes]);
 
   const handleMouseLeave = useCallback(() => {
     if (tooltipTimeoutRef.current) {

@@ -10,6 +10,7 @@ import ast
 
 import networkx as nx
 
+from .controlflow_extractor import extract_controlflow_edges
 from .node_extractor import extract_nodes
 
 
@@ -97,8 +98,10 @@ class CausalGraphBuilder:
         # STEP-03: Extract data flow edges (⏳ next)
         # TODO: Implement data flow analysis
 
-        # STEP-04: Extract control flow edges (⏳ next)
-        # TODO: Implement control flow analysis
+        # STEP-04: Extract control flow edges (✅ implemented)
+        control_edges = extract_controlflow_edges(ast_tree, nodes)
+        for source_id, target_id in control_edges:
+            graph.add_edge(source_id, target_id, type="control_flow")
 
         # STEP-05: Prune non-causal edges (⏳ pending STEP-03/04)
         # TODO: Implement edge pruning

@@ -91,6 +91,27 @@ export interface TypedHole {
 }
 
 /**
+ * Unified tooltip data for holes
+ * Combines semantic analysis (TypedHole) with store metadata (HoleDetails)
+ */
+export interface TooltipHoleData {
+  // Always available (from TypedHole)
+  id: string;
+  identifier: string;
+  kind: HoleKind;
+  typeHint: string;
+  description: string;
+  status: HoleStatus;
+  confidence: number;
+
+  // Optional store metadata (from HoleDetails when available)
+  blocks?: Array<{ id: string; name: string; reason: string }>;
+  blockedBy?: Array<{ id: string; name: string; reason: string }>;
+  constraintCount?: number;
+  priority?: 'critical' | 'high' | 'medium' | 'low';
+}
+
+/**
  * Constraint definition
  */
 export interface Constraint {

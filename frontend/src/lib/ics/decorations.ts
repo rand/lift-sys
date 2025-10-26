@@ -68,7 +68,7 @@ function createContradictionDecoration(from: number, to: number, contradiction: 
 function createHoleWidget(pos: number, hole: any): Decoration {
   return Decoration.widget(pos, () => {
     const badge = document.createElement('span');
-    badge.className = `hole-badge hole-${hole.kind} hole-${hole.status}`;
+    badge.className = `hole hole-${hole.kind} hole-${hole.status}`;
     badge.textContent = hole.identifier;
     badge.setAttribute('data-hole-id', hole.id);
     badge.setAttribute('title', `${hole.kind}: ${hole.typeHint}`);
@@ -94,7 +94,7 @@ function createHoleWidget(pos: number, hole: any): Decoration {
  */
 function createModalDecoration(from: number, to: number, modal: any): Decoration {
   return Decoration.inline(from, to, {
-    class: `modal-operator modal-${modal.modality}`,
+    class: `modal modal-${modal.modality}`,
     title: `Modal: ${modal.modality}`,
     'data-modal-id': modal.id,
   });

@@ -485,8 +485,9 @@ describe('decorations', () => {
       const decos = decorations.find();
       const deco = decos[0] as any;
 
-      // Create the widget element
-      const element = deco.type.spec.toDOM();
+      // Widget decorations have a toDOM function that's a factory
+      // Call it to create the element
+      const element = deco.type.toDOM();
 
       expect(element.tagName).toBe('SPAN');
       expect(element.className).toContain('hole');

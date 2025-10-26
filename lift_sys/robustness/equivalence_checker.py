@@ -3,7 +3,7 @@ Equivalence checking for IRs and code snippets.
 
 This module provides tools to determine semantic equivalence of:
 1. IR representations (modulo naming, effect ordering, assertion rephrasing)
-2. Code snippets (via execution on test inputs)
+2. Code snippets (via execution on test inputs OR AST-based structural comparison)
 
 Usage:
     from lift_sys.robustness import EquivalenceChecker
@@ -14,12 +14,17 @@ Usage:
     if checker.ir_equivalent(ir1, ir2):
         print("IRs are semantically equivalent")
 
-    # Check code equivalence
+    # Check code equivalence (execution-based)
     test_inputs = [{"nums": [3, 1, 4]}, {"nums": []}]
     if checker.code_equivalent(code1, code2, test_inputs):
         print("Code snippets are functionally equivalent")
+
+    # Check code equivalence (structural, for mock code)
+    if checker.code_equivalent_structural(code1, code2):
+        print("Code snippets are structurally equivalent")
 """
 
+import ast
 import json
 import os
 import re
@@ -290,6 +295,86 @@ class EquivalenceChecker:
                 return False
 
         return True
+
+    def code_equivalent_structural(
+        self,
+        code1: str,
+        code2: str,
+    ) -> bool:
+        """
+        Check if two code snippets are structurally equivalent via AST comparison.
+
+        This method normalizes identifiers (if normalize_naming=True) and compares
+        the AST structure. Useful for simple mock code where execution testing
+        isn't feasible.
+
+        Args:
+            code1: First code snippet (Python)
+            code2: Second code snippet (Python)
+
+        Returns:
+            True if code snippets have equivalent AST structure
+        """
+        try:
+            # Parse both code snippets
+            ast1 = ast.parse(code1)
+            ast2 = ast.parse(code2)
+
+            # Normalize ASTs if naming normalization is enabled
+            if self.normalize_naming:
+                ast1 = self._normalize_ast(ast1)
+                ast2 = self._normalize_ast(ast2)
+
+            # Compare AST dumps (string representation)
+            return ast.dump(ast1) == ast.dump(ast2)
+
+        except SyntaxError:
+            # If either code has syntax errors, they're not equivalent
+            return False
+
+    def _normalize_ast(self, tree: ast.AST) -> ast.AST:
+        """
+        Normalize identifiers in AST to snake_case for comparison.
+
+        This allows comparison of code with different naming conventions
+        (camelCase, PascalCase, etc.) as structurally equivalent.
+
+        Args:
+            tree: AST tree to normalize
+
+        Returns:
+            Normalized AST tree with all identifiers in snake_case
+        """
+
+        class IdentifierNormalizer(ast.NodeTransformer):
+            def __init__(self, normalize_func):
+                self.normalize = normalize_func
+
+            def visit_Name(self, node):
+                # Normalize variable names
+                node.id = self.normalize(node.id)
+                return node
+
+            def visit_FunctionDef(self, node):
+                # Normalize function names
+                node.name = self.normalize(node.name)
+                # Recursively visit function body
+                self.generic_visit(node)
+                return node
+
+            def visit_arg(self, node):
+                # Normalize argument names
+                node.arg = self.normalize(node.arg)
+                return node
+
+            def visit_Attribute(self, node):
+                # Normalize attribute names
+                node.attr = self.normalize(node.attr)
+                self.generic_visit(node)
+                return node
+
+        normalizer = IdentifierNormalizer(self._normalize_name)
+        return normalizer.visit(tree)
 
     def _execute_code(
         self,

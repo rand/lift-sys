@@ -206,9 +206,13 @@ class SensitivityAnalyzer:
                 equivalence_results.append(False)
             else:
                 try:
-                    is_equiv = self.checker.code_equivalent(
-                        original_code, code, test_inputs, timeout_seconds
-                    )
+                    # Use structural comparison if no test inputs, otherwise execution-based
+                    if not test_inputs:
+                        is_equiv = self.checker.code_equivalent_structural(original_code, code)
+                    else:
+                        is_equiv = self.checker.code_equivalent(
+                            original_code, code, test_inputs, timeout_seconds
+                        )
                     equivalence_results.append(is_equiv)
                 except Exception as e:
                     print(f"Warning: Code equivalence check failed: {e}")

@@ -162,13 +162,13 @@ class StaticMechanismInferrer(ast.NodeVisitor):
 
         # Check for multi-variable linear: a + b, 2*a + 3*b, etc.
         if self._is_multi_variable_linear(expr):
-            coefficients = self._extract_multi_variable_coefficients(expr)
+            coefficients, offset = self._extract_multi_variable_coefficients(expr)
             return InferredMechanism(
                 type=MechanismType.LINEAR,
-                parameters={"coefficients": coefficients, "offset": 0.0},
+                parameters={"coefficients": coefficients, "offset": offset},
                 confidence=0.8,
                 variables=list(coefficients.keys()),
-                expression=self._format_multi_linear(coefficients),
+                expression=self._format_multi_linear(coefficients, offset),
             )
 
         # Check for power (nonlinear)
@@ -253,24 +253,42 @@ class StaticMechanismInferrer(ast.NodeVisitor):
         if not isinstance(node.op, (ast.Add, ast.Sub)):
             return False
 
-        # Check both sides contain variables or linear terms
-        def is_linear_term(n: ast.expr) -> bool:
+        # Check both sides contain variables, linear terms, or constants
+        def is_linear_term_or_constant(n: ast.expr) -> bool:
+            # Allow constants (for offset terms like + 10)
+            if isinstance(n, ast.Constant):
+                return True
             if isinstance(n, ast.Name):
                 return n.id in self.parameters
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.Mult):
                 return self._is_simple_linear_mult(n)
             if isinstance(n, ast.BinOp) and isinstance(n.op, (ast.Add, ast.Sub)):
-                return is_linear_term(n.left) and is_linear_term(n.right)
+                return is_linear_term_or_constant(n.left) and is_linear_term_or_constant(n.right)
             return False
 
-        return is_linear_term(node.left) and is_linear_term(node.right)
+        return is_linear_term_or_constant(node.left) and is_linear_term_or_constant(node.right)
 
-    def _extract_multi_variable_coefficients(self, node: ast.expr) -> dict[str, float]:
-        """Extract coefficients for multi-variable linear expression."""
+    def _extract_multi_variable_coefficients(
+        self, node: ast.expr
+    ) -> tuple[dict[str, float], float]:
+        """Extract coefficients and offset for multi-variable linear expression.
+
+        Returns:
+            (coefficients, offset) where coefficients maps variable names to their
+            coefficients, and offset is the constant term.
+        """
         coefficients: dict[str, float] = {}
+        offset: float = 0.0
 
         def extract_terms(n: ast.expr, sign: float = 1.0) -> None:
-            if isinstance(n, ast.Name) and n.id in self.parameters:
+            nonlocal offset
+
+            # Handle constants (offset terms)
+            if isinstance(n, ast.Constant):
+                if isinstance(n.value, (int, float)):
+                    offset += sign * float(n.value)
+
+            elif isinstance(n, ast.Name) and n.id in self.parameters:
                 coefficients[n.id] = coefficients.get(n.id, 0.0) + sign
 
             elif isinstance(n, ast.BinOp) and isinstance(n.op, ast.Mult):
@@ -287,12 +305,15 @@ class StaticMechanismInferrer(ast.NodeVisitor):
                 extract_terms(n.right, -sign)
 
         extract_terms(node)
-        return coefficients
+        return coefficients, offset
 
-    def _format_multi_linear(self, coefficients: dict[str, float]) -> str:
+    def _format_multi_linear(self, coefficients: dict[str, float], offset: float = 0.0) -> str:
         """Format multi-variable linear expression."""
         terms = [f"{coef}*{var}" for var, coef in sorted(coefficients.items())]
-        return " + ".join(terms)
+        expr = " + ".join(terms)
+        if offset != 0.0:
+            expr += f" + {offset}"
+        return expr
 
     def _extract_variables(self, node: ast.expr) -> list[str]:
         """Extract all parameter variables used in expression."""

@@ -46,9 +46,9 @@ jobs:
 
       - name: Download spaCy model
         run: |
-          # Install spaCy model using uv pip with pre-built wheels only
-          # --only-binary :all: prevents blis compilation issues
-          uv pip install --only-binary :all: https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+          # Install spaCy model using uv pip, only requiring binary for blis
+          # This prevents blis compilation (12+ min) while allowing other deps
+          uv pip install --only-binary blis https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
       - name: Download NLTK data
         run: |

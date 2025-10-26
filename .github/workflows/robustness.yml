@@ -1,15 +1,13 @@
 name: Robustness Testing
 
 on:
-  # Temporarily disabled entirely due to spaCy/blis compilation issues in CI
-  # TODO: Re-enable after fixing spaCy binary wheel installation (Phase 2 cleanup - lift-sys-379)
-  # pull_request:
-  #   branches: [main, develop]
-  # push:
-  #   branches: [main]
-  # schedule:
-  #   # Run nightly at 2 AM UTC for comprehensive baseline tracking
-  #   - cron: '0 2 * * *'
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  schedule:
+    # Run nightly at 2 AM UTC for comprehensive baseline tracking
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       update_baseline:
@@ -43,14 +41,13 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Install spaCy with binary wheels only
+      - name: Install spaCy and model via pip (better binary wheel support)
         run: |
-          # Install spaCy and dependencies as binary wheels to avoid compilation errors
-          uv pip install --only-binary :all: spacy thinc blis cymem preshed murmurhash wasabi
-
-      - name: Download spaCy model
-        run: |
-          uv pip install en_core_web_sm@https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+          # Use pip instead of uv for spaCy - it has better binary wheel resolution
+          # This avoids blis compilation issues in CI
+          python -m pip install --upgrade pip
+          python -m pip install spacy[transformers]
+          python -m spacy download en_core_web_sm
 
       - name: Download NLTK data
         run: |

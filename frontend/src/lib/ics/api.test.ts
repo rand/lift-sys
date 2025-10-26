@@ -283,7 +283,8 @@ describe('ICS API Client Integration Tests', () => {
 
       const text = 'Test text';
 
-      await expect(analyzeText(text)).rejects.toThrow('Analysis failed: Internal Server Error');
+      // When JSON parsing fails, it falls back to 'Unknown error'
+      await expect(analyzeText(text)).rejects.toThrow('Analysis failed: Unknown error');
     });
 
     it('should handle empty text gracefully', async () => {

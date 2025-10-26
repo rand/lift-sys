@@ -1,6 +1,6 @@
 # lift-sys Development Guidelines
 
-**Last Updated**: 2025-10-25
+**Last Updated**: 2025-10-26
 
 > **Project-Specific Rules**: This file contains development guidelines specific to the lift-sys project. For global Claude development guidelines, see `~/.claude/CLAUDE.md`.
 
@@ -542,6 +542,8 @@ DATABASE_URL=<connection-string>
 
 ## 8. Security & Secrets
 
+**See [SECURITY.md](SECURITY.md) for comprehensive security policy, incident response, and checklists.**
+
 ### Secret Management Rules
 
 **CRITICAL: Secrets in this project were compromised once. NEVER AGAIN.**
@@ -550,24 +552,102 @@ DATABASE_URL=<connection-string>
 2. **NEVER hardcode secrets** in code
 3. **ALWAYS use environment variables** or Modal secrets
 4. **ALWAYS check before committing**: `git diff` for secrets
+5. **ALWAYS use template placeholders** in documentation
+
+### Template Placeholder Format
+
+**When documenting credentials or connection strings, use clearly fake placeholders:**
+
+```bash
+# ✅ CORRECT - Clearly a template
+DATABASE_URL=postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+SUPABASE_ANON_KEY=<YOUR_ANON_KEY>
+SUPABASE_SERVICE_KEY=<YOUR_SERVICE_KEY>
+
+# ❌ WRONG - Looks like it could be real
+DATABASE_URL=postgresql://postgres.project:password@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.actual_jwt_token_here
+```
+
+**Pattern**: Use `<YOUR_*>` format for all placeholders to avoid triggering secret scanners.
 
 ### Supabase Keys
 
 **Types of keys:**
-- **Anon key**: Safe to commit (public, low privilege)
-- **Service role key**: NEVER commit (bypasses RLS, full access)
-- **Database password**: NEVER commit
+- **Anon key**: Safe to commit in docs (public, low privilege)
+- **Service role key**: ⚠️ **NEVER commit** (bypasses RLS, full access)
+- **Database password**: ⚠️ **NEVER commit**
 
 **Where keys go:**
-- `.env.local` (gitignored)
-- Modal secrets (for production)
-- Documentation uses `<placeholder>` format
+- `.env.local` (gitignored) - Local development
+- Modal secrets (for production) - `modal secret create`
+- Documentation - Use `<YOUR_*>` placeholders only
+
+### Secret Detection Tools
+
+**Pre-commit hook (detect-secrets):**
+```bash
+# Automatically scans for secrets on every commit
+# Configured in .pre-commit-config.yaml
+
+# Manual scan
+uv run detect-secrets scan
+
+# Update baseline for new false positives
+uv run detect-secrets scan --baseline .secrets.baseline
+
+# Audit current baseline
+uv run detect-secrets audit .secrets.baseline
+```
+
+**Local scanning (gitleaks - optional):**
+```bash
+# Install
+brew install gitleaks
+
+# Scan repository
+gitleaks detect --config .gitleaks.toml
+
+# Scan git history
+gitleaks protect --config .gitleaks.toml
+```
+
+**GitHub Secret Scanning:**
+- Automatically enabled for this repository
+- False positives excluded via `.github/secret_scanning.yml`
+- If you receive an alert:
+  1. Verify if it's a real secret or template
+  2. If real: **IMMEDIATELY** rotate the credential and remove from git history
+  3. If template: Update to use `<YOUR_*>` placeholder format
+
+### False Positive Handling
+
+**Template strings in documentation may trigger scanners. This is expected.**
+
+**Allowed patterns:**
+- `<YOUR_PROJECT_REF>`, `<YOUR_PASSWORD>`, etc.
+- `PROJECT_REF`, `PASSWORD@aws` in template context
+- Truncated JWTs with `...`: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+**Excluded paths:**
+- `docs/**/*.md` - Documentation
+- `tests/fixtures/**` - Test data
+- `*_test.py`, `test_*.py` - Test files
+
+**If you get a false positive:**
+1. Verify it's actually a template (not a real secret)
+2. Update template to use `<YOUR_*>` format
+3. Run `detect-secrets scan` to update baseline
+4. Commit updated `.secrets.baseline`
 
 ### Git History Scrubbing
 
 **If secrets leak:**
 ```bash
-# 1. Revoke the secret immediately
+# 1. Revoke the secret immediately (CRITICAL!)
+# Supabase: Dashboard → Settings → API → Reset keys
+# Modal: Dashboard → Secrets → Regenerate
+
 # 2. Install git-filter-repo
 brew install git-filter-repo
 
@@ -584,7 +664,26 @@ git push --force origin main
 # 6. Update all secrets with new values
 ```
 
-**See session logs (2025-10-19) for complete recovery process.**
+**See [SECURITY.md](SECURITY.md) for detailed incident response process.**
+
+### Security Checklist
+
+**Before committing:**
+- [ ] No actual credentials in code
+- [ ] `.env.local` exists and is gitignored
+- [ ] Templates use `<YOUR_*>` placeholder format
+- [ ] Pre-commit hooks passed (`detect-secrets`)
+- [ ] No secrets in commit message or diff
+
+**Before pushing:**
+- [ ] Double-check `git diff` for secrets
+- [ ] Verify GitHub secret scanning won't trigger
+- [ ] Modal/Supabase secrets are environment-based
+
+**Before deploying:**
+- [ ] Environment variables set in deployment platform
+- [ ] Secrets rotated if exposed during development
+- [ ] RLS policies enabled on database tables
 
 ---
 
@@ -943,4 +1042,4 @@ modal secret list                # List secrets
 
 **This is a living document. Update it when patterns emerge or project structure evolves.**
 
-**Last major update: 2025-10-19 (Repository organization, secret management, Modal patterns)**
+**Last major update: 2025-10-26 (Secret detection tools, template placeholders, pre-commit hooks)**

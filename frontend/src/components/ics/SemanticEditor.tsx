@@ -41,6 +41,7 @@ export function SemanticEditor({
 }: SemanticEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const semanticAnalysisRef = useRef<typeof semanticAnalysis>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   // Autocomplete state
@@ -234,7 +235,7 @@ export function SemanticEditor({
           'Mod-Shift-z': redo,
         }),
         keymap(baseKeymap),
-        createDecorationsPlugin(() => semanticAnalysis),
+        createDecorationsPlugin(() => semanticAnalysisRef.current),
         createAutocompletePlugin({
           onTrigger: handleAutocompleteTrigger,
           onDismiss: handleAutocompleteDismiss,
@@ -283,6 +284,9 @@ export function SemanticEditor({
 
   // Update decorations when semantic analysis changes
   useEffect(() => {
+    // Update the ref so the plugin can access the latest analysis
+    semanticAnalysisRef.current = semanticAnalysis;
+
     if (viewRef.current && semanticAnalysis) {
       updateDecorations(viewRef.current);
     }

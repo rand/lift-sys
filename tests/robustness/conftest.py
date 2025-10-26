@@ -80,7 +80,7 @@ def complex_ir():
             name="process_user_data",
             parameters=[
                 Parameter(name="user_data", type_hint="dict[str, Any]"),
-                Parameter(name="strict_mode", type_hint="bool", default="False"),
+                Parameter(name="strict_mode", type_hint="bool", description="Defaults to False"),
             ],
             returns="dict[str, Any]",
         ),

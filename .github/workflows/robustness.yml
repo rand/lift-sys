@@ -44,14 +44,10 @@ jobs:
           # Clean cache to free up disk space for spaCy installation
           uv cache clean
 
-      - name: Install spaCy and model via pip (better binary wheel support)
+      - name: Download spaCy model
         run: |
-          # Use pip instead of uv for spaCy - it has better binary wheel resolution
-          # This avoids blis compilation issues in CI
-          # Install base spaCy only (no transformers) to save disk space
-          python -m pip install --upgrade pip
-          python -m pip install spacy
-          python -m spacy download en_core_web_sm
+          # Install spaCy model in uv environment so tests can access it
+          uv run python -m spacy download en_core_web_sm
 
       - name: Download NLTK data
         run: |

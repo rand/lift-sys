@@ -293,6 +293,17 @@ class ParaphraseGenerator:
             if diversity >= self.min_diversity:
                 diverse_variants.append(variant)
 
+        # Adaptive diversity threshold: if we don't have enough variants,
+        # progressively lower the threshold to get more variants
+        if len(diverse_variants) < 2:
+            # Try with half the diversity threshold
+            relaxed_threshold = self.min_diversity / 2
+            diverse_variants = []
+            for variant in unique_variants:
+                diversity = self._compute_diversity(original, variant)
+                if diversity >= relaxed_threshold:
+                    diverse_variants.append(variant)
+
         # Sort by diversity (higher is better)
         diverse_variants.sort(key=lambda v: self._compute_diversity(original, v), reverse=True)
 

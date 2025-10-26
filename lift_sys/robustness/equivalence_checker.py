@@ -368,6 +368,9 @@ class EquivalenceChecker:
         the AST structure. Useful for simple mock code where execution testing
         isn't feasible.
 
+        For simple function bodies with only statements (no control flow), this
+        performs order-independent comparison.
+
         Args:
             code1: First code snippet (Python)
             code2: Second code snippet (Python)
@@ -385,12 +388,71 @@ class EquivalenceChecker:
                 ast1 = self._normalize_ast(ast1)
                 ast2 = self._normalize_ast(ast2)
 
-            # Compare AST dumps (string representation)
+            # Check if both are simple function bodies (single function, only statements)
+            if self._is_simple_function_body(ast1) and self._is_simple_function_body(ast2):
+                # For simple function bodies, compare statements order-independently
+                return self._compare_simple_functions(ast1, ast2)
+
+            # Otherwise, compare AST dumps (string representation)
             return ast.dump(ast1) == ast.dump(ast2)
 
         except SyntaxError:
             # If either code has syntax errors, they're not equivalent
             return False
+
+    def _is_simple_function_body(self, tree: ast.AST) -> bool:
+        """
+        Check if AST is a simple function with only statements (no control flow).
+
+        Args:
+            tree: AST tree
+
+        Returns:
+            True if tree is a single function with only Expr statements
+        """
+        if not isinstance(tree, ast.Module) or len(tree.body) != 1:
+            return False
+
+        func = tree.body[0]
+        if not isinstance(func, ast.FunctionDef):
+            return False
+
+        # Check that all statements are simple expressions or passes
+        for stmt in func.body:
+            if not isinstance(stmt, (ast.Expr, ast.Pass)):
+                return False
+
+        return True
+
+    def _compare_simple_functions(self, ast1: ast.AST, ast2: ast.AST) -> bool:
+        """
+        Compare two simple functions order-independently.
+
+        Compares function signatures and statement bodies as sets.
+
+        Args:
+            ast1: First function AST
+            ast2: Second function AST
+
+        Returns:
+            True if functions have same signature and statements (order-independent)
+        """
+        func1 = ast1.body[0]
+        func2 = ast2.body[0]
+
+        # Compare function names
+        if func1.name != func2.name:
+            return False
+
+        # Compare arguments
+        if ast.dump(func1.args) != ast.dump(func2.args):
+            return False
+
+        # Compare statements as sets (order-independent)
+        stmts1 = {ast.dump(stmt) for stmt in func1.body}
+        stmts2 = {ast.dump(stmt) for stmt in func2.body}
+
+        return stmts1 == stmts2
 
     def _normalize_ast(self, tree: ast.AST) -> ast.AST:
         """

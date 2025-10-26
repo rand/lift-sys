@@ -882,4 +882,98 @@ describe('decorations', () => {
       expect(deco.type.attrs['data-confidence']).toBe('0.123456789');
     });
   });
+
+  describe('Plugin Integration', () => {
+    it('exports decorationsPluginKey for external use', async () => {
+      const { decorationsPluginKey } = await import('./decorations');
+      expect(decorationsPluginKey).toBeDefined();
+      expect(decorationsPluginKey.key).toContain('semanticDecorations');
+    });
+
+    it('createDecorationsPlugin returns a Plugin instance', async () => {
+      const { createDecorationsPlugin } = await import('./decorations');
+      const getAnalysis = () => null;
+      const plugin = createDecorationsPlugin(getAnalysis);
+
+      expect(plugin).toBeDefined();
+      expect(plugin.spec).toBeDefined();
+      expect(plugin.spec.key).toBeDefined();
+    });
+
+    it('plugin initializes with decorations from getAnalysis', async () => {
+      const { createDecorationsPlugin } = await import('./decorations');
+      const analysis = createTestAnalysis({
+        entities: [
+          { id: 'e1', type: 'PERSON', text: 'user', from: 1, to: 5, confidence: 0.9 },
+        ],
+      });
+      const getAnalysis = () => analysis;
+      const plugin = createDecorationsPlugin(getAnalysis);
+
+      expect(plugin.spec.state).toBeDefined();
+      expect(plugin.spec.state?.init).toBeDefined();
+    });
+
+    it('updateDecorations creates transaction with metadata', async () => {
+      const { updateDecorations } = await import('./decorations');
+
+      // Mock view with state and dispatch
+      const mockTr = {
+        setMeta: vi.fn().mockReturnThis(),
+      };
+      const mockView = {
+        state: {
+          tr: mockTr,
+        },
+        dispatch: vi.fn(),
+      };
+
+      updateDecorations(mockView);
+
+      expect(mockTr.setMeta).toHaveBeenCalledWith('updateDecorations', true);
+      expect(mockView.dispatch).toHaveBeenCalledWith(mockTr);
+    });
+  });
+
+  describe('Widget Click Handlers', () => {
+    it('hole widget dispatches selectHole event on click', () => {
+      const doc = createDoc('Test ???Hole');
+      const hole: TypedHole = {
+        id: 'hole-1',
+        identifier: 'Hole',
+        kind: 'signature',
+        typeHint: 'string',
+        description: 'Test hole',
+        status: 'unresolved',
+        confidence: 0.5,
+        evidence: [],
+        pos: 6,
+      };
+
+      const analysis = createTestAnalysis({ typedHoles: [hole] });
+      const decorations = buildDecorations(doc, analysis);
+
+      const decos = decorations.find();
+      const deco = decos[0] as any;
+
+      // Create the element
+      const element = deco.type.toDOM();
+
+      // Listen for the custom event
+      const eventPromise = new Promise<CustomEvent>((resolve) => {
+        document.addEventListener('selectHole', (e) => {
+          resolve(e as CustomEvent);
+        }, { once: true });
+      });
+
+      // Simulate click
+      element.click();
+
+      // Verify event was dispatched
+      return eventPromise.then((event) => {
+        expect(event.detail).toBeDefined();
+        expect(event.detail.holeId).toBe('hole-1');
+      });
+    });
+  });
 });

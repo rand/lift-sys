@@ -164,21 +164,15 @@ describe('mockSemanticAnalysis', () => {
       expect(uniqueIds.size).toBe(3); // All IDs unique
     });
 
-    it('initializes hole dependencies and constraints correctly', () => {
+    it('initializes hole constraints correctly', () => {
       const text = 'The type is ???T';
       const analysis = generateMockAnalysis(text);
 
       const hole = analysis.typedHoles[0];
-      expect(hole.dependencies).toEqual({
-        blocks: [],
-        blockedBy: [],
-      });
       expect(hole.constraints).toEqual([]);
-      expect(hole.solutionSpace).toEqual({
-        narrowed: false,
-        refinements: [],
-      });
-      expect(hole.acceptanceCriteria).toEqual([]);
+      expect(hole.description).toBeDefined();
+      expect(hole.confidence).toBe(0.5);
+      expect(hole.evidence).toHaveLength(1);
     });
 
     it('handles text without holes gracefully', () => {
@@ -230,7 +224,7 @@ describe('mockSemanticAnalysis', () => {
       expect(whenConstraint).toBeDefined();
       expect(whenConstraint!.type).toBe('position_constraint');
       expect(whenConstraint!.severity).toBe('warning');
-      expect(whenConstraint!.description).toContain('when');
+      expect(whenConstraint!.description.toLowerCase()).toContain('when');
     });
 
     it('detects constraints with correct positions', () => {

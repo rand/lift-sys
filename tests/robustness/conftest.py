@@ -128,8 +128,8 @@ def load_test_irs(test_fixtures_dir):
         if irs_file.exists():
             with open(irs_file) as f:
                 data = json.load(f)
-                # Convert JSON to IR objects
-                return [IntermediateRepresentation(**ir_data) for ir_data in data]
+                # Convert JSON to IR objects using from_dict to properly deserialize nested objects
+                return [IntermediateRepresentation.from_dict(ir_data) for ir_data in data]
         return []
 
     return _load

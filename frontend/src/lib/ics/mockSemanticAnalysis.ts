@@ -70,24 +70,21 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
   let holeMatch;
   while ((holeMatch = holePattern.exec(text)) !== null) {
     const identifier = holeMatch[1] || `hole-${typedHoles.length + 1}`;
+    const holeId = `hole-${typedHoles.length}`;
     typedHoles.push({
-      id: `hole-${typedHoles.length}`,
+      id: holeId,
       identifier,
       kind: 'implementation',
       status: 'unresolved',
       typeHint: 'unknown',
+      description: `Typed hole at position ${holeMatch.index}`,
+      confidence: 0.5,
+      evidence: [`Pattern match: ${holeMatch[0]}`],
       pos: holeMatch.index,
-      dependencies: {
-        blocks: [],
-        blockedBy: [],
-      },
       constraints: [],
-      solutionSpace: {
-        narrowed: false,
-        refinements: [],
-      },
-      acceptanceCriteria: [],
     });
+    // Add confidence score for typed hole
+    confidenceScores[holeId] = 0.5;
   }
 
   // Find ambiguities (or/and patterns, uncertain phrasing)
@@ -97,6 +94,7 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
     if (Math.random() > 0.7) { // Only mark some as ambiguous
       ambiguities.push({
         id: `ambiguity-${ambiguities.length}`,
+        text: ambMatch[0],
         reason: 'Potential ambiguity detected',
         from: ambMatch.index,
         to: ambMatch.index + ambMatch[0].length,
@@ -111,13 +109,13 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
   while ((constMatch = constraintPattern.exec(text)) !== null) {
     constraints.push({
       id: `constraint-${constraints.length}`,
-      type: 'temporal',
-      severity: 'medium',
-      description: 'Temporal constraint detected',
+      type: 'position_constraint',
+      severity: 'warning',
+      description: `Temporal constraint: ${constMatch[0]}`,
       appliesTo: [],
-      expression: constMatch[0],
-      from: constMatch.index,
-      to: constMatch.index + constMatch[0].length,
+      source: 'text_analysis',
+      impact: 'Execution order dependency',
+      locked: false,
     });
   }
 
@@ -128,11 +126,11 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
     if (Math.random() > 0.8) { // Rarely mark as contradictions
       contradictions.push({
         id: `contradiction-${contradictions.length}`,
+        text: contraMatch[0],
         conflicts: ['Statement A', 'Statement B'],
         from: contraMatch.index,
         to: contraMatch.index + contraMatch[0].length,
-        severity: 'high',
-        resolution: null,
+        severity: 'warning',
       });
     }
   }

@@ -7,6 +7,8 @@ and returns.
 Part of H20 (CausalGraphBuilder) implementation.
 """
 
+from __future__ import annotations
+
 import ast
 
 from .node_extractor import CausalNode, NodeType

@@ -52,7 +52,8 @@ import modal
 
 # Option 1: Use custom base image (P2 optimization - fastest builds)
 # Custom base pre-built with CUDA deps (20-30s builds instead of 87s)
-USE_CUSTOM_BASE = True  # Base image built on 2025-10-22
+# NOTE: Disabled - custom base import requires lift_sys package at build time
+USE_CUSTOM_BASE = False  # Using standard build (87s) until base image fixed
 
 # Create Modal app
 app = modal.App("lift-sys-inference")

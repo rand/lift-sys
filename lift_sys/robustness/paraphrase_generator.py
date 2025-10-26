@@ -584,9 +584,10 @@ class ParaphraseGenerator:
         """
         from sklearn.metrics.pairwise import cosine_similarity
 
-        # Reject multi-word synonyms that contain the original word
-        # Example: "numbers" → "Book of Numbers" (wrong sense!)
-        if " " in synonym and original_word.lower() in synonym.lower():
+        # Reject ALL multi-word synonyms (phrasal verbs, compound nouns, etc.)
+        # They often create grammatical errors when substituted
+        # Examples: "calculates" → "work out", "numbers" → "Book of Numbers"
+        if " " in synonym:
             return False
 
         # Create variant with synonym

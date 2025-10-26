@@ -18,15 +18,17 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ConstraintPropagationView } from './ConstraintPropagationView';
 
 export function HoleInspector() {
-  const { selectedHole, holes } = useICSStore();
+  const { selectedHole, holes, constraintPropagationHistory } = useICSStore();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     dependencies: true,
     constraints: true,
     solutionSpace: false,
     criteria: false,
     refinements: false,
+    propagation: true,
   });
 
   const hole = selectedHole ? holes.get(selectedHole) : null;
@@ -277,6 +279,44 @@ export function HoleInspector() {
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground">No suggestions available</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Constraint Propagation History */}
+          <div className="space-y-2">
+            <button
+              onClick={() => toggleSection('propagation')}
+              className="flex items-center gap-1 text-sm font-semibold hover:text-primary transition-colors"
+            >
+              {expandedSections.propagation ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              Propagation History (
+              {constraintPropagationHistory.filter(
+                (e) => e.sourceHole === selectedHole || e.targetHole === selectedHole
+              ).length}
+              )
+            </button>
+            {expandedSections.propagation && (
+              <div className="pl-5 space-y-2">
+                {constraintPropagationHistory.filter(
+                  (e) => e.sourceHole === selectedHole || e.targetHole === selectedHole
+                ).length > 0 ? (
+                  constraintPropagationHistory
+                    .filter((e) => e.sourceHole === selectedHole || e.targetHole === selectedHole)
+                    .slice(-3)
+                    .reverse()
+                    .map((event) => (
+                      <ConstraintPropagationView key={event.id} event={event} />
+                    ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No propagation events for this hole yet
+                  </p>
                 )}
               </div>
             )}

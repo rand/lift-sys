@@ -1,5 +1,85 @@
 # Release Notes
 
+## Version 0.3.0 - ICS Phase 1 & Backend Integration (2025-10-26)
+
+**Major Feature Release:** Integrated Context Studio (ICS) Phase 1 complete with real backend NLP integration.
+
+### 🎯 Highlights
+
+- **ICS Phase 1 MVP**: Complete interactive specification editor with 22/22 E2E tests passing
+- **Real Backend NLP**: spaCy + HuggingFace BERT integration for semantic analysis
+- **Constraint Propagation**: Phase 2.1 visualization of constraint propagation between typed holes
+- **Backend Integration Tests**: Comprehensive E2E test suite verifying real NLP pipeline
+- **Production-Ready UI**: shadcn/ui-based interface with accessibility and responsive design
+
+### 📊 By the Numbers
+
+- **22 E2E tests passing** (Phase 1)
+- **16 backend integration E2E tests** (real NLP pipeline)
+- **Real NER**: spaCy + HuggingFace for PERSON, ORG, GPE entity detection
+- **90.11 KB gzipped** bundle for ICS view
+- **211 lines** of constraint propagation visualization
+
+### ✨ New Features
+
+#### ICS Phase 1: Core Editor
+- **SemanticEditor**: ProseMirror-based editor with real-time semantic analysis
+- **Entity Highlighting**: Visual highlights for entities, modals, constraints, holes
+- **Tooltips**: Confidence scores and metadata on hover
+- **Autocomplete**: Context-aware suggestions for technical terms
+- **Typed Holes**: Visual widgets for unresolved specifications
+- **Multi-panel Layout**: File explorer, symbols panel, inspector, chat
+
+#### Backend NLP Pipeline
+- **spaCy Integration**: Fast, accurate entity recognition (en_core_web_sm)
+- **HuggingFace NER**: Advanced entity detection (dslim/bert-large-NER)
+- **Modal Operator Detection**: Necessity, certainty, possibility, prohibition
+- **Constraint Detection**: Temporal and conditional constraint extraction
+- **Relationship Extraction**: Dependency parsing for causal/temporal relationships
+
+#### Phase 2.1: Constraint Propagation
+- **ConstraintPropagationView**: Visual representation of constraint flow
+- **Solution Space Narrowing**: Before/after metrics with reduction percentage
+- **Propagation History**: Timeline of all constraint propagations
+- **Inspector Integration**: Filtered events by selected hole
+
+### 🔧 Technical Improvements
+
+**Frontend**:
+- TypeScript strict mode throughout
+- Zustand state management with Immer
+- ProseMirror decorations for semantic highlights
+- Playwright E2E testing with authentication
+- Real-time analysis with 500ms debounce
+
+**Backend**:
+- FastAPI endpoints (/ics/analyze, /ics/health)
+- CORS configuration for Vite dev server
+- Lazy model loading for fast startup
+- Type-compatible constraint structure
+- Graceful fallback to mock when backend unavailable
+
+**Testing**:
+- Comprehensive E2E coverage (38 total tests)
+- Backend integration verification
+- Real vs mock analysis testing
+- Performance benchmarks (<5s analysis time)
+
+### 📝 Documentation
+
+- [ICS Phase 2 Implementation Plan](docs/ics/ICS_PHASE2_NEXT_PLAN.md)
+- [ICS Interface Specification](docs/ics/ICS_INTERFACE_SPECIFICATION.md)
+- [Planning Documents](docs/planning/)
+- [Backend Integration Summary](/tmp/backend_integration_summary.txt)
+
+### 🚀 What's Next
+
+**Phase 2.2**: Solution Space Narrowing visualization
+**Phase 2.3**: AI Chat Assistant with /refine and /analyze commands
+**Phase 2.4**: Enhanced backend (relationships, effects, assertions)
+
+---
+
 ## Version 0.2.0 - Iterative Prompt-to-IR Refinement (2025-10-11)
 
 **Major Feature Release:** Complete session management system for iterative specification refinement across all interfaces.

@@ -17,15 +17,17 @@ Two complementary modes:
 
 Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
-## 📊 Current Status (Updated October 25, 2025)
+## 📊 Current Status (Updated October 26, 2025)
 
-**📌 For detailed status, see [CURRENT_STATE.md](CURRENT_STATE.md) and [docs/issues/BACKEND_STATUS.md](docs/issues/BACKEND_STATUS.md)**
+**📌 For detailed project status, see [docs/issues/BACKEND_STATUS.md](docs/issues/BACKEND_STATUS.md) and [docs/planning/](docs/planning/)**
 
 **Active Work**:
-- 🎯 **ICS (Integrated Context Studio)** - Primary user interface in development
+- 🎯 **ICS (Integrated Context Studio)** - Primary user interface (Phase 2 in progress)
   - Interactive specification editor with real-time semantic analysis
-  - Phase 4 complete (32 Beads issues created), Phase 1 implementation starting
-  - Timeline: 8-10 days for MVP (22/22 E2E tests passing)
+  - ✅ **Phase 1 Complete**: 22/22 E2E tests passing, core editor functional
+  - ✅ **Backend Integration**: Real NLP pipeline (spaCy + HuggingFace) integrated
+  - 🚧 **Phase 2.1 In Progress**: Constraint propagation visualization (functional, needs E2E tests)
+  - **Next**: Phase 2.2 (Solution Space Narrowing), 2.3 (AI Chat Assistant)
 
 **Forward Mode Pipeline**: **PARTIALLY WORKING** ⚠️
 - ✅ **Compilation**: 100% success (generated code is syntactically valid)

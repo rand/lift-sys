@@ -143,15 +143,8 @@ function HoleTooltip({ hole }: { hole: TypedHole }) {
         {hole.typeHint && hole.typeHint !== 'unknown' && (
           <div className="tooltip-hint">Type: {hole.typeHint}</div>
         )}
-        {hole.dependencies.blocks.length > 0 && (
-          <div className="tooltip-hint">
-            Blocks: {hole.dependencies.blocks.length} holes
-          </div>
-        )}
-        {hole.dependencies.blockedBy.length > 0 && (
-          <div className="tooltip-hint">
-            Blocked by: {hole.dependencies.blockedBy.length} holes
-          </div>
+        {hole.description && (
+          <div className="tooltip-hint">{hole.description}</div>
         )}
       </div>
     </div>

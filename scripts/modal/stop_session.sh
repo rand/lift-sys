@@ -26,7 +26,7 @@ echo ""
 echo "Stopping apps..."
 
 # Get all deployed/active app IDs
-DEPLOYED_APPS=$(modal app list --json 2>/dev/null | jq -r '.[] | select(.state == "deployed") | .app_id' 2>/dev/null || echo "")
+DEPLOYED_APPS=$(modal app list --json 2>/dev/null | jq -r '.[] | select(.State == "deployed") | .["App ID"]' 2>/dev/null || echo "")
 
 STOPPED=0
 if [ -z "$DEPLOYED_APPS" ]; then

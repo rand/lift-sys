@@ -123,8 +123,10 @@ def test_validation_integration():
     y_true = np.array([1, 2, 3, 4, 5])
     y_pred = np.array([1.1, 2.0, 2.9, 4.1, 5.0])
 
-    r2 = calculate_r_squared(y_true, y_pred)
+    r2, ss_res, ss_tot = calculate_r_squared(y_true, y_pred)
     assert 0.9 <= r2 <= 1.0  # Very good fit
+    assert ss_res >= 0  # Residuals should be non-negative
+    assert ss_tot > 0  # Total variation should be positive
 
     # Test train/test split
     traces = pd.DataFrame({"x": range(100), "y": range(100, 200)})
@@ -186,7 +188,7 @@ def test_week2_acceptance_criteria():
 
     from lift_sys.causal.validation import calculate_r_squared
 
-    r2 = calculate_r_squared(
+    r2, _, _ = calculate_r_squared(
         np.array([1, 2, 3, 4, 5]),
         np.array([1, 2, 3, 4, 5]),  # Perfect fit
     )

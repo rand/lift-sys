@@ -61,11 +61,13 @@ class TestIRVariantRobustness:
         if not variants:
             pytest.skip("No valid effect orderings generated")
 
-        # Mock code generation
+        # Mock code generation (wrap descriptions as strings for valid Python)
         def generate_code(ir):
-            effects_str = (
-                "\\n    ".join(e.description for e in ir.effects) if ir.effects else "pass"
-            )
+            if ir.effects:
+                # Wrap each effect description as a string literal (docstring-like)
+                effects_str = "\\n    ".join(f'"{e.description}"' for e in ir.effects)
+            else:
+                effects_str = "pass"
             return f"def {ir.signature.name}():\\n    {effects_str}"
 
         # Measure sensitivity

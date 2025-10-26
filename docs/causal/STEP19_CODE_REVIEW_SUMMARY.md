@@ -70,10 +70,10 @@ Comprehensive code review of the causal analysis implementation covering STEP-02
 
 ### ⚠️ Areas for Future Improvement
 
-1. **Type Safety (Minor)**
-   - Some mypy errors in AST attribute access
-   - Optional[int] passed where int expected in controlflow_extractor
-   - Not blocking for P1, but should address in P2
+1. **Type Safety** ✅ **FIXED**
+   - ~~Some mypy errors in AST attribute access~~ - Fixed with proper type narrowing
+   - ~~Optional[int] passed where int expected in controlflow_extractor~~ - Fixed
+   - All mypy errors in causal module resolved (commit: 4389277)
 
 2. **Parameter Tracking (Documented Limitation)**
    - Function parameters not tracked as causal nodes
@@ -125,10 +125,11 @@ Comprehensive code review of the causal analysis implementation covering STEP-02
 
 ### MyPy
 ```bash
-⚠️ 17 type errors (non-blocking)
-   - AST node attribute access (expected)
-   - Optional[int] vs int in _get_nodes_in_range
-   - Recommend: Add --check-untyped-defs for full coverage
+✅ All type errors fixed (causal module only)
+   - 0 errors in lift_sys/causal/
+   - Proper type narrowing for AST attributes
+   - Optional types handled correctly
+   - Note: Remaining errors only in lift_sys/ir/ (outside causal module)
 ```
 
 ## Documentation
@@ -158,7 +159,7 @@ Comprehensive code review of the causal analysis implementation covering STEP-02
 ## Recommendations for P2
 
 ### High Priority
-1. Fix mypy type errors (2-3 hours)
+1. ~~Fix mypy type errors~~ ✅ COMPLETE (commit: 4389277)
 2. Add parameter node extraction (4-6 hours)
 3. Improve cycle detection and handling (4-6 hours)
 
@@ -190,7 +191,7 @@ Comprehensive code review of the causal analysis implementation covering STEP-02
 1. Parameters not tracked as causal nodes
 2. ~14% failure rate on real code (mostly cycles)
 3. Intra-function analysis only (no interprocedural)
-4. Some minor type errors (non-blocking)
+4. ~~Some minor type errors~~ ✅ Fixed (commit: 4389277)
 
 ### Next Steps
 1. Close STEP-19 issue

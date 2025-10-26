@@ -17,6 +17,7 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
   const ambiguities = [];
   const contradictions = [];
   const typedHoles = [];
+  const confidenceScores: Record<string, number> = {};
 
   // Simple pattern matching for demo purposes
   // In production, this would be replaced by NLP pipeline (spaCy + HuggingFace)
@@ -135,10 +136,8 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
     }
   }
 
-  // Generate confidence scores
-  const confidenceScores: Record<string, number> = {};
+  // Generate confidence scores for entities (holes already added inline)
   entities.forEach(e => confidenceScores[e.id] = e.confidence);
-  typedHoles.forEach(h => confidenceScores[h.id] = 0.5);
 
   return {
     entities,

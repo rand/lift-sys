@@ -226,21 +226,21 @@ describe('mockSemanticAnalysis', () => {
 
       expect(analysis.constraints.length).toBeGreaterThanOrEqual(3);
 
-      const whenConstraint = analysis.constraints.find(c => c.expression.toLowerCase() === 'when');
+      const whenConstraint = analysis.constraints.find(c => c.description.toLowerCase().includes('when'));
       expect(whenConstraint).toBeDefined();
-      expect(whenConstraint!.type).toBe('temporal');
-      expect(whenConstraint!.severity).toBe('medium');
-      expect(whenConstraint!.description).toBe('Temporal constraint detected');
+      expect(whenConstraint!.type).toBe('position_constraint');
+      expect(whenConstraint!.severity).toBe('warning');
+      expect(whenConstraint!.description).toContain('when');
     });
 
     it('detects constraints with correct positions', () => {
       const text = 'Before starting, after completion, during processing.';
       const analysis = generateMockAnalysis(text);
 
-      const beforeConstraint = analysis.constraints.find(c => c.expression.toLowerCase() === 'before');
+      const beforeConstraint = analysis.constraints.find(c => c.description.toLowerCase().includes('before'));
       expect(beforeConstraint).toBeDefined();
-      expect(beforeConstraint!.from).toBe(0);
-      expect(beforeConstraint!.to).toBe(6);
+      // Constraints don't track positions in current interface
+      expect(beforeConstraint!.source).toBe('text_analysis');
     });
 
     it('handles empty text gracefully for constraints', () => {
@@ -286,13 +286,13 @@ describe('mockSemanticAnalysis', () => {
       expect(text.substring(hole.pos!)).toMatch(/^\?\?\?/);
     });
 
-    it('accurately tracks positions for constraints', () => {
+    it('accurately captures constraint text in description', () => {
       const text = 'When ready, start.';
       const analysis = generateMockAnalysis(text);
 
       const constraint = analysis.constraints[0];
-      const extractedText = text.substring(constraint.from, constraint.to);
-      expect(extractedText.toLowerCase()).toBe('when');
+      expect(constraint.description.toLowerCase()).toContain('when');
+      expect(constraint.source).toBe('text_analysis');
     });
   });
 

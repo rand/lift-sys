@@ -372,3 +372,21 @@ export interface PanelVisibility {
   chat: boolean;
   terminal: boolean;
 }
+
+/**
+ * Constraint propagation event
+ * Tracks when constraints propagate from one hole to another
+ */
+export interface ConstraintPropagationEvent {
+  id: string;
+  timestamp: number;
+  sourceHole: string;  // Hole that was resolved
+  targetHole: string;  // Hole that receives constraints
+  addedConstraints: Constraint[];
+  solutionSpaceReduction: {
+    before: number;
+    after: number;
+    percentage: number;
+  };
+  status: 'pending' | 'completed' | 'failed';
+}

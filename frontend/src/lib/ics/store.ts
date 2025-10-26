@@ -13,6 +13,7 @@ import type {
   Constraint,
   LayoutConfig,
   PanelVisibility,
+  ConstraintPropagationEvent,
 } from '@/types/ics/semantic';
 
 // Enable Map and Set support in Immer
@@ -31,6 +32,9 @@ interface ICSStore {
   holes: Map<string, HoleDetails>;
   constraints: Map<string, Constraint>;
   selectedHole: string | null;
+
+  // Constraint propagation tracking
+  constraintPropagationHistory: ConstraintPropagationEvent[];
 
   // Relationship selection
   selectedRelationship: string | null;
@@ -51,6 +55,7 @@ interface ICSStore {
   setLayout: (layout: Partial<LayoutConfig>) => void;
   setPanelVisibility: (panel: keyof PanelVisibility, visible: boolean) => void;
   setActiveTab: (tab: 'natural-language' | 'ir' | 'code' | 'split') => void;
+  clearPropagationHistory: () => void;
 
   // Computed getters
   unresolvedHoles: () => HoleDetails[];
@@ -89,6 +94,7 @@ export const useICSStore = create<ICSStore>()(
         holes: new Map(),
         constraints: new Map(),
         selectedHole: null,
+        constraintPropagationHistory: [],
         selectedRelationship: null,
         layout: defaultLayout,
         panelVisibility: defaultPanelVisibility,
@@ -191,14 +197,42 @@ export const useICSStore = create<ICSStore>()(
             return;
           }
 
+          // Helper: Estimate solution space size based on constraints
+          const estimateSolutionSpace = (constraints: string[]): number => {
+            let baseSpace = 1000; // Initial solution space size
+
+            constraints.forEach((constraintId) => {
+              const constraint = get().constraints.get(constraintId);
+              if (!constraint) return;
+
+              // Reduce solution space based on constraint type
+              switch (constraint.type) {
+                case 'return_constraint':
+                  baseSpace *= 0.6; // 40% reduction
+                  break;
+                case 'loop_constraint':
+                  baseSpace *= 0.7; // 30% reduction
+                  break;
+                case 'position_constraint':
+                  baseSpace *= 0.8; // 20% reduction
+                  break;
+              }
+            });
+
+            return Math.max(1, Math.floor(baseSpace));
+          };
+
           set((state) => {
             for (const propagation of hole.propagatesTo) {
               const targetHole = state.holes.get(propagation.targetId);
               if (targetHole) {
-                // Add constraint
+                // Calculate solution space before adding constraint
+                const beforeSize = estimateSolutionSpace(targetHole.constraints || []);
+
+                // Create new constraint
                 const newConstraint: Constraint = {
                   id: `constraint-${Date.now()}-${Math.random()}`,
-                  type: 'return_constraint',  // TODO: Determine from propagation
+                  type: 'return_constraint',
                   description: propagation.constraint,
                   severity: 'error',
                   appliesTo: [propagation.targetId],
@@ -215,7 +249,37 @@ export const useICSStore = create<ICSStore>()(
                 }
                 targetHole.constraints.push(newConstraint.id);
 
-                // TODO: Recalculate solution space
+                // Calculate solution space after adding constraint
+                const afterSize = estimateSolutionSpace(targetHole.constraints);
+                const reductionPercentage = Math.floor(
+                  ((beforeSize - afterSize) / beforeSize) * 100
+                );
+
+                // Update solution space on hole
+                targetHole.solutionSpace = {
+                  before: `~${beforeSize} options`,
+                  after: `~${afterSize} options`,
+                  reduction: reductionPercentage,
+                  remainingOptions: [], // TODO: Generate actual options
+                };
+
+                // Create propagation event
+                const event: ConstraintPropagationEvent = {
+                  id: `propagation-${Date.now()}-${Math.random()}`,
+                  timestamp: Date.now(),
+                  sourceHole: holeId,
+                  targetHole: propagation.targetId,
+                  addedConstraints: [newConstraint],
+                  solutionSpaceReduction: {
+                    before: beforeSize,
+                    after: afterSize,
+                    percentage: reductionPercentage,
+                  },
+                  status: 'completed',
+                };
+
+                // Add to history
+                state.constraintPropagationHistory.push(event);
               }
             }
           });
@@ -234,6 +298,11 @@ export const useICSStore = create<ICSStore>()(
         setActiveTab: (tab) =>
           set((state) => {
             state.activeTab = tab;
+          }),
+
+        clearPropagationHistory: () =>
+          set((state) => {
+            state.constraintPropagationHistory = [];
           }),
 
         // Computed getters

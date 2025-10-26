@@ -12,6 +12,7 @@ rather than fixing them with pattern matching after generation.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -102,6 +103,14 @@ class Constraint:
     2. Work for any code structure (not specific AST patterns)
     3. Scale maintainably (one constraint per bug type)
     4. Guide LLM generation with clear requirements
+
+    Phase 2 Enhancement: Added fields to align with frontend ICS representation:
+    - id: Unique identifier for constraint tracking
+    - applies_to: List of hole IDs this constraint applies to
+    - source: Origin of the constraint (NLP extraction, user input, etc.)
+    - impact: Description of what happens if constraint is violated
+    - locked: Whether this represents a locked-in design decision
+    - metadata: Additional context and information
     """
 
     type: ConstraintType
@@ -113,12 +122,37 @@ class Constraint:
     severity: ConstraintSeverity = ConstraintSeverity.ERROR
     """Severity of constraint violation (error blocks generation, warning logs)"""
 
+    # Phase 2: ICS alignment fields
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """Unique identifier for this constraint (auto-generated if not provided)"""
+
+    applies_to: list[str] = field(default_factory=list)
+    """List of hole IDs this constraint applies to (empty = applies globally)"""
+
+    source: str = ""
+    """Where this constraint came from (e.g., 'nlp_extraction', 'user_input', 'inference')"""
+
+    impact: str = ""
+    """Description of impact if constraint is violated"""
+
+    locked: bool = False
+    """Whether this constraint represents a locked-in design decision"""
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+    """Additional metadata about this constraint"""
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize constraint to dictionary."""
         return {
             "type": self.type.value,
             "description": self.description,
             "severity": self.severity.value,
+            "id": self.id,
+            "appliesTo": self.applies_to,  # Frontend uses camelCase
+            "source": self.source,
+            "impact": self.impact,
+            "locked": self.locked,
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -135,10 +169,17 @@ class Constraint:
             return PositionConstraint.from_dict(data)
         else:
             # Fallback to base class
+            # Handle both camelCase (frontend) and snake_case (backend) keys
             return cls(
                 type=constraint_type,
-                description=data["description"],
+                description=data.get("description", ""),
                 severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+                id=data.get("id", str(uuid.uuid4())),
+                applies_to=data.get("appliesTo", data.get("applies_to", [])),
+                source=data.get("source", ""),
+                impact=data.get("impact", ""),
+                locked=data.get("locked", False),
+                metadata=data.get("metadata", {}),
             )
 
 
@@ -193,6 +234,13 @@ class ReturnConstraint(Constraint):
             ),
             description=data.get("description", ""),
             severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+            # Phase 2 fields
+            id=data.get("id", str(uuid.uuid4())),
+            applies_to=data.get("appliesTo", data.get("applies_to", [])),
+            source=data.get("source", ""),
+            impact=data.get("impact", ""),
+            locked=data.get("locked", False),
+            metadata=data.get("metadata", {}),
         )
 
 

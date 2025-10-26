@@ -13,7 +13,7 @@ import { history, undo, redo } from 'prosemirror-history';
 import { baseKeymap } from 'prosemirror-commands';
 import { specSchema } from '@/lib/ics/schema';
 import { useICSStore } from '@/lib/ics/store';
-import { createDecorationsPlugin, updateDecorations } from '@/lib/ics/decorations';
+import { createDecorationsPlugin } from '@/lib/ics/decorations';
 import {
   createAutocompletePlugin,
   insertAutocompleteItem,
@@ -310,8 +310,11 @@ export function SemanticEditor({
     // Update the ref so the plugin can access the latest analysis
     semanticAnalysisRef.current = semanticAnalysis;
 
-    if (viewRef.current && semanticAnalysis) {
-      updateDecorations(viewRef.current);
+    // Dispatch transaction with semanticAnalysis metadata
+    if (viewRef.current) {
+      const tr = viewRef.current.state.tr;
+      tr.setMeta('semanticAnalysis', semanticAnalysis);
+      viewRef.current.dispatch(tr);
     }
   }, [semanticAnalysis]);
 

@@ -17,50 +17,43 @@ Two complementary modes:
 
 Together, these modes let teams move fluidly between building new systems and responsibly evolving the ones they already depend on.
 
-## ✅ Current Status (Updated October 19, 2025)
+## 📊 Current Status (Updated October 25, 2025)
 
-**Forward Mode**: **PRODUCTION READY** 🎉
-- ✅ Natural language → Formal IR specification (10.8s median latency)
-- ✅ Formal IR → Executable Python code (4.3s median latency)
-- ✅ Generated code compiles (80% success) and executes correctly (60% success)
-- ✅ **Total E2E latency: ~16 seconds median** (validated with execution testing)
-- ✅ Return statement bug fixed (improved from ~30% to 60% real success)
-- ✅ Best-of-N sampling for improved IR quality
-- ⚠️  Known issue: Control flow (if/else) may have indentation bugs (~20% failure rate)
+**📌 For detailed status, see [CURRENT_STATE.md](CURRENT_STATE.md) and [docs/issues/BACKEND_STATUS.md](docs/issues/BACKEND_STATUS.md)**
 
-**Infrastructure**: **FULLY OPERATIONAL** ✨
-- ✅ Modal.com deployment (L40S GPU, vLLM + XGrammar + Qwen2.5-Coder-7B)
-- ✅ Supabase database with full session storage (PostgreSQL + RLS + Auth)
-- ✅ Session management with revision tracking and hole resolution
-- ✅ Multi-provider support (Anthropic, OpenAI, Google, Modal)
-- ✅ OAuth system with encrypted tokens
-- ✅ Honeycomb observability integration planned
+**Active Work**:
+- 🎯 **ICS (Integrated Context Studio)** - Primary user interface in development
+  - Interactive specification editor with real-time semantic analysis
+  - Phase 4 complete (32 Beads issues created), Phase 1 implementation starting
+  - Timeline: 8-10 days for MVP (22/22 E2E tests passing)
 
-**Database & Storage**:
-- ✅ Supabase integration complete (setup, migrations, RLS policies)
-- ✅ SupabaseSessionStore implementation with full CRUD operations
-- ✅ Session revision tracking and draft management
-- ✅ Typed hole resolution storage
-- ✅ Row-Level Security for multi-user isolation
+**Forward Mode Pipeline**: **PARTIALLY WORKING** ⚠️
+- ✅ **Compilation**: 100% success (generated code is syntactically valid)
+- ✅ **Execution**: 80% success (8/10 tests pass)
+- ❌ **Known Failures**: 3 persistent issues (find_index, get_type_name, is_valid_email)
+- ⚠️ **XGrammar Status**: Unclear if fully functional (llguidance migration in progress)
+- ⚠️ **132 Known Gaps**: Backend issues labeled `backend-gap` (features incomplete or broken)
+- ✅ **Working Components**: AST Repair (Phase 4), Assertion Checking (Phase 5), Constraints (Phase 7, 97.8% tests passing)
 
-**Performance** (Modal - L40S GPU):
-- ✅ 80% compilation success, 60% execution success
-- ✅ 75% execution success among compiled code
-- ✅ 16s median E2E latency (10.8s IR gen + 4.3s code gen)
-- ✅ $0.0029 per request (cost-effective)
-- ✅ Parallel benchmark execution with per-test isolation
+**Infrastructure**: **MIXED STATUS**
+- ✅ **Modal.com**: Operational (LLM inference, some latency issues)
+- ⏸️ **Supabase**: Schema designed, deployment pending (lift-sys-71 in progress)
+- ⏸️ **Honeycomb**: Observability planned, not started
 
-**Reverse Mode**: **INFRASTRUCTURE COMPLETE**
-- ✅ Whole-project analysis (100+ files)
-- ✅ Static analysis (AST parsing, type extraction)
-- ✅ Security analysis (CodeQL integration)
-- ⚠️  End-to-end reverse mode quality validation in progress
+**Queued Enhancements** (Researched, Not Implemented):
+- ⏸️ **DSPy Architecture** (H1-H19): Systematic LLM orchestration, queued post-ICS
+- ⏸️ **ACE Enhancement** (3 issues): Advanced code evolution, researched
+- ⏸️ **MUSLR Enhancement** (4 issues): Multi-stage reasoning, researched
 
-**What's Next**:
-- Honeycomb observability integration (planned)
-- Conjecturing feature implementation (in progress)
-- Performance optimization and scaling
-- Enhanced IR validation and constraint propagation
+**Reverse Mode**: **PLANNING PHASE** 🚧
+- Infrastructure planning in progress
+- Not yet implemented
+
+**Current Priorities**:
+1. ICS Phase 1 implementation (ACTIVE)
+2. Backend stabilization (fix 3 persistent failures, investigate XGrammar)
+3. Infrastructure deployment (Supabase, Honeycomb)
+4. Backend gap closure (systematic)
 
 See [`docs/IR_SPECIFICATION.md`](docs/IR_SPECIFICATION.md) for the complete IR design specification (PRD + RFC + Reference Spec).
 

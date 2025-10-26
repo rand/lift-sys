@@ -23,3 +23,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 playwright/.auth/
+
+# Frontend build artifacts
+frontend/dist/
+
+# Beads SQLite temp files
+.beads/*.db-shm
+.beads/*.db-wal

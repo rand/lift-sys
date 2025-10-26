@@ -1,72 +1,169 @@
 # Known Issues and Future Work
 
-**Last Updated**: 2025-10-18
-**Status**: Active tracking document for deferred issues and optimizations
+**Last Updated**: 2025-10-25
+**Status**: Active tracking document for blockers, bugs, and optimization opportunities
+
+**📌 For comprehensive status, see [CURRENT_STATE.md](CURRENT_STATE.md) and [docs/issues/BACKEND_STATUS.md](docs/issues/BACKEND_STATUS.md)**
 
 ---
 
-## Active Issues
+## Critical Issues (Blocking Progress)
 
-### 1. fibonacci Regression in Phase 3.2 (+23.8% latency)
+### 1. ICS Blocker: H2 - DecorationApplication Bug (lift-sys-310)
 
-**Discovered**: October 18, 2025 (Phase 3.2 testing)
-**Severity**: Low (isolated to single test)
-**Status**: Monitoring
+**Discovered**: 2025-10-25 (ICS Phase 4 planning)
+**Severity**: **P1 CRITICAL** (blocks ICS Phase 1)
+**Status**: Identified, fix pending
 
 **Details**:
-- fibonacci latency increased from 100.80s (Phase 3.1) to 124.81s (Phase 3.2)
-- Regression: +23.8% (+23.9s)
-- Constraint filtering removed 1 constraint, but generation took longer
+- Decorations not applying correctly in ProseMirror editor
+- Blocks STEP-03 in ICS execution plan (6-hour fix estimated, HIGH RISK)
+- Blocks 9 dependent steps in ICS implementation
 
-**Evidence**:
-```
-Phase 3.1: ✓ Success: 91432.24ms (no filtering)
-Phase 3.2: 🔧 Filtered constraints: 1 → 0 (1 non-applicable)
-           ✓ Success: 115315.39ms
-```
+**Impact**:
+- ICS Phase 1 cannot proceed until fixed
+- Real-time semantic analysis display broken
+- User experience degraded
 
-**Hypotheses**:
-1. Statistical variance in LLM generation (fibonacci is complex, recursive logic)
-2. Filtered constraint may have been helpful for guiding code structure
-3. Single-sample benchmark noise (no warmup specifically for fibonacci)
-
-**Investigation Plan** (deferred):
-1. Run fibonacci-only benchmark 10 times with Phase 3.2 filtering
-2. Calculate mean and variance vs Phase 3.1 baseline
-3. Inspect generated code quality (AST repairs needed?)
-4. Check if constraint description had beneficial guidance
-5. Consider fibonacci-specific constraint tuning if regression persists
-
-**Priority**: P2 (monitor in future benchmarks)
-**Tracking**: See PHASE3_2_RESULTS.md lines 169-210
+**Priority**: **P0** (critical blocker)
+**Tracking**: Beads issue lift-sys-310, ICS execution plan STEP-03
 
 ---
 
-### 2. Result Aggregation for Parallel Benchmarks (lift-sys-232)
+### 2. ICS Blocker: H5 - Autocomplete Popup Bug (lift-sys-316)
 
-**Discovered**: October 18, 2025 (parallel benchmark work)
-**Severity**: Low (feature incomplete)
-**Status**: In progress (but can be deferred)
+**Discovered**: 2025-10-25 (ICS Phase 4 planning)
+**Severity**: **P2 CRITICAL** (blocks ICS autocomplete)
+**Status**: Identified, fix pending
 
 **Details**:
-- Parallel benchmark execution works (lift-sys-231 closed)
-- Result aggregation function needed to combine results from isolated instances
-- CLI flags implemented (lift-sys-233 closed)
-- Aggregation task still marked in_progress
+- Autocomplete popup not displaying correctly
+- Blocks STEP-09 in ICS execution plan (3-hour fix estimated)
+- Blocks autocomplete testing and E2E preparation
 
-**Current State**:
-- Parallel execution: ✅ Working
-- Isolated instances: ✅ Working
-- Result aggregation: ⚠️ Incomplete
+**Impact**:
+- ICS autocomplete feature non-functional
+- User experience for typed hole resolution degraded
 
-**Required Work**:
-- Implement `aggregate_results()` function
-- Merge BenchmarkResult lists from multiple instances
-- Generate single BenchmarkSummary with correct statistics
-- Preserve all timing and cost data
+**Priority**: **P1** (high priority blocker)
+**Tracking**: Beads issue lift-sys-316, ICS execution plan STEP-09
 
-**Priority**: P2 (parallel mode works, aggregation is polish)
-**Tracking**: Beads issue lift-sys-232
+---
+
+## Backend Persistent Failures
+
+### 3. find_index - Off-by-One Error
+
+**Severity**: **P1** (80% success rate degraded)
+**Status**: Root cause identified, fix pending
+
+**Details**:
+- Function: Find index of element in list
+- Expected: `find_index([1, 2, 3], 2) → 1`
+- Actual: Returns incorrect index (off-by-one error)
+- Root Cause: IR generation or code template issue with index calculation
+
+**Impact**:
+- Contributes to 20% execution failure rate
+- Affects list operation correctness
+
+**Priority**: **P1** (backend stabilization)
+**Tracking**: `docs/testing/PERSISTENT_FAILURES_ANALYSIS.md`
+
+---
+
+### 4. get_type_name - Type Handling
+
+**Severity**: **P1** (80% success rate degraded)
+**Status**: Root cause identified, fix pending
+
+**Details**:
+- Function: Get name of Python type
+- Expected: `get_type_name(int) → "int"`, `get_type_name(str) → "str"`
+- Actual: Incorrect type name handling
+- Root Cause: IR type representation or code generation gap
+
+**Impact**:
+- Contributes to 20% execution failure rate
+- Affects type introspection operations
+
+**Priority**: **P1** (backend stabilization)
+**Tracking**: `docs/testing/PERSISTENT_FAILURES_ANALYSIS.md`
+
+---
+
+### 5. is_valid_email - Edge Case Validation
+
+**Severity**: **P2** (specific edge cases)
+**Status**: Root cause identified, fix pending
+
+**Details**:
+- Function: Validate email address
+- Expected: Handle all RFC-compliant emails
+- Actual: Fails on edge cases (special characters, internationalization)
+- Root Cause: Incomplete validation logic in generated code
+
+**Impact**:
+- Contributes to 20% execution failure rate (occasionally)
+- Affects email validation correctness
+
+**Priority**: **P2** (backend quality)
+**Tracking**: `docs/testing/PERSISTENT_FAILURES_ANALYSIS.md`
+
+---
+
+## Infrastructure Uncertainty
+
+### 6. XGrammar Status Unclear
+
+**Discovered**: 2025-10-25 (cleanup review)
+**Severity**: **P1** (foundation uncertainty)
+**Status**: Investigation needed
+
+**Details**:
+- Constrained generation system (XGrammar) may not be fully functional
+- Recent work included llguidance migration attempts
+- Experiments with bigger instances and different models suggest issues
+- May be contributing to 20% execution failures
+
+**Impact**:
+- IR generation semantic correctness uncertain
+- Backend reliability foundation unclear
+- May require migration to llguidance
+
+**Priority**: **P1** (investigate immediately)
+**Tracking**: See `docs/issues/BACKEND_STATUS.md` Root Cause Analysis
+
+---
+
+## Known Gaps (132 Backend Issues)
+
+### 7. Backend Implementation Gaps
+
+**Discovered**: 2025-10-25 (Beads triage)
+**Severity**: **P2** (systematic gaps)
+**Status**: Tracked, prioritization needed
+
+**Details**:
+- 132 Beads issues labeled `backend-gap` represent incomplete features
+- Distribution across phases:
+  - Phase 1 (NLP → IR): 27 issues
+  - Phase 2 (Validation): 18 issues
+  - Phase 3 (Code Gen): 21 issues
+  - Phase 4 (AST Repair): 20 issues
+  - Phase 5 (Assertions): 18 issues
+  - Phase 6 (Symbolic): 15 issues
+  - Phase 7 (Constraints): 9 issues
+  - Phase 8 (Learning): 6 issues
+
+**Impact**:
+- Many features designed but not implemented
+- Edge cases not handled
+- Integration points missing
+- Performance optimizations needed
+
+**Priority**: **P2** (systematic closure)
+**Tracking**: Beads issues with `backend-gap` label, see `docs/issues/BACKEND_STATUS.md`
 
 ---
 

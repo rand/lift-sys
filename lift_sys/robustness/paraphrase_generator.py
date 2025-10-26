@@ -175,7 +175,8 @@ class ParaphraseGenerator:
             and token.text.lower() not in self._get_technical_terms()
         ]
 
-        # Replace each content word with synonyms
+        # Collect all valid (token, synonym) pairs
+        replacement_options: list[tuple[Any, list[str]]] = []
         for token in content_tokens:
             wordnet_pos = self._get_wordnet_pos(token.pos_)
             if not wordnet_pos:
@@ -183,24 +184,57 @@ class ParaphraseGenerator:
 
             synsets = self._wordnet.synsets(token.text.lower(), pos=wordnet_pos)
 
-            # Get synonyms from ONLY the first (most common) synset
-            # This avoids wrong word senses like "numbers" → "Book of Numbers"
+            # Get synonyms from top 2 synsets for better coverage
+            # Semantic similarity filter will reject wrong word senses
             synonyms: set[str] = set()
             if synsets:
-                # Use only the first (most common) synset
-                first_synset = synsets[0]
-                for lemma in first_synset.lemmas()[:5]:  # Top 5 lemmas from first synset
-                    synonym = lemma.name().replace("_", " ")
-                    if synonym.lower() != token.text.lower():
-                        # Check if synonym is semantically similar in context
-                        if self._is_semantically_similar_synonym(prompt, token.text, synonym):
-                            synonyms.add(synonym)
+                # Use top 2 synsets to get more synonym candidates
+                for synset in synsets[:2]:
+                    for lemma in synset.lemmas()[:5]:  # Top 5 lemmas per synset
+                        synonym = lemma.name().replace("_", " ")
+                        if synonym.lower() != token.text.lower():
+                            # Check if synonym is semantically similar in context
+                            if self._is_semantically_similar_synonym(prompt, token.text, synonym):
+                                synonyms.add(synonym)
 
-            # Generate variants by replacing token
-            for synonym in list(synonyms)[: max(2, self.max_variants // len(content_tokens))]:
+            if synonyms:
+                replacement_options.append(
+                    (token, list(synonyms)[:2])
+                )  # Keep top 2 synonyms per token
+
+        # Generate single-replacement variants
+        for token, synonyms in replacement_options:
+            for synonym in synonyms:
                 variant = self._replace_token(prompt, token, synonym)
                 if variant and variant != prompt:
                     variants.append(variant)
+
+        # Generate double-replacement variants for higher diversity
+        # Only if we have multiple tokens with synonyms and haven't hit max_variants
+        if len(replacement_options) >= 2 and len(variants) < self.max_variants:
+            for i, (token1, syns1) in enumerate(replacement_options):
+                for j, (token2, syns2) in enumerate(replacement_options):
+                    if i < j:  # Avoid duplicates and self-pairs
+                        # Try combining first synonym of each token
+                        if syns1 and syns2:
+                            # Apply first replacement
+                            variant = self._replace_token(prompt, token1, syns1[0])
+                            # Re-parse to get updated token positions
+                            variant_doc = self._nlp(variant)
+                            # Find the token to replace in the new doc
+                            for variant_token in variant_doc:
+                                if (
+                                    variant_token.text == token2.text
+                                    and variant_token.pos_ == token2.pos_
+                                ):
+                                    variant = self._replace_token(variant, variant_token, syns2[0])
+                                    break
+                            if variant and variant != prompt:
+                                variants.append(variant)
+                                if len(variants) >= self.max_variants:
+                                    break
+                if len(variants) >= self.max_variants:
+                    break
 
         return variants
 
@@ -522,7 +556,7 @@ class ParaphraseGenerator:
             "object",
             "string",
             "integer",
-            "number",
+            # Removed "number" - too generic, prevents useful paraphrases
             "boolean",
             "file",
             "database",
@@ -565,7 +599,7 @@ class ParaphraseGenerator:
         # Compute similarity
         similarity = cosine_similarity(emb1, emb2)[0][0]
 
-        # Require high similarity (>= 0.80) to accept synonym
-        # Lower threshold allows more useful synonyms while still filtering
-        # semantically incorrect ones (e.g., "Book of Numbers", "role")
-        return similarity >= 0.80
+        # Require high similarity (>= 0.75) to accept synonym
+        # Lower threshold allows more lexical variants while still filtering
+        # semantically incorrect ones (e.g., "Book of Numbers")
+        return similarity >= 0.75

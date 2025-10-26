@@ -349,8 +349,8 @@ def test_single_node_no_function():
 
 
 def test_integration_with_scm_fitter():
-    """Test integration with SCMFitter (STEP-08 preparation)."""
-    from lift_sys.causal.scm_fitter import SCMFitter
+    """Test integration with SCMFitter (STEP-08 complete)."""
+    from lift_sys.causal.scm_fitter import FittingError, SCMFitter
 
     # Create simple graph
     graph = nx.DiGraph([("x", "y")])
@@ -360,12 +360,18 @@ def test_integration_with_scm_fitter():
     collector = TraceCollector(random_seed=42)
     traces = collector.collect_traces(graph, code, num_samples=100)
 
-    # Try to fit with SCMFitter (dynamic mode not yet implemented)
+    # Try to fit with SCMFitter (dynamic mode now implemented)
     fitter = SCMFitter()
 
-    # This should raise NotImplementedError for now (STEP-08)
-    with pytest.raises(NotImplementedError, match="Dynamic fitting.*not yet implemented"):
-        fitter.fit(graph, traces=traces)
+    # Should either succeed (if DoWhy available) or raise FittingError
+    try:
+        result = fitter.fit(graph, traces=traces)
+        # If DoWhy available, should return result
+        assert result["mode"] == "dynamic"
+        assert "validation" in result
+    except FittingError as e:
+        # Expected if DoWhy venv not available
+        assert "DoWhy subprocess not available" in str(e)
 
 
 def test_collect_traces_returns_clean_dataframe():

@@ -1,15 +1,15 @@
 name: Robustness Testing
 
 on:
-  # Temporarily disabled for PRs due to spaCy/blis compilation issues in CI
-  # TODO: Re-enable after fixing spaCy binary wheel installation (Phase 2 cleanup)
+  # Temporarily disabled entirely due to spaCy/blis compilation issues in CI
+  # TODO: Re-enable after fixing spaCy binary wheel installation (Phase 2 cleanup - lift-sys-379)
   # pull_request:
   #   branches: [main, develop]
-  push:
-    branches: [main]
-  schedule:
-    # Run nightly at 2 AM UTC for comprehensive baseline tracking
-    - cron: '0 2 * * *'
+  # push:
+  #   branches: [main]
+  # schedule:
+  #   # Run nightly at 2 AM UTC for comprehensive baseline tracking
+  #   - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       update_baseline:

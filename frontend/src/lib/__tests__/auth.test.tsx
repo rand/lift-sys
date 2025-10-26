@@ -1,4 +1,4 @@
-import { describe, beforeEach, it, expect, vi } from "vitest";
+import { describe, beforeEach, afterEach, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "../auth";
@@ -21,6 +21,13 @@ function AuthStatus() {
 describe("AuthProvider", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Disable demo mode for tests so auth logic uses mocked API
+    vi.stubEnv('VITE_DEMO_MODE', 'false');
+    vi.stubEnv('DEV', 'false');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("loads the current session on mount", async () => {

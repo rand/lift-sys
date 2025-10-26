@@ -24,10 +24,10 @@ export function generateMockAnalysis(text: string): SemanticAnalysis {
 
   // Find entities (simple keyword matching)
   const entityPatterns = [
-    { pattern: /\b(user|customer|admin|developer)\b/gi, type: 'PERSON' as const },
-    { pattern: /\b(system|application|service|API|database)\b/gi, type: 'TECHNICAL' as const },
-    { pattern: /\b(company|organization|team|department)\b/gi, type: 'ORG' as const },
-    { pattern: /\b(function|method|class|module)\b/gi, type: 'FUNCTION' as const },
+    { pattern: /\b(users?|customers?|admins?|developers?|Alice|Bob)\b/gi, type: 'PERSON' as const },
+    { pattern: /\b(system|application|service|API|database|algorithm)\b/gi, type: 'TECHNICAL' as const },
+    { pattern: /\b(company|organization|team|department|Google)\b/gi, type: 'ORG' as const },
+    { pattern: /\b(functions?|methods?|class(?:es)?|modules?)\b/gi, type: 'FUNCTION' as const },
   ];
 
   entityPatterns.forEach((ep, idx) => {

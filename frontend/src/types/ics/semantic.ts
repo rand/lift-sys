@@ -140,7 +140,8 @@ export interface Entity {
 }
 
 /**
- * Detected relationship
+ * NLP-detected relationship in text (position-based)
+ * Used in semantic analysis to represent relationships extracted from natural language.
  */
 export interface Relationship {
   id: string;
@@ -151,6 +152,21 @@ export interface Relationship {
   from: number;
   to: number;
   confidence: number;
+}
+
+/**
+ * IR-level relationship between entities (from RelationshipClause)
+ * Represents semantic relationships in the Intermediate Representation,
+ * not tied to specific text positions. Used in session IR responses.
+ */
+export interface IRRelationship {
+  fromEntity: string;
+  toEntity: string;
+  relationshipType: string;
+  confidence: number;
+  description: string;
+  holes?: TypedHole[];
+  provenance?: Provenance;
 }
 
 /**

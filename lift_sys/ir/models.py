@@ -228,6 +228,63 @@ class AssertClause:
 
 
 @dataclass(slots=True)
+class RelationshipClause:
+    """
+    Represents a relationship between entities extracted from natural language.
+
+    Phase 2 Enhancement: Structured relationship extraction for semantic analysis.
+
+    Relationships capture connections between entities mentioned in the prompt:
+    - Dependencies: "X depends on Y", "X requires Y", "X uses Y"
+    - Creation: "X creates Y", "X generates Y", "X produces Y"
+    - Modification: "X modifies Y", "X updates Y", "X changes Y"
+    - Temporal: "X before Y", "X after Y", "X triggers Y"
+    - Causal: "X causes Y", "X results in Y", "if X then Y"
+    - Composition: "X contains Y", "X includes Y", "X is part of Y"
+
+    Example:
+        RelationshipClause(
+            from_entity="validate",
+            to_entity="email",
+            relationship_type="OPERATES_ON",
+            confidence=0.9,
+            description="Validate operates on email input"
+        )
+    """
+
+    from_entity: str
+    """Source entity in the relationship"""
+
+    to_entity: str
+    """Target entity in the relationship"""
+
+    relationship_type: str
+    """Type of relationship (USES, PRODUCES, DEPENDS_ON, MODIFIES, etc.)"""
+
+    confidence: float = 0.8
+    """Confidence score for this relationship extraction (0.0-1.0)"""
+
+    description: str = ""
+    """Human-readable description of the relationship"""
+
+    holes: list[TypedHole] = field(default_factory=list)
+    provenance: Provenance | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        result = {
+            "from_entity": self.from_entity,
+            "to_entity": self.to_entity,
+            "relationship_type": self.relationship_type,
+            "confidence": self.confidence,
+            "description": self.description,
+            "holes": [hole.to_dict() for hole in self.holes],
+        }
+        if self.provenance:
+            result["provenance"] = self.provenance.to_dict()
+        return result
+
+
+@dataclass(slots=True)
 class Metadata:
     source_path: str | None = None
     language: str | None = None
@@ -251,6 +308,8 @@ class IntermediateRepresentation:
     signature: SigClause
     effects: list[EffectClause] = field(default_factory=list)
     assertions: list[AssertClause] = field(default_factory=list)
+    relationships: list[RelationshipClause] = field(default_factory=list)
+    """Phase 2: Structured relationships between entities"""
     metadata: Metadata = field(default_factory=Metadata)
     constraints: list[Constraint] = field(default_factory=list)
     """Phase 7: Explicit constraints on code generation behavior"""
@@ -268,6 +327,8 @@ class IntermediateRepresentation:
             holes.extend(effect.holes)
         for assertion in self.assertions:
             holes.extend(assertion.holes)
+        for relationship in self.relationships:
+            holes.extend(relationship.holes)
         return holes
 
     def to_dict(self) -> dict[str, object]:
@@ -280,6 +341,10 @@ class IntermediateRepresentation:
             "assertions": [assertion.to_dict() for assertion in self.assertions],
             "metadata": self.metadata.to_dict(),
         }
+
+        # Add relationships if present (Phase 2)
+        if self.relationships:
+            result["relationships"] = [rel.to_dict() for rel in self.relationships]
 
         # Add constraints if present (Phase 7)
         if self.constraints:
@@ -349,14 +414,21 @@ class IntermediateRepresentation:
             provenance=parse_provenance(signature_data.get("provenance")),
         )
 
-        effects = [
-            EffectClause(
-                description=effect["description"],
-                holes=parse_holes(effect.get("holes", [])),
-                provenance=parse_provenance(effect.get("provenance")),
-            )
-            for effect in payload.get("effects", [])
-        ]
+        # Handle both string effects (legacy) and dict effects (new format)
+        effects = []
+        for effect in payload.get("effects", []):
+            if isinstance(effect, str):
+                # Legacy format: effects are strings
+                effects.append(EffectClause(description=effect))
+            else:
+                # New format: effects are dicts
+                effects.append(
+                    EffectClause(
+                        description=effect["description"],
+                        holes=parse_holes(effect.get("holes", [])),
+                        provenance=parse_provenance(effect.get("provenance")),
+                    )
+                )
 
         assertions = [
             AssertClause(
@@ -366,6 +438,20 @@ class IntermediateRepresentation:
                 provenance=parse_provenance(assertion.get("provenance")),
             )
             for assertion in payload.get("assertions", [])
+        ]
+
+        # Parse relationships (Phase 2)
+        relationships = [
+            RelationshipClause(
+                from_entity=rel["from_entity"],
+                to_entity=rel["to_entity"],
+                relationship_type=rel["relationship_type"],
+                confidence=rel.get("confidence", 0.8),
+                description=rel.get("description", ""),
+                holes=parse_holes(rel.get("holes", [])),
+                provenance=parse_provenance(rel.get("provenance")),
+            )
+            for rel in payload.get("relationships", [])
         ]
 
         metadata_payload = payload.get("metadata", {}) or {}
@@ -394,6 +480,7 @@ class IntermediateRepresentation:
             signature=signature,
             effects=effects,
             assertions=assertions,
+            relationships=relationships,
             metadata=metadata,
             constraints=constraints,
         )
@@ -409,6 +496,7 @@ __all__ = [
     "SigClause",
     "EffectClause",
     "AssertClause",
+    "RelationshipClause",
     "Metadata",
     "IntermediateRepresentation",
 ]

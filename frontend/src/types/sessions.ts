@@ -2,9 +2,55 @@
  * TypeScript types for prompt-to-IR session management API
  */
 
+import type { TypedHole, Provenance, Constraint, IRRelationship } from './ics/semantic';
+
+/**
+ * Intermediate Representation structure matching backend IR serialization
+ * Includes Phase 2 fields: relationships and enhanced constraint metadata
+ */
+export interface IntermediateRepresentation {
+  intent: {
+    summary: string;
+    rationale?: string;
+    holes?: TypedHole[];
+    provenance?: Provenance;
+  };
+  signature: {
+    name: string;
+    parameters: Array<{
+      name: string;
+      type_hint: string;
+      description?: string;
+      provenance?: Provenance;
+    }>;
+    returns?: string;
+    holes?: TypedHole[];
+    provenance?: Provenance;
+  };
+  effects?: Array<{
+    description: string;
+    holes?: TypedHole[];
+    provenance?: Provenance;
+  }>;
+  assertions?: Array<{
+    predicate: string;
+    rationale?: string;
+    holes?: TypedHole[];
+    provenance?: Provenance;
+  }>;
+  relationships?: IRRelationship[];  // Phase 2: IR-level semantic relationships
+  metadata?: {
+    source_path?: string;
+    language?: string;
+    origin?: string;
+    evidence?: Array<Record<string, unknown>>;
+  };
+  constraints?: Constraint[];  // Phase 2: Enhanced with appliesTo, source, impact, locked
+}
+
 export interface IRDraft {
   version: number;
-  ir: Record<string, unknown>;
+  ir: IntermediateRepresentation;  // Phase 2: Typed IR structure
   validation_status: "pending" | "incomplete" | "valid" | "contradictory";
   ambiguities: string[];
   smt_results: Array<Record<string, unknown>>;
@@ -26,7 +72,7 @@ export interface PromptSession {
 
 export interface CreateSessionRequest {
   prompt?: string;
-  ir?: Record<string, unknown>;
+  ir?: IntermediateRepresentation;  // Phase 2: Typed IR structure
   source?: "prompt" | "reverse_mode";
   metadata?: Record<string, unknown>;
 }
@@ -52,7 +98,7 @@ export interface AssistsResponse {
 }
 
 export interface IRResponse {
-  ir: Record<string, unknown>;
+  ir: IntermediateRepresentation;  // Phase 2: Typed IR structure
   metadata: Record<string, unknown>;
 }
 

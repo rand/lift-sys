@@ -5,6 +5,7 @@
  * [MenuBar] [FileExplorer] [ActiveEditor] [SymbolsPanel + Inspector + AIChat]
  */
 
+import { useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useICSStore } from '@/lib/ics/store';
 import { MenuBar } from './MenuBar';
@@ -12,11 +13,14 @@ import { FileExplorer } from './FileExplorer';
 import { ActiveEditor } from './ActiveEditor';
 import { SymbolsPanel } from './SymbolsPanel';
 import { HoleInspector } from './HoleInspector';
+import { RelationshipPanel } from './RelationshipPanel';
 import { AIChat } from './AIChat';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 export function ICSLayout() {
   const { panelVisibility, layout, setLayout } = useICSStore();
+  const [inspectorTab, setInspectorTab] = useState<'holes' | 'relationships'>('holes');
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-background">
@@ -78,10 +82,23 @@ export function ICSLayout() {
                         </>
                       )}
 
-                      {/* Hole Inspector */}
+                      {/* Inspector: Holes + Relationships */}
                       {panelVisibility.inspector && (
                         <Panel defaultSize={layout.inspectorHeight} minSize={20}>
-                          <HoleInspector />
+                          <Tabs value={inspectorTab} onValueChange={(v) => setInspectorTab(v as 'holes' | 'relationships')} className="h-full flex flex-col">
+                            <div className="border-b border-border px-3 pt-2">
+                              <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="holes">Holes</TabsTrigger>
+                                <TabsTrigger value="relationships">Relationships</TabsTrigger>
+                              </TabsList>
+                            </div>
+                            <TabsContent value="holes" className="flex-1 m-0">
+                              <HoleInspector />
+                            </TabsContent>
+                            <TabsContent value="relationships" className="flex-1 m-0">
+                              <RelationshipPanel className="h-full flex flex-col" />
+                            </TabsContent>
+                          </Tabs>
                         </Panel>
                       )}
                     </PanelGroup>

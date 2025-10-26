@@ -7,6 +7,7 @@ import pytest
 
 from lift_sys.ir.models import (
     AssertClause,
+    EffectClause,
     IntentClause,
     IntermediateRepresentation,
     Parameter,
@@ -66,7 +67,7 @@ def sample_ir():
             parameters=[Parameter(name="numbers", type_hint="list[int]")],
             returns="list[int]",
         ),
-        effects=[],
+        effects=[],  # No effects for simple IR
         assertions=[AssertClause(predicate="result is sorted in ascending order")],
     )
 
@@ -80,15 +81,15 @@ def complex_ir():
             name="process_user_data",
             parameters=[
                 Parameter(name="user_data", type_hint="dict[str, Any]"),
-                Parameter(name="strict_mode", type_hint="bool", default="False"),
+                Parameter(name="strict_mode", type_hint="bool", description="Defaults to False"),
             ],
             returns="dict[str, Any]",
         ),
         effects=[
-            "Validate email format",
-            "Check age is positive integer",
-            "Normalize name to title case",
-            "Remove whitespace from fields",
+            EffectClause(description="Validate email format"),
+            EffectClause(description="Check age is positive integer"),
+            EffectClause(description="Normalize name to title case"),
+            EffectClause(description="Remove whitespace from fields"),
         ],
         assertions=[
             AssertClause(predicate="email matches regex pattern"),
@@ -127,8 +128,8 @@ def load_test_irs(test_fixtures_dir):
         if irs_file.exists():
             with open(irs_file) as f:
                 data = json.load(f)
-                # Convert JSON to IR objects
-                return [IntermediateRepresentation(**ir_data) for ir_data in data]
+                # Convert JSON to IR objects using from_dict to properly deserialize nested objects
+                return [IntermediateRepresentation.from_dict(ir_data) for ir_data in data]
         return []
 
     return _load

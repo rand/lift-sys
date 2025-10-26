@@ -3,6 +3,8 @@
  */
 
 import { useEffect, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type {
   Entity,
   Constraint,
@@ -10,6 +12,7 @@ import type {
   Ambiguity,
   Contradiction,
   ModalOperator,
+  Relationship,
 } from '@/types/ics/semantic';
 
 interface SemanticTooltipProps {
@@ -25,6 +28,7 @@ export type TooltipElement =
   | { type: 'ambiguity'; data: Ambiguity }
   | { type: 'contradiction'; data: Contradiction }
   | { type: 'modal'; data: ModalOperator }
+  | { type: 'relationship'; data: Relationship; entities: Entity[] }
   | { type: 'text'; title: string; content: string };
 
 export function SemanticTooltip({ visible, position, element }: SemanticTooltipProps) {
@@ -69,6 +73,7 @@ export function SemanticTooltip({ visible, position, element }: SemanticTooltipP
       {element.type === 'ambiguity' && <AmbiguityTooltip ambiguity={element.data} />}
       {element.type === 'contradiction' && <ContradictionTooltip contradiction={element.data} />}
       {element.type === 'modal' && <ModalTooltip modal={element.data} />}
+      {element.type === 'relationship' && <RelationshipTooltip relationship={element.data} entities={element.entities} />}
       {element.type === 'text' && <TextTooltip title={element.title} content={element.content} />}
     </div>
   );
@@ -269,6 +274,50 @@ function ModalTooltip({ modal }: { modal: ModalOperator }) {
         </div>
         {modal.scope && (
           <div className="tooltip-hint">Scope: {modal.scope}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RelationshipTooltip({ relationship, entities }: { relationship: Relationship; entities: Entity[] }) {
+  const sourceEntity = entities.find((e) => e.id === relationship.source);
+  const targetEntity = entities.find((e) => e.id === relationship.target);
+
+  const confidencePercent = Math.round(relationship.confidence * 100);
+
+  const relationshipColors = {
+    causal: '#8b5cf6',
+    temporal: '#06b6d4',
+    conditional: '#f59e0b',
+    dependency: '#14b8a6',
+  };
+
+  return (
+    <div className="tooltip-content">
+      <div className="tooltip-header">
+        <Badge style={{ backgroundColor: relationshipColors[relationship.type], color: 'white' }}>
+          {relationship.type.toUpperCase()}
+        </Badge>
+        <span className="tooltip-confidence">{confidencePercent}%</span>
+      </div>
+      <div className="tooltip-body">
+        <div className="tooltip-relationship-flow">
+          <div className="tooltip-entity">
+            <span className="entity-badge">{sourceEntity?.type || 'UNKNOWN'}</span>
+            <span>{sourceEntity?.text || relationship.source}</span>
+          </div>
+          <div className="tooltip-arrow">
+            <ArrowRight className="h-4 w-4" />
+            <span className="relationship-label">{relationship.type}</span>
+          </div>
+          <div className="tooltip-entity">
+            <span className="entity-badge">{targetEntity?.type || 'UNKNOWN'}</span>
+            <span>{targetEntity?.text || relationship.target}</span>
+          </div>
+        </div>
+        {relationship.text && (
+          <div className="tooltip-hint">{relationship.text}</div>
         )}
       </div>
     </div>

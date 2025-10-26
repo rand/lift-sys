@@ -7,14 +7,17 @@ This module provides GPU-accelerated, schema-constrained IR generation using:
 - Qwen2.5-Coder-32B-Instruct model
 
 Development Workflow:
-    # Development with hot-reload (recommended for testing)
+    # Start dev session (aggressive scaledown for cost savings)
+    ./scripts/modal/start_dev.sh
+
+    # Start demo session (longer scaledown for presentations)
+    ./scripts/modal/start_demo.sh
+
+    # Stop session when done (proactive cost savings)
+    ./scripts/modal/stop_session.sh
+
+    # Development with hot-reload (manual)
     modal serve lift_sys/inference/modal_app.py
-
-    # One-time test run
-    modal run lift_sys/inference/modal_app.py::test
-
-    # Production deployment
-    modal deploy lift_sys/inference/modal_app.py
 
 Endpoints:
     - Health: https://rand--health.modal.run (GET)
@@ -25,6 +28,11 @@ Performance:
     - Cold start (32B model): ~7 minutes (model loading + compilation)
     - Warm containers: 2-10 seconds response time
     - Recommended timeout: 600s (10 min) for cold starts
+
+Cost Optimization:
+    - DEV mode: 120s scaledown (aggressive cost savings, cold starts acceptable)
+    - DEMO mode: 600s scaledown (presentations, minimize cold starts during demos)
+    - Always stop resources when done for the day (use stop_session.sh)
 
 Optimizations (2025-10-22):
     - Added Pydantic request validation (prevents KeyError crashes)
@@ -38,11 +46,14 @@ Note: Switched from SGLang to vLLM due to sgl_kernel compatibility issues on Mod
 SGLang investigation documented in docs/SGLANG_MODAL_ISSUES.md for future optimization.
 """
 
+import os
+
 import modal
 
 # Option 1: Use custom base image (P2 optimization - fastest builds)
 # Custom base pre-built with CUDA deps (20-30s builds instead of 87s)
-USE_CUSTOM_BASE = True  # Base image built on 2025-10-22
+# NOTE: Disabled - custom base import requires lift_sys package at build time
+USE_CUSTOM_BASE = False  # Using standard build (87s) until base image fixed
 
 # Create Modal app
 app = modal.App("lift-sys-inference")
@@ -115,6 +126,26 @@ volume = modal.Volume.from_name("lift-sys-models", create_if_missing=True)
 TORCH_COMPILE_CACHE_DIR = "/root/.cache/vllm"
 torch_cache_volume = modal.Volume.from_name("lift-sys-torch-cache", create_if_missing=True)
 
+# Cost optimization: Environment-based scaledown configuration
+# Set MODAL_MODE environment variable to control behavior
+MODAL_MODE = os.getenv("MODAL_MODE", "dev").lower()
+
+if MODAL_MODE == "demo":
+    # Demo mode: Longer scaledown for presentations (minimize cold starts during demo)
+    SCALEDOWN_WINDOW = 600  # 10 minutes
+    print("🎬 DEMO MODE: 10 minute scaledown window (presentation-optimized)")
+elif MODAL_MODE == "prod":
+    # Production mode: Balanced scaledown (future use)
+    SCALEDOWN_WINDOW = 300  # 5 minutes
+    print("🚀 PRODUCTION MODE: 5 minute scaledown window")
+else:
+    # Dev mode (default): Aggressive scaledown for cost savings
+    SCALEDOWN_WINDOW = 120  # 2 minutes
+    print("💻 DEV MODE: 2 minute scaledown window (cost-optimized)")
+
+print(f"Scaledown window: {SCALEDOWN_WINDOW}s")
+print("💡 TIP: Stop resources when done with ./scripts/modal/stop_session.sh")
+
 
 @app.cls(
     image=llm_image,  # Image with vLLM, transformers, FastAPI
@@ -124,7 +155,7 @@ torch_cache_volume = modal.Volume.from_name("lift-sys-torch-cache", create_if_mi
         TORCH_COMPILE_CACHE_DIR: torch_cache_volume,  # Cache torch compilation graphs
     },
     timeout=1200,  # 20 minutes for first-time model download + loading + inference
-    scaledown_window=600,  # Keep warm for 10 minutes to avoid cold starts during testing
+    scaledown_window=SCALEDOWN_WINDOW,  # Environment-based scaledown
 )
 @modal.concurrent(max_inputs=20)  # Process multiple requests concurrently
 class ConstrainedIRGenerator:

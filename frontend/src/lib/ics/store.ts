@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { enableMapSet } from 'immer';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type {
   SemanticAnalysis,
@@ -13,6 +14,9 @@ import type {
   LayoutConfig,
   PanelVisibility,
 } from '@/types/ics/semantic';
+
+// Enable Map and Set support in Immer
+enableMapSet();
 
 interface ICSStore {
   // Document state

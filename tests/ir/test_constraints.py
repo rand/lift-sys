@@ -564,3 +564,219 @@ class TestConstraintSeverity:
         constraint = ReturnConstraint(value_name="result")
 
         assert constraint.severity == ConstraintSeverity.ERROR
+
+
+class TestPhase2Fields:
+    """Tests for Phase 2 ICS alignment fields (id, applies_to, source, impact, locked, metadata)."""
+
+    def test_return_constraint_with_phase2_fields(self):
+        """Test ReturnConstraint serialization with Phase 2 fields."""
+        constraint = ReturnConstraint(
+            value_name="count",
+            requirement=ReturnRequirement.MUST_RETURN,
+            description="Must return count",
+            id="constraint-123",
+            applies_to=["hole-1", "hole-2"],
+            source="nlp_extraction",
+            impact="Missing return will cause undefined behavior",
+            locked=True,
+            metadata={"confidence": 0.95, "extracted_from": "intent"},
+        )
+
+        data = constraint.to_dict()
+
+        assert data["id"] == "constraint-123"
+        assert data["appliesTo"] == ["hole-1", "hole-2"]  # camelCase for frontend
+        assert data["source"] == "nlp_extraction"
+        assert data["impact"] == "Missing return will cause undefined behavior"
+        assert data["locked"] is True
+        assert data["metadata"]["confidence"] == 0.95
+
+    def test_return_constraint_deserialization_camelcase(self):
+        """Test ReturnConstraint deserialization with camelCase (from frontend)."""
+        data = {
+            "type": "return_constraint",
+            "value_name": "result",
+            "requirement": "MUST_RETURN",
+            "description": "Must return",
+            "id": "constraint-456",
+            "appliesTo": ["hole-3", "hole-4"],  # Frontend uses camelCase
+            "source": "user_input",
+            "impact": "Code will fail",
+            "locked": False,
+            "metadata": {"priority": "high"},
+        }
+
+        constraint = ReturnConstraint.from_dict(data)
+
+        assert constraint.id == "constraint-456"
+        assert constraint.applies_to == ["hole-3", "hole-4"]
+        assert constraint.source == "user_input"
+        assert constraint.impact == "Code will fail"
+        assert constraint.locked is False
+        assert constraint.metadata["priority"] == "high"
+
+    def test_return_constraint_deserialization_snakecase(self):
+        """Test ReturnConstraint deserialization with snake_case (from backend)."""
+        data = {
+            "type": "return_constraint",
+            "value_name": "result",
+            "requirement": "MUST_RETURN",
+            "description": "Must return",
+            "id": "constraint-789",
+            "applies_to": ["hole-5"],  # Backend might use snake_case
+            "source": "constraint_detector",
+            "impact": "Impact description",
+            "locked": True,
+            "metadata": {"auto_generated": True},
+        }
+
+        constraint = ReturnConstraint.from_dict(data)
+
+        assert constraint.id == "constraint-789"
+        assert constraint.applies_to == ["hole-5"]
+        assert constraint.source == "constraint_detector"
+        assert constraint.locked is True
+
+    def test_return_constraint_auto_generated_id(self):
+        """Test that constraint ID is auto-generated if not provided."""
+        constraint = ReturnConstraint(value_name="result")
+
+        # ID should be a UUID string
+        assert constraint.id
+        assert len(constraint.id) > 0
+        assert "-" in constraint.id  # UUID format
+
+    def test_return_constraint_default_phase2_values(self):
+        """Test default values for Phase 2 fields."""
+        constraint = ReturnConstraint(value_name="result")
+
+        assert constraint.applies_to == []
+        assert constraint.source == ""
+        assert constraint.impact == ""
+        assert constraint.locked is False
+        assert constraint.metadata == {}
+
+    def test_loop_behavior_constraint_with_phase2_fields(self):
+        """Test LoopBehaviorConstraint with Phase 2 fields."""
+        constraint = LoopBehaviorConstraint(
+            search_type=LoopSearchType.FIRST_MATCH,
+            requirement=LoopRequirement.EARLY_RETURN,
+            id="loop-constraint-1",
+            applies_to=["hole-loop"],
+            source="pattern_detection",
+            impact="Will accumulate instead of early return",
+            locked=False,
+            metadata={"pattern": "first_match"},
+        )
+
+        data = constraint.to_dict()
+
+        assert data["id"] == "loop-constraint-1"
+        assert data["appliesTo"] == ["hole-loop"]
+        assert data["source"] == "pattern_detection"
+        assert data["impact"] == "Will accumulate instead of early return"
+        assert data["metadata"]["pattern"] == "first_match"
+
+    def test_loop_behavior_constraint_deserialization_with_phase2(self):
+        """Test LoopBehaviorConstraint deserialization with Phase 2 fields."""
+        data = {
+            "type": "loop_constraint",
+            "search_type": "LAST_MATCH",
+            "requirement": "ACCUMULATE",
+            "id": "loop-2",
+            "appliesTo": ["hole-6"],
+            "source": "nlp",
+            "impact": "Impact text",
+            "locked": True,
+            "metadata": {"key": "value"},
+        }
+
+        constraint = LoopBehaviorConstraint.from_dict(data)
+
+        assert constraint.id == "loop-2"
+        assert constraint.applies_to == ["hole-6"]
+        assert constraint.source == "nlp"
+        assert constraint.locked is True
+
+    def test_position_constraint_with_phase2_fields(self):
+        """Test PositionConstraint with Phase 2 fields."""
+        constraint = PositionConstraint(
+            elements=["@", "."],
+            requirement=PositionRequirement.NOT_ADJACENT,
+            id="pos-constraint-1",
+            applies_to=["hole-email"],
+            source="email_validation_pattern",
+            impact="Invalid email validation",
+            locked=True,
+            metadata={"validation_type": "email"},
+        )
+
+        data = constraint.to_dict()
+
+        assert data["id"] == "pos-constraint-1"
+        assert data["appliesTo"] == ["hole-email"]
+        assert data["source"] == "email_validation_pattern"
+        assert data["impact"] == "Invalid email validation"
+        assert data["metadata"]["validation_type"] == "email"
+
+    def test_position_constraint_deserialization_with_phase2(self):
+        """Test PositionConstraint deserialization with Phase 2 fields."""
+        data = {
+            "type": "position_constraint",
+            "elements": ["(", ")"],
+            "requirement": "ORDERED",
+            "id": "pos-2",
+            "appliesTo": ["hole-7", "hole-8"],
+            "source": "parentheses_check",
+            "impact": "Parentheses mismatch",
+            "locked": False,
+            "metadata": {"check": "balanced"},
+        }
+
+        constraint = PositionConstraint.from_dict(data)
+
+        assert constraint.id == "pos-2"
+        assert constraint.applies_to == ["hole-7", "hole-8"]
+        assert constraint.source == "parentheses_check"
+        assert constraint.impact == "Parentheses mismatch"
+        assert constraint.metadata["check"] == "balanced"
+
+    def test_phase2_roundtrip_with_camelcase(self):
+        """Test full roundtrip with Phase 2 fields (frontend → backend → frontend)."""
+        # Simulate frontend data
+        frontend_data = {
+            "type": "return_constraint",
+            "value_name": "output",
+            "requirement": "MUST_RETURN",
+            "description": "Output required",
+            "id": "rt-123",
+            "appliesTo": ["hole-x", "hole-y"],
+            "source": "user",
+            "impact": "No output",
+            "locked": True,
+            "metadata": {"version": 2},
+        }
+
+        # Backend deserializes
+        constraint = ReturnConstraint.from_dict(frontend_data)
+
+        # Backend serializes back
+        backend_data = constraint.to_dict()
+
+        # Verify camelCase is preserved
+        assert backend_data["appliesTo"] == ["hole-x", "hole-y"]
+        assert backend_data["id"] == "rt-123"
+        assert backend_data["source"] == "user"
+        assert backend_data["locked"] is True
+
+    def test_multiple_constraints_preserve_unique_ids(self):
+        """Test that multiple constraints get unique auto-generated IDs."""
+        constraint1 = ReturnConstraint(value_name="a")
+        constraint2 = ReturnConstraint(value_name="b")
+        constraint3 = LoopBehaviorConstraint(search_type=LoopSearchType.FIRST_MATCH)
+
+        # All should have different IDs
+        assert constraint1.id != constraint2.id
+        assert constraint1.id != constraint3.id
+        assert constraint2.id != constraint3.id

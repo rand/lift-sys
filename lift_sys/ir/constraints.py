@@ -261,6 +261,13 @@ class LoopBehaviorConstraint(Constraint):
             loop_variable=data.get("loop_variable"),
             description=data.get("description", ""),
             severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+            # Phase 2 fields
+            id=data.get("id", str(uuid.uuid4())),
+            applies_to=data.get("appliesTo", data.get("applies_to", [])),
+            source=data.get("source", ""),
+            impact=data.get("impact", ""),
+            locked=data.get("locked", False),
+            metadata=data.get("metadata", {}),
         )
 
 
@@ -463,6 +470,13 @@ class PositionConstraint(Constraint):
             max_distance=data.get("max_distance"),
             description=data.get("description", ""),
             severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+            # Phase 2 fields
+            id=data.get("id", str(uuid.uuid4())),
+            applies_to=data.get("appliesTo", data.get("applies_to", [])),
+            source=data.get("source", ""),
+            impact=data.get("impact", ""),
+            locked=data.get("locked", False),
+            metadata=data.get("metadata", {}),
         )
 
 

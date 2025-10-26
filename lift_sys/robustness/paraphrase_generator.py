@@ -145,7 +145,7 @@ class ParaphraseGenerator:
         - Identify content words (nouns, verbs, adjectives)
         - Find synonyms via WordNet
         - Replace words maintaining POS tags
-        - Filter by semantic similarity
+        - Filter by semantic similarity to preserve meaning
 
         Args:
             prompt: Original prompt
@@ -156,9 +156,13 @@ class ParaphraseGenerator:
         doc = self._nlp(prompt)
         variants: list[str] = []
 
-        # Find content words
+        # Find content words (but avoid replacing critical technical terms)
         content_tokens = [
-            token for token in doc if token.pos_ in ("NOUN", "VERB", "ADJ") and not token.is_stop
+            token
+            for token in doc
+            if token.pos_ in ("NOUN", "VERB", "ADJ")
+            and not token.is_stop
+            and token.text.lower() not in self._get_technical_terms()
         ]
 
         # Replace each content word with synonyms
@@ -169,16 +173,21 @@ class ParaphraseGenerator:
 
             synsets = self._wordnet.synsets(token.text.lower(), pos=wordnet_pos)
 
-            # Get unique synonyms
+            # Get synonyms from ONLY the first (most common) synset
+            # This avoids wrong word senses like "numbers" → "Book of Numbers"
             synonyms: set[str] = set()
-            for synset in synsets[:3]:  # Top 3 synsets
-                for lemma in synset.lemmas():
+            if synsets:
+                # Use only the first (most common) synset
+                first_synset = synsets[0]
+                for lemma in first_synset.lemmas()[:5]:  # Top 5 lemmas from first synset
                     synonym = lemma.name().replace("_", " ")
                     if synonym.lower() != token.text.lower():
-                        synonyms.add(synonym)
+                        # Check if synonym is semantically similar in context
+                        if self._is_semantically_similar_synonym(prompt, token.text, synonym):
+                            synonyms.add(synonym)
 
             # Generate variants by replacing token
-            for synonym in list(synonyms)[: max(3, self.max_variants // len(content_tokens))]:
+            for synonym in list(synonyms)[: max(2, self.max_variants // len(content_tokens))]:
                 variant = self._replace_token(prompt, token, synonym)
                 if variant and variant != prompt:
                     variants.append(variant)
@@ -479,3 +488,67 @@ class ParaphraseGenerator:
                 return f"{object_phrase.capitalize()} should be {passive_verb}"
 
         return None
+
+    def _get_technical_terms(self) -> set[str]:
+        """Get set of technical terms that should not be replaced.
+
+        These are critical programming/technical terms where synonym replacement
+        would change the semantic meaning too much.
+
+        Returns:
+            Set of lowercase technical terms to preserve
+        """
+        return {
+            "function",
+            "class",
+            "method",
+            "variable",
+            "parameter",
+            "argument",
+            "return",
+            "list",
+            "array",
+            "dictionary",
+            "object",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "file",
+            "database",
+            "api",
+            "endpoint",
+            "request",
+            "response",
+        }
+
+    def _is_semantically_similar_synonym(
+        self, original_text: str, original_word: str, synonym: str
+    ) -> bool:
+        """Check if a synonym preserves semantic meaning in context.
+
+        Uses sentence embeddings to compare the semantic similarity of the
+        original text vs. text with the synonym substituted.
+
+        Args:
+            original_text: Original prompt text
+            original_word: Original word being replaced
+            synonym: Proposed synonym replacement
+
+        Returns:
+            True if synonym preserves semantic meaning (similarity >= 0.85)
+        """
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        # Create variant with synonym
+        variant_text = original_text.replace(original_word, synonym, 1)
+
+        # Get embeddings
+        emb1 = self.sentence_model.encode([original_text])
+        emb2 = self.sentence_model.encode([variant_text])
+
+        # Compute similarity
+        similarity = cosine_similarity(emb1, emb2)[0][0]
+
+        # Require high similarity (>= 0.85) to accept synonym
+        return similarity >= 0.85

@@ -25,24 +25,18 @@ modal app list
 echo ""
 echo "Stopping apps..."
 
-# Stop all known lift-sys apps
-APPS=(
-    "lift-sys-inference"
-    "qwen-vllm-inference"
-    "lift-sys"
-)
+# Get all deployed/active app IDs
+DEPLOYED_APPS=$(modal app list --json 2>/dev/null | jq -r '.[] | select(.state == "deployed") | .app_id' 2>/dev/null || echo "")
 
 STOPPED=0
-for app in "${APPS[@]}"; do
-    echo "Checking $app..."
-    if modal app list | grep -q "$app"; then
-        echo "  Stopping $app..."
-        modal app stop "$app" 2>/dev/null || echo "  (Already stopped or not found)"
-        STOPPED=$((STOPPED + 1))
-    else
-        echo "  (Not running)"
-    fi
-done
+if [ -z "$DEPLOYED_APPS" ]; then
+    echo "No deployed apps found"
+else
+    for app_id in $DEPLOYED_APPS; do
+        echo "Stopping $app_id..."
+        modal app stop "$app_id" 2>/dev/null && STOPPED=$((STOPPED + 1)) || echo "  (Failed to stop)"
+    done
+fi
 
 echo ""
 if [ $STOPPED -gt 0 ]; then

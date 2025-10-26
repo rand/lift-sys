@@ -23,28 +23,33 @@ vi.mock('@/lib/ics/api', () => ({
 }));
 
 // Mock ProseMirror modules to prevent DOM API issues
-vi.mock('prosemirror-view', () => ({
-  EditorView: class MockEditorView {
-    state: any;
-    dom: HTMLDivElement;
-    constructor(el: HTMLDivElement, config: any) {
-      this.state = config.state;
-      this.dom = document.createElement('div');
-      this.dom.setAttribute('contenteditable', 'true');
-      this.dom.setAttribute('role', 'textbox');
-      el.appendChild(this.dom);
-    }
-    updateState(state: any) {
-      this.state = state;
-    }
-    destroy() {}
-    focus() {}
-    dispatch() {}
-    coordsAtPos() {
-      return { top: 0, bottom: 20, left: 0, right: 100 };
-    }
-  },
-}));
+vi.mock('prosemirror-view', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('prosemirror-view')>();
+
+  return {
+    ...actual,
+    EditorView: class MockEditorView {
+      state: any;
+      dom: HTMLDivElement;
+      constructor(el: HTMLDivElement, config: any) {
+        this.state = config.state;
+        this.dom = document.createElement('div');
+        this.dom.setAttribute('contenteditable', 'true');
+        this.dom.setAttribute('role', 'textbox');
+        el.appendChild(this.dom);
+      }
+      updateState(state: any) {
+        this.state = state;
+      }
+      destroy() {}
+      focus() {}
+      dispatch() {}
+      coordsAtPos() {
+        return { top: 0, bottom: 20, left: 0, right: 100 };
+      }
+    },
+  };
+});
 
 describe('SemanticEditor Integration Tests', () => {
   beforeEach(() => {

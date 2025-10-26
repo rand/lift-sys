@@ -91,10 +91,12 @@ from .schemas import (
 app = FastAPI(title="lift-sys API", version="0.1.0")
 auth_router = configure_auth(app)
 
-allowed_origins_raw = os.getenv("LIFT_SYS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+allowed_origins_raw = os.getenv(
+    "LIFT_SYS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173"
+).split(",")
 allowed_origins = [origin.strip() for origin in allowed_origins_raw if origin.strip()]
 if not allowed_origins:
-    allowed_origins = ["http://localhost:3000"]
+    allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,

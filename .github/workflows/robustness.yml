@@ -46,8 +46,9 @@ jobs:
 
       - name: Download spaCy model
         run: |
-          # Install spaCy model in uv environment so tests can access it
-          uv run python -m spacy download en_core_web_sm
+          # Install spaCy model in uv environment using uv pip
+          # spacy download uses pip internally, which isn't in uv envs
+          uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
       - name: Download NLTK data
         run: |

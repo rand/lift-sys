@@ -138,7 +138,12 @@ class NodeExtractor(ast.NodeVisitor):
 
         for target in node.targets:
             if isinstance(target, ast.Name):
-                var_id = f"var:{scope}.{target.id}" if scope != "__module__" else f"var:{target.id}"
+                # Include line number to make each assignment unique (for causal analysis)
+                var_id = (
+                    f"var:{scope}.{target.id}:L{node.lineno}"
+                    if scope != "__module__"
+                    else f"var:{target.id}:L{node.lineno}"
+                )
 
                 self._add_node(
                     CausalNode(
@@ -161,10 +166,11 @@ class NodeExtractor(ast.NodeVisitor):
         scope = self._current_scope()
 
         if isinstance(node.target, ast.Name):
+            # Include line number to make each assignment unique (for causal analysis)
             var_id = (
-                f"var:{scope}.{node.target.id}"
+                f"var:{scope}.{node.target.id}:L{node.lineno}"
                 if scope != "__module__"
-                else f"var:{node.target.id}"
+                else f"var:{node.target.id}:L{node.lineno}"
             )
 
             self._add_node(

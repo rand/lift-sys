@@ -18,61 +18,60 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-# Relationship type patterns (verb/phrase → relationship type)
+# Relationship type patterns (verb lemma → relationship type)
+# NOTE: spaCy lemmatizer returns base forms (e.g., "use" not "uses")
 RELATIONSHIP_PATTERNS = {
     # Dependencies
-    "depends": "DEPENDS_ON",
-    "requires": "DEPENDS_ON",
-    "needs": "DEPENDS_ON",
-    "relies": "DEPENDS_ON",
-    "uses": "USES",
-    "utilizes": "USES",
-    "employs": "USES",
+    "depend": "DEPENDS_ON",
+    "require": "DEPENDS_ON",
+    "need": "DEPENDS_ON",
+    "rely": "DEPENDS_ON",
+    "use": "USES",
+    "utilize": "USES",
+    "employ": "USES",
     # Creation
-    "creates": "PRODUCES",
-    "generates": "PRODUCES",
-    "produces": "PRODUCES",
-    "makes": "PRODUCES",
-    "builds": "PRODUCES",
-    "constructs": "PRODUCES",
-    "initializes": "PRODUCES",
+    "create": "PRODUCES",
+    "generate": "PRODUCES",
+    "produce": "PRODUCES",
+    "make": "PRODUCES",
+    "build": "PRODUCES",
+    "construct": "PRODUCES",
+    "initialize": "PRODUCES",
     # Modification
-    "modifies": "MODIFIES",
-    "updates": "MODIFIES",
-    "changes": "MODIFIES",
-    "alters": "MODIFIES",
-    "transforms": "TRANSFORMS",
-    "converts": "TRANSFORMS",
+    "modify": "MODIFIES",
+    "update": "MODIFIES",
+    "change": "MODIFIES",
+    "alter": "MODIFIES",
+    "transform": "TRANSFORMS",
+    "convert": "TRANSFORMS",
     # Temporal
-    "before": "PRECEDES",
-    "after": "FOLLOWS",
-    "precedes": "PRECEDES",
-    "follows": "FOLLOWS",
-    "triggers": "TRIGGERS",
+    "precede": "PRECEDES",
+    "follow": "FOLLOWS",
+    "trigger": "TRIGGERS",
     # Causal
-    "causes": "CAUSES",
-    "results": "CAUSES",
-    "leads": "CAUSES",
+    "cause": "CAUSES",
+    "result": "CAUSES",
+    "lead": "CAUSES",
     # Composition
-    "contains": "CONTAINS",
-    "includes": "CONTAINS",
-    "comprises": "CONTAINS",
+    "contain": "CONTAINS",
+    "include": "CONTAINS",
+    "comprise": "CONTAINS",
     # Operations
-    "processes": "OPERATES_ON",
-    "validates": "OPERATES_ON",
-    "checks": "OPERATES_ON",
-    "verifies": "OPERATES_ON",
-    "analyzes": "OPERATES_ON",
+    "process": "OPERATES_ON",
+    "validate": "OPERATES_ON",
+    "check": "OPERATES_ON",
+    "verify": "OPERATES_ON",
+    "analyze": "OPERATES_ON",
     # Data flow
-    "returns": "RETURNS",
-    "outputs": "RETURNS",
-    "yields": "RETURNS",
-    "saves": "WRITES_TO",
-    "writes": "WRITES_TO",
-    "stores": "WRITES_TO",
-    "reads": "READS_FROM",
-    "loads": "READS_FROM",
-    "fetches": "READS_FROM",
+    "return": "RETURNS",
+    "output": "RETURNS",
+    "yield": "RETURNS",
+    "save": "WRITES_TO",
+    "write": "WRITES_TO",
+    "store": "WRITES_TO",
+    "read": "READS_FROM",
+    "load": "READS_FROM",
+    "fetch": "READS_FROM",
 }
 
 
@@ -112,6 +111,44 @@ def extract_relationships(doc) -> list[dict[str, Any]]:
                     for grandchild in child.children:
                         if grandchild.dep_ == "pobj":
                             objects.append(grandchild)
+
+            # Also look for coordinating conjunctions (e.g., "processes input and returns output")
+            # This allows us to find additional verbs in a compound predicate
+            for child in token.children:
+                if child.dep_ == "conj" and child.pos_ == "VERB":
+                    # Found a conjoined verb, check if it has objects
+                    conj_objects = [
+                        gc for gc in child.children if gc.dep_ in ("dobj", "obj", "pobj", "attr")
+                    ]
+                    # If conjoined verb has objects, process it separately
+                    if conj_objects:
+                        for conj_obj in conj_objects:
+                            # Use same subjects as parent verb
+                            for subj in subjects:
+                                verb_lemma = child.lemma_.lower()
+                                relationship_type = RELATIONSHIP_PATTERNS.get(
+                                    verb_lemma, "RELATES_TO"
+                                )
+                                from_entity = _get_entity_text(subj)
+                                to_entity = _get_entity_text(conj_obj)
+                                confidence = 0.9 if verb_lemma in RELATIONSHIP_PATTERNS else 0.6
+                                description = f"{from_entity} {child.text} {to_entity}"
+
+                                relationships.append(
+                                    {
+                                        "id": f"rel-{relationship_id}",
+                                        "from_entity": from_entity,
+                                        "to_entity": to_entity,
+                                        "relationship_type": relationship_type,
+                                        "confidence": round(confidence, 2),
+                                        "description": description,
+                                        "span": {
+                                            "start": child.idx,
+                                            "end": child.idx + len(child.text),
+                                        },
+                                    }
+                                )
+                                relationship_id += 1
 
             # Create relationships for each subject-verb-object triple
             for subj in subjects:

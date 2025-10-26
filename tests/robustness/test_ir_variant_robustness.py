@@ -56,14 +56,16 @@ class TestIRVariantRobustness:
     ):
         """Test robustness to effect reordering."""
         # Generate effect ordering variants
-        variants = ir_variant_generator.generate_effect_orderings(complex_ir, max_variants=5)
+        variants = ir_variant_generator.generate_effect_orderings(complex_ir)
 
         if not variants:
             pytest.skip("No valid effect orderings generated")
 
         # Mock code generation
         def generate_code(ir):
-            effects_str = "\\n    ".join(ir.effects) if ir.effects else "pass"
+            effects_str = (
+                "\\n    ".join(e.description for e in ir.effects) if ir.effects else "pass"
+            )
             return f"def {ir.signature.name}():\\n    {effects_str}"
 
         # Measure sensitivity
@@ -89,7 +91,7 @@ class TestIRVariantRobustness:
     ):
         """Test robustness to assertion rephrasing."""
         # Generate assertion rephrasing variants
-        variants = ir_variant_generator.rephrase_assertions(complex_ir)
+        variants = ir_variant_generator.generate_assertion_variants(complex_ir)
 
         if not variants:
             pytest.skip("No assertion rephrasing variants generated")

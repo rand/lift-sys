@@ -7,6 +7,7 @@ import pytest
 
 from lift_sys.ir.models import (
     AssertClause,
+    EffectClause,
     IntentClause,
     IntermediateRepresentation,
     Parameter,
@@ -66,7 +67,7 @@ def sample_ir():
             parameters=[Parameter(name="numbers", type_hint="list[int]")],
             returns="list[int]",
         ),
-        effects=[],
+        effects=[],  # No effects for simple IR
         assertions=[AssertClause(predicate="result is sorted in ascending order")],
     )
 
@@ -85,10 +86,10 @@ def complex_ir():
             returns="dict[str, Any]",
         ),
         effects=[
-            "Validate email format",
-            "Check age is positive integer",
-            "Normalize name to title case",
-            "Remove whitespace from fields",
+            EffectClause(description="Validate email format"),
+            EffectClause(description="Check age is positive integer"),
+            EffectClause(description="Normalize name to title case"),
+            EffectClause(description="Remove whitespace from fields"),
         ],
         assertions=[
             AssertClause(predicate="email matches regex pattern"),

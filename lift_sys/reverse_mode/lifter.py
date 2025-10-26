@@ -98,6 +98,16 @@ class LifterConfig:
     timeout_per_file_seconds: float | None = None  # Timeout per file analysis (None = no limit)
     max_total_time_seconds: float | None = None  # Maximum total analysis time (None = no limit)
 
+    # Causal analysis configuration (Week 4: H20-H22 integration)
+    run_causal: bool = (
+        False  # Enable causal analysis (default: disabled for backward compatibility)
+    )
+    causal_mode: str = "auto"  # Causal analysis mode: "auto", "static", or "dynamic"
+    causal_collect_traces: bool = False  # Collect execution traces for dynamic mode
+    causal_num_traces: int = 200  # Number of execution traces to collect
+    causal_enable_circuit_breaker: bool = True  # Enable circuit breaker for repeated failures
+    causal_circuit_breaker_threshold: int = 3  # Circuit breaker failure threshold
+
 
 @dataclass
 class RepositoryHandle:
@@ -115,6 +125,16 @@ class SpecificationLifter:
         self.daikon = DaikonAnalyzer()
         self.stack_graphs = StackGraphAnalyzer()
         self.progress_log: list[str] = []
+
+        # Initialize causal analysis components if enabled
+        self.causal_enhancer = None
+        if self.config.run_causal:
+            from ..causal import CausalEnhancer
+
+            self.causal_enhancer = CausalEnhancer(
+                enable_circuit_breaker=self.config.causal_enable_circuit_breaker,
+                circuit_breaker_threshold=self.config.causal_circuit_breaker_threshold,
+            )
 
     def load_repository(self, source: str | Path | RepositoryHandle) -> Repo:
         """Load a repository from a managed workspace or streamed archive."""
@@ -330,14 +350,19 @@ class SpecificationLifter:
 
         return irs
 
-    def lift(self, target_module: str) -> IntermediateRepresentation:
+    def lift(
+        self, target_module: str, include_causal: bool | None = None
+    ) -> IntermediateRepresentation:
         """Lift a specification from a single module.
 
         Args:
             target_module: Path to the Python module to analyze.
+            include_causal: Override config.run_causal for this specific lift.
+                If None, uses config.run_causal. If True/False, overrides config.
 
         Returns:
-            Intermediate representation of the module.
+            Intermediate representation of the module. Returns EnhancedIR if
+            causal analysis is enabled and successful, otherwise returns base IR.
 
         Raises:
             RepositoryNotLoadedError: If repository is not loaded.
@@ -400,13 +425,51 @@ class SpecificationLifter:
         )
         self._record_progress("reverse:ir-assembled")
 
-        return IntermediateRepresentation(
+        base_ir = IntermediateRepresentation(
             intent=intent,
             signature=signature,
             effects=effects,
             assertions=assertions,
             metadata=metadata,
         )
+
+        # Determine if causal analysis should run (parameter overrides config)
+        should_run_causal = include_causal if include_causal is not None else self.config.run_causal
+
+        # Add causal analysis if enabled
+        if should_run_causal and self.causal_enhancer:
+            import ast
+
+            from ..causal import EnhancedIR
+
+            self._record_progress("causal:start")
+
+            try:
+                # Read source code and parse AST
+                module_path = Path(self.repo.working_tree_dir) / target_module
+                with open(module_path) as f:
+                    source_code = f.read()
+                ast_tree = ast.parse(source_code)
+
+                # Enhance with causal capabilities
+                result = self.causal_enhancer.enhance(
+                    ir=base_ir,
+                    ast_tree=ast_tree,
+                    mode=self.config.causal_mode,
+                    source_code={Path(target_module).stem: source_code},
+                )
+
+                # Create EnhancedIR
+                enhanced_ir = EnhancedIR.from_enhancement_result(result)
+                self._record_progress("causal:complete")
+                return enhanced_ir
+
+            except Exception as e:
+                # Graceful degradation: log error and return base IR
+                self._record_progress(f"causal:failed:{type(e).__name__}:{e}")
+                return base_ir
+
+        return base_ir
 
     def _record_progress(self, label: str) -> None:
         self.progress_log.append(label)

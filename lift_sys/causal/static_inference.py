@@ -209,9 +209,13 @@ class StaticMechanismInferrer(ast.NodeVisitor):
 
     def _extract_linear_mult(self, node: ast.BinOp) -> tuple[float, str]:
         """Extract coefficient and variable from x * c or c * x."""
-        if isinstance(node.left, ast.Constant):
-            return float(node.left.value), node.right.id
-        return float(node.right.value), node.left.id
+        if isinstance(node.left, ast.Constant) and isinstance(node.right, ast.Name):
+            coef = float(node.left.value) if isinstance(node.left.value, (int, float)) else 1.0
+            return coef, node.right.id
+        if isinstance(node.right, ast.Constant) and isinstance(node.left, ast.Name):
+            coef = float(node.right.value) if isinstance(node.right.value, (int, float)) else 1.0
+            return coef, node.left.id
+        return 1.0, ""  # Fallback
 
     def _is_linear_add(self, node: ast.BinOp) -> bool:
         """Check if node is linear addition like x*c + b or x + b."""
@@ -234,12 +238,14 @@ class StaticMechanismInferrer(ast.NodeVisitor):
 
         # x + b → coefficient=1, offset=b
         if isinstance(left, ast.Name) and isinstance(right, ast.Constant):
-            return 1.0, float(right.value), left.id
+            offset = float(right.value) if isinstance(right.value, (int, float)) else 0.0
+            return 1.0, offset, left.id
 
         # (x * c) + b → coefficient=c, offset=b
         if isinstance(left, ast.BinOp) and isinstance(right, ast.Constant):
             coef, var = self._extract_linear_mult(left)
-            return coef, float(right.value), var
+            offset = float(right.value) if isinstance(right.value, (int, float)) else 0.0
+            return coef, offset, var
 
         # Fallback
         return 1.0, 0.0, ""

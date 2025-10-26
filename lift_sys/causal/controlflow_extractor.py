@@ -65,10 +65,16 @@ class ControlFlowExtractor(ast.NodeVisitor):
         """Get all nodes at a specific line number."""
         return self._nodes_by_line.get(lineno, [])
 
-    def _get_nodes_in_range(self, start: int, end: int) -> list[CausalNode]:
-        """Get all nodes in a line range (inclusive)."""
+    def _get_nodes_in_range(self, start: int, end: int | None) -> list[CausalNode]:
+        """Get all nodes in a line range (inclusive).
+
+        Args:
+            start: Starting line number
+            end: Ending line number (if None, uses start)
+        """
         nodes = []
-        for line in range(start, end + 1):
+        end_line = end if end is not None else start
+        for line in range(start, end_line + 1):
             nodes.extend(self._get_nodes_at_line(line))
         return nodes
 

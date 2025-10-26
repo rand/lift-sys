@@ -11,6 +11,7 @@ import ast
 import networkx as nx
 
 from .controlflow_extractor import extract_controlflow_edges
+from .dataflow_extractor import extract_dataflow_edges
 from .node_extractor import extract_nodes
 
 
@@ -95,8 +96,10 @@ class CausalGraphBuilder:
                 **node.metadata,
             )
 
-        # STEP-03: Extract data flow edges (⏳ next)
-        # TODO: Implement data flow analysis
+        # STEP-03: Extract data flow edges (✅ implemented)
+        data_edges = extract_dataflow_edges(ast_tree, nodes)
+        for src, tgt in data_edges:
+            graph.add_edge(src, tgt, type="data_flow")
 
         # STEP-04: Extract control flow edges (✅ implemented)
         control_edges = extract_controlflow_edges(ast_tree, nodes)

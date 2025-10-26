@@ -54,6 +54,15 @@ dev = [
     "anyio>=4.3.0",
     "playwright>=1.41.0"
 ]
+causal = [
+    # DoWhy and dependencies for causal inference (H20-H24)
+    # NOTE: DoWhy requires Python 3.11 (cvxpy incompatibility with 3.13)
+    # Installed in separate .venv-dowhy via: uv venv --python 3.11 .venv-dowhy
+    # Communication via subprocess for isolation
+    "dowhy>=0.13",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+]
 
 [project.scripts]
 test = "pytest:main"

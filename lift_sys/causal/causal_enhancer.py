@@ -11,6 +11,7 @@ See docs/planning/WEEK4_DOWHY_INTEGRATION.md for complete design.
 
 import ast
 import logging
+from typing import Any
 
 import networkx as nx
 import pandas as pd
@@ -140,7 +141,7 @@ class CausalEnhancer:
             If causal analysis fails, returns IR with causal_graph=None and logs warning.
             Core lift-sys functionality is never blocked by causal failures.
         """
-        metadata = {"warnings": [], "mode": mode}
+        metadata: dict[str, Any] = {"warnings": [], "mode": mode}
 
         # Check circuit breaker
         if self._circuit_breaker_open:

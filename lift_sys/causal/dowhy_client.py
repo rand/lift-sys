@@ -151,7 +151,7 @@ class DoWhyClient:
 
         # Parse output
         try:
-            output = json.loads(result.stdout)
+            output: dict[str, Any] = json.loads(result.stdout)
         except json.JSONDecodeError as e:
             raise DoWhySubprocessError(
                 f"Failed to parse DoWhy output as JSON.\n"
@@ -263,7 +263,7 @@ class DoWhyClient:
 
         # Parse output
         try:
-            output = json.loads(result.stdout)
+            output: dict[str, Any] = json.loads(result.stdout)
         except json.JSONDecodeError as e:
             raise DoWhySubprocessError(
                 f"Failed to parse DoWhy query output as JSON.\n"

@@ -176,7 +176,8 @@ class EnhancedIR:
         Returns:
             List of warning strings (empty if no warnings)
         """
-        return self._metadata.get("warnings", [])
+        warnings: list[str] = self._metadata.get("warnings", [])
+        return warnings
 
     @cached_property
     def causal_graph(self) -> nx.DiGraph | None:
@@ -244,7 +245,7 @@ class EnhancedIR:
             return None
 
         graph = self.causal_graph
-        if target_node not in graph.nodes():
+        if graph is None or target_node not in graph.nodes():
             logger.warning(f"Node '{target_node}' not in causal graph")
             return None
 
@@ -321,9 +322,9 @@ class EnhancedIR:
 
         # Convert dict to intervention spec format
         # Simple format: {"node": value} → hard intervention
-        from .intervention_spec import HardIntervention, InterventionSpec
+        from .intervention_spec import HardIntervention, InterventionSpec, SoftIntervention
 
-        intervention_list = [
+        intervention_list: list[HardIntervention | SoftIntervention] = [
             HardIntervention(node=node, value=value) for node, value in interventions.items()
         ]
 
@@ -334,6 +335,9 @@ class EnhancedIR:
         )
 
         # Execute intervention
+        if self._causal_scm is None:
+            raise ValueError("Cannot perform intervention: SCM not fitted")
+
         try:
             result = self._intervention_engine.execute(
                 scm=self._causal_scm,
@@ -375,6 +379,8 @@ class EnhancedIR:
             return None
 
         graph = self.causal_graph
+        if graph is None:
+            return None
 
         if source not in graph.nodes() or target not in graph.nodes():
             logger.warning(f"Nodes not in graph: source={source}, target={target}")

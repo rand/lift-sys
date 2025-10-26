@@ -32,6 +32,9 @@ interface ICSStore {
   constraints: Map<string, Constraint>;
   selectedHole: string | null;
 
+  // Relationship selection
+  selectedRelationship: string | null;
+
   // UI state
   layout: LayoutConfig;
   panelVisibility: PanelVisibility;
@@ -42,6 +45,7 @@ interface ICSStore {
   updateSemanticAnalysis: (analysis: SemanticAnalysis) => void;
   setIsAnalyzing: (analyzing: boolean) => void;
   selectHole: (id: string | null) => void;
+  selectRelationship: (id: string | null) => void;
   resolveHole: (id: string, refinement: unknown) => Promise<void>;
   propagateConstraints: (holeId: string) => void;
   setLayout: (layout: Partial<LayoutConfig>) => void;
@@ -85,6 +89,7 @@ export const useICSStore = create<ICSStore>()(
         holes: new Map(),
         constraints: new Map(),
         selectedHole: null,
+        selectedRelationship: null,
         layout: defaultLayout,
         panelVisibility: defaultPanelVisibility,
         activeTab: 'natural-language',
@@ -151,6 +156,11 @@ export const useICSStore = create<ICSStore>()(
         selectHole: (id) =>
           set((state) => {
             state.selectedHole = id;
+          }),
+
+        selectRelationship: (id) =>
+          set((state) => {
+            state.selectedRelationship = id;
           }),
 
         resolveHole: async (id, refinement) => {

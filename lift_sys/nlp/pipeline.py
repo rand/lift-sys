@@ -226,10 +226,18 @@ class SemanticAnalysisPipeline:
         return mapping.get(spacy_label, "TECHNICAL")
 
     def _extract_relationships(self, doc) -> list[dict[str, Any]]:
-        """Extract relationships using dependency parsing."""
-        relationships = []
-        # TODO: Implement relationship extraction using spaCy dependencies
-        # For now, return empty list
+        """Extract relationships using dependency parsing.
+
+        Phase 2 Enhancement: Uses spaCy dependency trees to identify
+        subject-verb-object patterns and conditional relationships.
+        """
+        from lift_sys.nlp.relationship_extractor import (
+            deduplicate_relationships,
+            extract_relationships,
+        )
+
+        relationships = extract_relationships(doc)
+        relationships = deduplicate_relationships(relationships)
         return relationships
 
     def _detect_modal_operators(self, text: str) -> list[dict[str, Any]]:

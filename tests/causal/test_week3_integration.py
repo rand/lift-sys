@@ -25,7 +25,7 @@ def test_full_intervention_pipeline():
     """
     # 1. Create simple graph: x → y
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     # 2. Collect traces (Week 2, STEP-07)
     traces = collect_traces(graph, code, num_samples=200, random_seed=42)
@@ -70,7 +70,7 @@ def test_full_intervention_pipeline():
 def test_hard_intervention_integration():
     """Test hard intervention: do(x=5) sets x to constant value."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 
@@ -97,7 +97,7 @@ def test_hard_intervention_integration():
 def test_soft_intervention_shift_integration():
     """Test soft intervention (shift): do(x=x+2) shifts distribution."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 
@@ -126,7 +126,7 @@ def test_soft_intervention_shift_integration():
 def test_soft_intervention_scale_integration():
     """Test soft intervention (scale): do(x=x*2) scales distribution."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 
@@ -157,8 +157,8 @@ def test_multiple_interventions_integration():
     """Test multiple simultaneous interventions: do(x=5, z=10)."""
     graph = nx.DiGraph([("x", "y"), ("y", "w"), ("z", "w")])
     code = {
-        "y": "def double(x):\\n    return x * 2",
-        "w": "def add(y, z):\\n    return y + z",
+        "y": "def double(x):\n    return x * 2",
+        "w": "def add(y, z):\n    return y + z",
     }
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
@@ -194,7 +194,7 @@ def test_multiple_interventions_integration():
 def test_string_intervention_format_integration():
     """Test string intervention format: 'do(x=5)'."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 
@@ -218,7 +218,7 @@ def test_string_intervention_format_integration():
 def test_dict_intervention_format_integration():
     """Test dict intervention format: {'type': 'hard', 'node': 'x', 'value': 5}."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 
@@ -261,7 +261,7 @@ def test_intervention_without_traces_fails():
 def test_serialization_roundtrip_integration():
     """Test serialization/deserialization roundtrip (STEP-12)."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=50, random_seed=42)
 
@@ -299,7 +299,7 @@ def test_serialization_roundtrip_integration():
 def test_intervention_validation_integration():
     """Test that intervention validation catches invalid nodes."""
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=50, random_seed=42)
 
@@ -325,7 +325,7 @@ def test_week3_performance_benchmark():
     This is a smoke test - actual latency varies by system.
     """
     graph = nx.DiGraph([("x", "y")])
-    code = {"y": "def double(x):\\n    return x * 2"}
+    code = {"y": "def double(x):\n    return x * 2"}
 
     traces = collect_traces(graph, code, num_samples=100, random_seed=42)
 

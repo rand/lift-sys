@@ -26,8 +26,9 @@ Together, these modes let teams move fluidly between building new systems and re
   - Interactive specification editor with real-time semantic analysis
   - ✅ **Phase 1 Complete**: 22/22 E2E tests passing, core editor functional
   - ✅ **Backend Integration**: Real NLP pipeline (spaCy + HuggingFace) integrated
-  - 🚧 **Phase 2.1 In Progress**: Constraint propagation visualization (functional, needs E2E tests)
-  - **Next**: Phase 2.2 (Solution Space Narrowing), 2.3 (AI Chat Assistant)
+  - ✅ **Phase 2.1 Complete**: Constraint propagation visualization (19/19 E2E tests passing)
+  - 🚧 **Phase 2.2 Next**: Solution Space Narrowing visualization
+  - **Planned**: Phase 2.3 (AI Chat Assistant), 2.4 (Backend enhancements)
 
 **Forward Mode Pipeline**: **PARTIALLY WORKING** ⚠️
 - ✅ **Compilation**: 100% success (generated code is syntactically valid)

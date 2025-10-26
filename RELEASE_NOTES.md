@@ -8,17 +8,18 @@
 
 - **ICS Phase 1 MVP**: Complete interactive specification editor with 22/22 E2E tests passing
 - **Real Backend NLP**: spaCy + HuggingFace BERT integration for semantic analysis
-- **Constraint Propagation**: Phase 2.1 visualization of constraint propagation between typed holes
+- **Constraint Propagation (Phase 2.1)**: Complete visualization with 19/19 E2E tests passing
 - **Backend Integration Tests**: Comprehensive E2E test suite verifying real NLP pipeline
 - **Production-Ready UI**: shadcn/ui-based interface with accessibility and responsive design
 
 ### 📊 By the Numbers
 
-- **22 E2E tests passing** (Phase 1)
+- **22 E2E tests passing** (Phase 1 core editor)
 - **16 backend integration E2E tests** (real NLP pipeline)
+- **19 constraint propagation E2E tests** (Phase 2.1 complete)
 - **Real NER**: spaCy + HuggingFace for PERSON, ORG, GPE entity detection
 - **90.11 KB gzipped** bundle for ICS view
-- **211 lines** of constraint propagation visualization
+- **211 lines** of constraint propagation visualization code
 
 ### ✨ New Features
 

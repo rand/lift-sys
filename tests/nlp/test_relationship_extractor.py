@@ -117,7 +117,9 @@ class TestRelationshipExtraction:
         rel = writes_rels[0]
         assert "process" in rel["from_entity"].lower()
         # May extract either "data" (direct object) or "database" (prepositional object)
-        assert "data" in rel["to_entity"].lower() or "database" in rel["to_entity"].lower()
+        # Both are valid interpretations of the dependency parse
+        to_entity = rel["to_entity"].lower()
+        assert "data" in to_entity or "database" in to_entity
 
     def test_extract_reads_from_relationship(self):
         """Test extraction of READS_FROM relationship."""

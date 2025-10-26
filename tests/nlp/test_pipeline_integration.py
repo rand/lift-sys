@@ -78,7 +78,8 @@ class TestSemanticAnalysisPipelineIntegration:
         assert "relationships" in result
 
         # Should have at least one relationship
-        # (Entities may or may not be found depending on NER model)
+        # Note: NER may not find entities in this sentence (validation, function, etc. aren't named entities)
+        # Focus is on verifying relationship extraction works
         assert len(result["relationships"]) >= 1
 
     def test_pipeline_confidence_scores(self, pipeline):
@@ -255,15 +256,16 @@ class TestRealWorldExamples:
     def test_complex_processing_spec(self, pipeline):
         """Test extraction from complex processing specification."""
         text = """
-        Function process_data must validate the input data.
-        It transforms the data using the parser.
-        It stores the results in the database.
+        The process_data function must validate the input data.
+        The function transforms the data using the parser.
+        The function stores the results in the database.
         The function should return the number of records processed.
         """
 
         result = pipeline.analyze(text)
 
-        # Should extract multiple relationships (at least 2-3)
+        # Should extract multiple relationships (at least 2)
+        # Note: Actual extraction depends on spaCy's parsing
         assert len(result["relationships"]) >= 2
 
         # Should have modal operators

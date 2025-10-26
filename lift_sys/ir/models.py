@@ -414,14 +414,21 @@ class IntermediateRepresentation:
             provenance=parse_provenance(signature_data.get("provenance")),
         )
 
-        effects = [
-            EffectClause(
-                description=effect["description"],
-                holes=parse_holes(effect.get("holes", [])),
-                provenance=parse_provenance(effect.get("provenance")),
-            )
-            for effect in payload.get("effects", [])
-        ]
+        # Handle both string effects (legacy) and dict effects (new format)
+        effects = []
+        for effect in payload.get("effects", []):
+            if isinstance(effect, str):
+                # Legacy format: effects are strings
+                effects.append(EffectClause(description=effect))
+            else:
+                # New format: effects are dicts
+                effects.append(
+                    EffectClause(
+                        description=effect["description"],
+                        holes=parse_holes(effect.get("holes", [])),
+                        provenance=parse_provenance(effect.get("provenance")),
+                    )
+                )
 
         assertions = [
             AssertClause(

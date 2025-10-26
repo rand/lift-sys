@@ -111,9 +111,7 @@ class SemanticAnalysisPipeline:
 
         # Extract semantic elements
         entities = self._extract_entities(doc, text)
-        relationships = self._normalize_relationships(
-            self._extract_relationships(doc), entities
-        )
+        relationships = self._normalize_relationships(self._extract_relationships(doc), entities)
         modals = self._detect_modal_operators(text)
         constraints = self._detect_constraints(doc, text)
         ambiguities = self._detect_ambiguities(text)
@@ -288,9 +286,7 @@ class SemanticAnalysisPipeline:
 
         return normalized
 
-    def _resolve_entity_reference(
-        self, label: str, entity_lookup: dict[str, str]
-    ) -> str | None:
+    def _resolve_entity_reference(self, label: str, entity_lookup: dict[str, str]) -> str | None:
         """Attempt to resolve a relationship endpoint to an entity ID."""
 
         if not label:
@@ -373,6 +369,9 @@ class SemanticAnalysisPipeline:
                     "severity": "medium",
                     "description": f"Temporal constraint: {match.group(0)}",
                     "appliesTo": [],  # TODO: Link to affected entities
+                    "source": "nlp_pipeline",
+                    "impact": "Execution order dependency",
+                    "locked": False,
                     "expression": match.group(0),
                     "from": match.start(),
                     "to": match.end(),

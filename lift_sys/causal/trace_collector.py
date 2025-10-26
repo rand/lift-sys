@@ -122,6 +122,11 @@ class TraceCollector:
         except nx.NetworkXError as e:
             raise TraceCollectionError(f"Failed to get topological order: {e}")
 
+        # Handle empty graph case
+        if len(topo_order) == 0:
+            logger.info("Empty graph, returning empty DataFrame")
+            return pd.DataFrame(index=range(num_samples))
+
         logger.info(f"Collecting {num_samples} samples for {len(topo_order)} nodes...")
 
         # Collect traces

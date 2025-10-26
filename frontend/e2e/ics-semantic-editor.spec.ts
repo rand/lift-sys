@@ -13,6 +13,9 @@ test.describe('ICS Semantic Editor', () => {
     // Navigate to ICS section
     await page.getByRole('button', { name: /ICS.*New/i }).click();
 
+    // Wait for Suspense lazy load to complete (loading state disappears)
+    await page.waitForSelector('text=Loading...', { state: 'hidden', timeout: 15000 });
+
     // Wait for editor to load
     await page.waitForSelector('.ics-editor-container', { timeout: 10000 });
   });

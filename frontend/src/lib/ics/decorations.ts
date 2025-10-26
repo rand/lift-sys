@@ -199,18 +199,21 @@ export function createDecorationsPlugin(getAnalysis: () => SemanticAnalysis | nu
       },
 
       apply(tr, decorationSet, oldState, newState) {
-        // If document changed, rebuild decorations
+        // Check if semantic analysis was provided in transaction metadata
+        const analysis = tr.getMeta('semanticAnalysis');
+
+        if (analysis !== undefined) {
+          // Rebuild decorations with new analysis
+          return buildDecorations(newState.doc, analysis);
+        }
+
+        // If document changed, map existing decorations to new positions
         if (tr.docChanged) {
-          return buildDecorations(newState.doc, getAnalysis());
+          return decorationSet.map(tr.mapping, newState.doc);
         }
 
-        // If semantic analysis was updated (check metadata)
-        if (tr.getMeta('updateDecorations')) {
-          return buildDecorations(newState.doc, getAnalysis());
-        }
-
-        // Otherwise, map existing decorations to new positions
-        return decorationSet.map(tr.mapping, tr.doc);
+        // Otherwise, return existing decorations unchanged
+        return decorationSet;
       },
     },
 
@@ -220,13 +223,4 @@ export function createDecorationsPlugin(getAnalysis: () => SemanticAnalysis | nu
       },
     },
   });
-}
-
-/**
- * Helper to trigger decoration update
- */
-export function updateDecorations(view: any) {
-  const tr = view.state.tr;
-  tr.setMeta('updateDecorations', true);
-  view.dispatch(tr);
 }

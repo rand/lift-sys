@@ -16,18 +16,27 @@ except ImportError:
     os.system("uv add psycopg2-binary")
     import psycopg2
 
-# Your Supabase credentials
-# Get from environment or .env.local file
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
-)
-
 # Colors for output
 GREEN = "\033[0;32m"
 YELLOW = "\033[1;33m"
 RED = "\033[0;31m"
 NC = "\033[0m"
+
+# Supabase database connection
+# REQUIRED: Set DATABASE_URL environment variable or create .env.local file
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    print(f"{RED}❌ ERROR: DATABASE_URL environment variable not set{NC}")
+    print(f"{YELLOW}Set it in your shell or create .env.local file:{NC}")
+    print(
+        "  export DATABASE_URL='postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres'"
+    )
+    print(f"{YELLOW}Or add to .env.local (gitignored):{NC}")
+    print(
+        "  DATABASE_URL=postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+    )
+    sys.exit(1)
 
 
 def run_migration(conn, migration_file):

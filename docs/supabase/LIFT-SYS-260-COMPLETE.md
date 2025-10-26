@@ -39,12 +39,14 @@ Successfully set up Supabase database with complete schema, deployed all migrati
 
 ### 2. Connection Configuration
 
-**Correct Connection String Discovered**:
+**Correct Connection String Format**:
 ```
-postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
 ```
 
-**Key Discovery**: Hostname is `aws-1-us-east-1.pooler.supabase.com`, NOT `db.PROJECT_REF.supabase.co`
+**Key Discovery**: Hostname is `aws-1-us-east-1.pooler.supabase.com`, NOT `db.<YOUR_PROJECT_REF>.supabase.co`
+
+**Security Note**: This is a template! Replace `<YOUR_PROJECT_REF>` and `<YOUR_PASSWORD>` with actual values from Supabase dashboard.
 
 **Connection Details**:
 - Region: US East 1 (Virginia)
@@ -83,13 +85,13 @@ def my_function():
 
 **Created `.env.local`**:
 ```bash
-SUPABASE_URL=https://bqokcxjusdkywfgfqhzo.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-DATABASE_URL=postgresql://postgres.bqokcxjusdkywfgfqhzo:...
+SUPABASE_URL=https://<YOUR_PROJECT_REF>.supabase.co
+SUPABASE_ANON_KEY=<YOUR_ANON_KEY>
+SUPABASE_SERVICE_KEY=<YOUR_SERVICE_KEY>
+DATABASE_URL=postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
 ```
 
-**Protected**: Added to `.gitignore` to prevent credential leaks
+**Security**: All credentials stored in `.env.local` (gitignored) to prevent leaks
 
 ---
 
@@ -328,8 +330,9 @@ uv run modal deploy app.py
 # Run migrations
 uv run python run_migrations.py
 
-# Connect to database
-psql "postgresql://postgres.bqokcxjusdkywfgfqhzo:PASSWORD@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+# Connect to database (set DATABASE_URL env var first)
+export DATABASE_URL="postgresql://postgres.<YOUR_PROJECT_REF>:<YOUR_PASSWORD>@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+psql "$DATABASE_URL"
 
 # Query via Python
 uv run python -c "import psycopg2; ..."

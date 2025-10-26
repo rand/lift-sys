@@ -195,6 +195,9 @@ export async function searchFiles(query: string): Promise<AutocompleteItem[]> {
     { path: 'lift_sys/ir/constraints.py', type: 'python' },
     { path: 'lift_sys/dspy_signatures/node_interface.py', type: 'python' },
     { path: 'specifications/example_spec.md', type: 'markdown' },
+    { path: 'tests/test_ir.py', type: 'python' },
+    { path: 'tests/test_validation.py', type: 'python' },
+    { path: 'frontend/src/lib/ics/decorations.test.ts', type: 'typescript' },
   ];
 
   // Filter by query

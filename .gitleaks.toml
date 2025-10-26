@@ -1,0 +1,59 @@
+# Gitleaks Configuration for lift-sys
+# Prevents accidental secret commits while allowing template strings
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "lift-sys Secret Detection"
+
+[allowlist]
+  description = "Allowlist for template strings and placeholders"
+
+  # Ignore specific patterns that are templates, not real secrets
+  regexes = [
+    '''<YOUR_[A-Z_]+>''',  # <YOUR_PROJECT_REF>, <YOUR_PASSWORD>, etc.
+    '''PROJECT_REF''',  # Template placeholder
+    '''PASSWORD@aws''',  # Template pattern
+    '''\.\.\.''',  # Truncated examples with ...
+  ]
+
+  # Ignore documentation and test files
+  paths = [
+    '''docs/.*\.md$''',
+    '''tests/fixtures/.*''',
+    '''.*_test\.py$''',
+    '''test_.*\.py$''',
+    '''\.env\.template$''',
+  ]
+
+# Standard rules from Gitleaks
+[[rules]]
+  id = "postgres-connection"
+  description = "PostgreSQL connection string"
+  regex = '''postgres(ql)?://[a-zA-Z0-9_.+-]+:[a-zA-Z0-9_.+-]+@[a-zA-Z0-9.-]+:\d+/[a-zA-Z0-9_]+'''
+  tags = ["database", "postgres"]
+  [rules.allowlist]
+    regexes = [
+      '''<YOUR_[A-Z_]+>''',
+      '''PROJECT_REF''',
+      '''PASSWORD@''',
+    ]
+
+[[rules]]
+  id = "supabase-service-key"
+  description = "Supabase service role key"
+  regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'''
+  tags = ["supabase", "jwt"]
+  [rules.allowlist]
+    regexes = [
+      '''\.\.\.''',  # Truncated JWT examples
+    ]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API Key"
+  regex = '''(?i)(api[_-]?key|apikey|api[_-]?secret)['":\s=]+([a-zA-Z0-9_\-]{20,})'''
+  tags = ["api", "key"]
+  [rules.allowlist]
+    regexes = [
+      '''<YOUR_[A-Z_]+>''',
+      '''example[_-]?key''',
+    ]

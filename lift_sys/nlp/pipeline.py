@@ -111,7 +111,9 @@ class SemanticAnalysisPipeline:
 
         # Extract semantic elements
         entities = self._extract_entities(doc, text)
-        relationships = self._extract_relationships(doc)
+        relationships = self._normalize_relationships(
+            self._extract_relationships(doc), entities
+        )
         modals = self._detect_modal_operators(text)
         constraints = self._detect_constraints(doc, text)
         ambiguities = self._detect_ambiguities(text)
@@ -239,6 +241,93 @@ class SemanticAnalysisPipeline:
         relationships = extract_relationships(doc)
         relationships = deduplicate_relationships(relationships)
         return relationships
+
+    def _normalize_relationships(
+        self, raw_relationships: list[dict[str, Any]], entities: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Map raw extractor payloads to frontend Relationship interface."""
+
+        if not raw_relationships:
+            return []
+
+        entity_lookup = {}
+        for entity in entities:
+            text_key = entity["text"].lower()
+            entity_lookup.setdefault(text_key, entity["id"])
+            normalized_text = text_key.replace("_", " ")
+            entity_lookup.setdefault(normalized_text, entity["id"])
+            entity_lookup.setdefault(normalized_text.replace(" ", ""), entity["id"])
+
+        normalized = []
+        for rel in raw_relationships:
+            raw_type = rel.get("relationship_type", "RELATES_TO")
+            source_id = self._resolve_entity_reference(rel.get("from_entity", ""), entity_lookup)
+            target_id = self._resolve_entity_reference(rel.get("to_entity", ""), entity_lookup)
+
+            span = rel.get("span", {}) or {}
+            start = span.get("start", -1)
+            end = span.get("end", -1)
+
+            normalized.append(
+                {
+                    "id": rel.get("id", ""),
+                    "type": self._map_relationship_category(raw_type),
+                    "source": source_id or rel.get("from_entity", ""),
+                    "target": target_id or rel.get("to_entity", ""),
+                    "text": rel.get("description", ""),
+                    "from": start,
+                    "to": end,
+                    "confidence": rel.get("confidence", 0.0),
+                    # Preserve original extractor payload for reference
+                    "relationship_type": raw_type,
+                    "from_entity": rel.get("from_entity", ""),
+                    "to_entity": rel.get("to_entity", ""),
+                    "span": span,
+                }
+            )
+
+        return normalized
+
+    def _resolve_entity_reference(
+        self, label: str, entity_lookup: dict[str, str]
+    ) -> str | None:
+        """Attempt to resolve a relationship endpoint to an entity ID."""
+
+        if not label:
+            return None
+
+        lowered = label.lower()
+        if lowered in entity_lookup:
+            return entity_lookup[lowered]
+
+        variants = {
+            lowered.replace("_", " "),
+            lowered.replace("_", ""),
+            lowered.replace("-", " "),
+            lowered.replace("-", ""),
+        }
+        for variant in variants:
+            if variant in entity_lookup:
+                return entity_lookup[variant]
+
+        return None
+
+    def _map_relationship_category(self, relationship_type: str) -> str:
+        """Normalize extractor types to frontend RelationshipType values."""
+
+        normalized = relationship_type.upper()
+        causal_types = {"CAUSES", "TRIGGERS"}
+        temporal_types = {"PRECEDES", "FOLLOWS"}
+
+        if normalized in causal_types:
+            return "causal"
+        if normalized in temporal_types:
+            return "temporal"
+        if normalized in {"CONDITIONAL", "RESULTS_IN"}:
+            return "conditional"
+
+        # Default grouping treats operational semantics as dependencies
+        return "dependency"
 
     def _detect_modal_operators(self, text: str) -> list[dict[str, Any]]:
         """Detect modal operators (must, should, may, cannot)."""

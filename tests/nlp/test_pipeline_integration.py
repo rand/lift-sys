@@ -45,14 +45,19 @@ class TestSemanticAnalysisPipelineIntegration:
         # Should extract at least one relationship
         assert len(result["relationships"]) >= 1
 
-        # Check relationship structure
+        # Check relationship structure matches frontend contract
         rel = result["relationships"][0]
-        assert "id" in rel
-        assert "from_entity" in rel or "fromEntity" in rel
-        assert "to_entity" in rel or "toEntity" in rel
-        assert "relationship_type" in rel or "relationshipType" in rel
-        assert "confidence" in rel
-        assert "description" in rel
+        assert rel["id"]
+        assert rel["source"]
+        assert rel["target"]
+        assert rel["type"] in {"dependency", "causal", "temporal", "conditional"}
+        assert isinstance(rel["confidence"], (int, float))
+        assert "text" in rel
+        assert "from" in rel and "to" in rel
+        # Backwards compatibility payload retained for IR consumers
+        assert "relationship_type" in rel
+        assert "from_entity" in rel
+        assert "to_entity" in rel
 
     def test_pipeline_extracts_multiple_relationships(self, pipeline):
         """Test extraction of multiple relationships from complex text."""
@@ -64,7 +69,7 @@ class TestSemanticAnalysisPipelineIntegration:
         assert len(relationships) >= 2
 
         # Should find "reads code" and "generates tokens"
-        rel_types = {r.get("relationship_type", r.get("relationshipType")) for r in relationships}
+        rel_types = {r["relationship_type"] for r in relationships}
         assert len(rel_types) >= 2
 
     def test_pipeline_integrates_with_entities(self, pipeline):
@@ -123,12 +128,9 @@ class TestSemanticAnalysisPipelineIntegration:
         assert len(relationships) >= 1
 
         # Should find DEPENDS_ON relationship
-        dep_rels = [
-            r
-            for r in relationships
-            if r.get("relationship_type", r.get("relationshipType")) == "DEPENDS_ON"
-        ]
+        dep_rels = [r for r in relationships if r["relationship_type"] == "DEPENDS_ON"]
         assert len(dep_rels) >= 1
+        assert all(rel["type"] == "dependency" for rel in dep_rels)
 
     def test_pipeline_writes_to_relationship(self, pipeline):
         """Test extraction of WRITES_TO relationships."""
@@ -139,12 +141,9 @@ class TestSemanticAnalysisPipelineIntegration:
         relationships = result["relationships"]
 
         # Should find WRITES_TO relationship
-        writes_rels = [
-            r
-            for r in relationships
-            if r.get("relationship_type", r.get("relationshipType")) == "WRITES_TO"
-        ]
+        writes_rels = [r for r in relationships if r["relationship_type"] == "WRITES_TO"]
         assert len(writes_rels) >= 1
+        assert all(rel["type"] == "dependency" for rel in writes_rels)
 
     def test_pipeline_multiple_components(self, pipeline):
         """Test that all pipeline components work together."""
@@ -172,12 +171,9 @@ class TestSemanticAnalysisPipelineIntegration:
         relationships = result["relationships"]
 
         # Should extract CAUSES relationship from conditional
-        causal_rels = [
-            r
-            for r in relationships
-            if r.get("relationship_type", r.get("relationshipType")) == "CAUSES"
-        ]
+        causal_rels = [r for r in relationships if r["relationship_type"] == "CAUSES"]
         assert len(causal_rels) >= 1
+        assert all(rel["type"] in {"causal", "conditional"} for rel in causal_rels)
 
 
 class TestRealWorldExamples:
@@ -206,9 +202,7 @@ class TestRealWorldExamples:
 
         # Should detect validation operation
         operates_on = [
-            r
-            for r in result["relationships"]
-            if r.get("relationship_type", r.get("relationshipType")) == "OPERATES_ON"
+            r for r in result["relationships"] if r["relationship_type"] == "OPERATES_ON"
         ]
         assert len(operates_on) >= 1
 
@@ -226,9 +220,7 @@ class TestRealWorldExamples:
         assert len(result["relationships"]) >= 3
 
         # Should have different relationship types
-        rel_types = {
-            r.get("relationship_type", r.get("relationshipType")) for r in result["relationships"]
-        }
+        rel_types = {r["relationship_type"] for r in result["relationships"]}
         assert len(rel_types) >= 2
 
     def test_workflow_spec(self, pipeline):
@@ -246,11 +238,7 @@ class TestRealWorldExamples:
         assert len(relationships) >= 2
 
         # Should have dependency relationship
-        dep_rels = [
-            r
-            for r in relationships
-            if r.get("relationship_type", r.get("relationshipType")) == "DEPENDS_ON"
-        ]
+        dep_rels = [r for r in relationships if r["relationship_type"] == "DEPENDS_ON"]
         assert len(dep_rels) >= 1
 
     def test_complex_processing_spec(self, pipeline):
@@ -272,9 +260,7 @@ class TestRealWorldExamples:
         assert len(result["modalOperators"]) >= 2  # "must" and "should"
 
         # Should have various relationship types
-        rel_types = {
-            r.get("relationship_type", r.get("relationshipType")) for r in result["relationships"]
-        }
+        rel_types = {r["relationship_type"] for r in result["relationships"]}
         assert "OPERATES_ON" in rel_types or "USES" in rel_types or "TRANSFORMS" in rel_types
 
     def test_api_spec(self, pipeline):
@@ -293,7 +279,7 @@ class TestRealWorldExamples:
         assert len(relationships) >= 3
 
         # Check for various operations
-        rel_types = {r.get("relationship_type", r.get("relationshipType")) for r in relationships}
+        rel_types = {r["relationship_type"] for r in relationships}
         # Should have data flow operations
         assert any(
             t in rel_types for t in ["READS_FROM", "WRITES_TO", "RETURNS", "OPERATES_ON", "USES"]

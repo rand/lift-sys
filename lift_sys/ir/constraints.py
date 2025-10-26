@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import uuid
 from typing import Any
 
 
@@ -113,12 +114,37 @@ class Constraint:
     severity: ConstraintSeverity = ConstraintSeverity.ERROR
     """Severity of constraint violation (error blocks generation, warning logs)"""
 
+    # Phase 2 metadata fields
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """Stable identifier for referencing constraints across systems"""
+
+    applies_to: list[str] = field(default_factory=list)
+    """IDs of IR elements (e.g., holes) the constraint applies to"""
+
+    source: str = ""
+    """Where this constraint originated (human, agent, verification, etc.)"""
+
+    impact: str = ""
+    """Description of the expected impact or rationale"""
+
+    locked: bool = False
+    """Whether this constraint represents a locked design decision"""
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+    """Arbitrary metadata for downstream consumers"""
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize constraint to dictionary."""
         return {
             "type": self.type.value,
             "description": self.description,
             "severity": self.severity.value,
+            "id": self.id,
+            "appliesTo": self.applies_to,
+            "source": self.source,
+            "impact": self.impact,
+            "locked": self.locked,
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -139,6 +165,12 @@ class Constraint:
                 type=constraint_type,
                 description=data["description"],
                 severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+                id=data.get("id", data.get("constraintId", str(uuid.uuid4()))),
+                applies_to=data.get("appliesTo", data.get("applies_to", [])),
+                source=data.get("source", ""),
+                impact=data.get("impact", ""),
+                locked=data.get("locked", False),
+                metadata=data.get("metadata", {}),
             )
 
 
@@ -193,6 +225,12 @@ class ReturnConstraint(Constraint):
             ),
             description=data.get("description", ""),
             severity=ConstraintSeverity(data.get("severity", ConstraintSeverity.ERROR.value)),
+            id=data.get("id", data.get("constraintId", str(uuid.uuid4()))),
+            applies_to=data.get("appliesTo", data.get("applies_to", [])),
+            source=data.get("source", ""),
+            impact=data.get("impact", ""),
+            locked=data.get("locked", False),
+            metadata=data.get("metadata", {}),
         )
 
 

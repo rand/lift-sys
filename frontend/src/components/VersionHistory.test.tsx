@@ -99,8 +99,9 @@ describe("VersionHistory", () => {
     render(<VersionHistory sessionId={mockSessionId} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/human: 5/)).toBeInTheDocument();
-      expect(screen.getByText(/agent: 3/)).toBeInTheDocument();
+      // Provenance badges may appear multiple times (one per version)
+      expect(screen.getAllByText(/human:\s*5/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/agent:\s*3/).length).toBeGreaterThan(0);
     });
   });
 
@@ -204,7 +205,8 @@ describe("VersionHistory", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Restore Version/)).toBeInTheDocument();
+      // "Restore Version" may appear multiple times (dialog title, button text, etc.)
+      expect(screen.getAllByText(/Restore Version/).length).toBeGreaterThan(0);
     });
   });
 
@@ -291,7 +293,8 @@ describe("VersionHistory", () => {
 
     await waitFor(() => {
       // Date should be formatted as "Jan 15, 10:00 AM" or similar
-      expect(screen.getByText(/Jan 15/)).toBeInTheDocument();
+      // Multiple versions have dates, so getAllByText
+      expect(screen.getAllByText(/Jan 15/).length).toBeGreaterThan(0);
     });
   });
 });

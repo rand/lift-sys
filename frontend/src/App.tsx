@@ -15,8 +15,9 @@ const EnhancedIrView = lazy(() => import("./views/EnhancedIrView").then(m => ({ 
 const PlannerView = lazy(() => import("./views/PlannerView").then(m => ({ default: m.PlannerView })));
 const IdeView = lazy(() => import("./views/IdeView").then(m => ({ default: m.IdeView })));
 const PromptWorkbenchView = lazy(() => import("./views/PromptWorkbenchView").then(m => ({ default: m.PromptWorkbenchView })));
+const ICSView = lazy(() => import("./views/ICSView").then(m => ({ default: m.ICSView })));
 
-type Section = "configuration" | "repository" | "prompt" | "ir" | "planner" | "ide";
+type Section = "configuration" | "repository" | "prompt" | "ir" | "planner" | "ide" | "ics";
 
 export default function App() {
   const [section, setSection] = useState<Section>("configuration");
@@ -74,6 +75,9 @@ export default function App() {
           <Button variant={section === "ide" ? "default" : "ghost"} onClick={() => setSection("ide")} className="justify-start">
             IDE
           </Button>
+          <Button variant={section === "ics" ? "default" : "ghost"} onClick={() => setSection("ics")} className="justify-start">
+            ICS (New)
+          </Button>
         </nav>
         <Separator />
         <Button variant="ghost" onClick={() => void signOut()} className="justify-start mt-auto">
@@ -92,6 +96,7 @@ export default function App() {
             {section === "ir" && <EnhancedIrView />}
             {section === "planner" && <PlannerView />}
             {section === "ide" && <IdeView />}
+            {section === "ics" && <ICSView />}
           </Suspense>
         </main>
       </div>

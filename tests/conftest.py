@@ -318,6 +318,84 @@ def configured_api_client(api_client: TestClient) -> TestClient:
 
 
 @pytest.fixture
+def mock_provider():
+    """
+    Create mock provider for testing code generation without real LLM calls.
+
+    This mock provider supports structured output generation and can be
+    configured to return specific responses for testing.
+    """
+    from typing import Any
+
+    from lift_sys.providers.base import BaseProvider, ProviderCapabilities
+
+    class MockProvider(BaseProvider):
+        """Mock provider for testing."""
+
+        def __init__(self) -> None:
+            super().__init__(
+                name="mock",
+                capabilities=ProviderCapabilities(
+                    streaming=False,
+                    structured_output=True,
+                    reasoning=True,
+                ),
+            )
+            self._initialized = True
+            self._response: str | None = None
+
+        def set_generate_response(self, response: str) -> None:
+            """Set the response to return from generate_structured."""
+            self._response = response
+
+        async def initialize(self, credentials: dict) -> None:
+            self._initialized = True
+
+        async def generate_text(
+            self,
+            prompt: str,
+            max_tokens: int = 1024,
+            temperature: float = 0.7,
+            **kwargs: Any,
+        ) -> str:
+            if self._response:
+                return self._response
+            return '{"implementation": "return 0;", "imports": [], "helper_functions": []}'
+
+        async def generate_stream(self, prompt: str, **kwargs: Any):
+            raise NotImplementedError("Streaming not implemented in mock")
+
+        async def generate_structured(
+            self,
+            prompt: str,
+            schema: dict,
+            **kwargs: Any,
+        ) -> dict:
+            import json
+
+            if self._response:
+                return json.loads(self._response)
+            return {
+                "implementation": "return 0;",
+                "imports": [],
+                "helper_functions": [],
+            }
+
+        async def check_health(self) -> bool:
+            return self._initialized
+
+        @property
+        def supports_streaming(self) -> bool:
+            return False
+
+        @property
+        def supports_structured_output(self) -> bool:
+            return True
+
+    return MockProvider()
+
+
+@pytest.fixture
 def mock_subprocess_run(monkeypatch):
     """Mock subprocess.run for external tool calls."""
     mock = Mock()

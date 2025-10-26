@@ -75,68 +75,6 @@
       "warnings": []
     }
   },
-  "typescript_pipeline_array_filtering": {
-    "metadata": {
-      "feature": "array_methods",
-      "language": "typescript",
-      "prompt": "filter positive numbers",
-      "test": "typescript_pipeline_e2e"
-    },
-    "original_key": "typescript_pipeline_array_filtering",
-    "response": {
-      "ir_version": null,
-      "language": "typescript",
-      "metadata": {
-        "attempts": 1,
-        "generator": "typescript-xgrammar",
-        "has_lsp_context": false,
-        "ir_origin": "User request"
-      },
-      "source_code": "/**\n * Filter an array of numbers to keep only positive numbers\n * \n * This function is useful for processing numerical data to isolate positive values.\n *\n * @param numbers - Parameter of type Array<number>\n * @returns Array<number>\n */\nexport function filter_positive_numbers(numbers: Array<number>): Array<number> {\n  let result_list: Array<number>;\n\n  // Initialize an empty result list\n  result_list = []\n  // Iterate through all elements in the input list\n  for (let number of numbers)\n  // Check if the number is positive\n  if (number > 0)\n  // Append positive numbers to the result list\n  result_list.push(number)\n  // Return the result list after the loop completes\n  return result_list\n}",
-      "warnings": []
-    }
-  },
-  "typescript_pipeline_async_function": {
-    "metadata": {
-      "feature": "async_await",
-      "language": "typescript",
-      "prompt": "async fetch user data",
-      "test": "typescript_pipeline_e2e"
-    },
-    "original_key": "typescript_pipeline_async_function",
-    "response": {
-      "ir_version": null,
-      "language": "typescript",
-      "metadata": {
-        "attempts": 1,
-        "generator": "typescript-xgrammar",
-        "has_lsp_context": false,
-        "ir_origin": "User request"
-      },
-      "source_code": "/**\n * Fetch user data by ID and return a user object\n * \n * This function is necessary to retrieve user information from an external API for use in the application.\n *\n * @param user_id - Parameter of type number\n * @returns Promise<Record<string, any>>\n */\nexport async function fetch_user_by_id(user_id: number): Promise<Record<string, any>> {\n  let url: string;\n  let response: Response;\n  let user_data: Record<string, any>;\n\n  // Check if the user_id is a positive integer\n  user_id <= 0\n  // Throw an error if user_id is not a positive integer\n  throw new Error('User ID must be a positive integer')\n  // Construct the URL with the provided user ID\n  url = `https://api.example.com/users/${user_id}`\n  // Make an asynchronous HTTP GET request to the constructed URL\n  response = await fetch(url)\n  // Parse the JSON response into a dictionary\n  user_data = await response.json()\n  // Return the parsed user object\n  return user_data\n}",
-      "warnings": []
-    }
-  },
-  "typescript_pipeline_simple_addition": {
-    "metadata": {
-      "language": "typescript",
-      "prompt": "add two numbers",
-      "test": "typescript_pipeline_e2e"
-    },
-    "original_key": "typescript_pipeline_simple_addition",
-    "response": {
-      "ir_version": null,
-      "language": "typescript",
-      "metadata": {
-        "attempts": 2,
-        "generator": "typescript-xgrammar",
-        "has_lsp_context": false,
-        "ir_origin": "User's request"
-      },
-      "source_code": "/**\n * Add two numbers and return the result\n * \n * This function is a basic arithmetic operation that takes two numbers as input and returns their sum.\n *\n * @param first_number - Parameter of type number\n * @param second_number - Parameter of type number\n * @returns number\n */\nexport function add_two_numbers(first_number: number, second_number: number): number {\n  let sum: number;\n\n  // Add the first_number and second_number\n  sum = first_number + second_number\n  // Return the sum of the two numbers\n  return sum\n}",
-      "warnings": []
-    }
-  },
   "typescript_schema_compliance_test": {
     "metadata": {
       "language": "typescript",

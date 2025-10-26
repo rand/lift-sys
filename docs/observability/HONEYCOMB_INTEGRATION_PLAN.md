@@ -1,10 +1,11 @@
 # Honeycomb Observability Integration Plan
 
-**Date**: 2025-10-19
+**Date**: 2025-10-23 (Updated)
 **Epic**: Production-Grade Observability with Honeycomb + OpenTelemetry
 **Timeline**: 4 days (10 hours total)
-**Priority**: P0 (blocks production launch)
-**Dependencies**: Modal deployment, Supabase integration
+**Priority**: P1 (production readiness, not immediate blocker)
+**Dependencies**: ✅ Modal deployment, ✅ Supabase integration, ✅ Multi-language generators
+**Status**: Ready to implement (infrastructure complete)
 
 ---
 
@@ -25,6 +26,34 @@
 
 ---
 
+## 0. Current Infrastructure State (2025-10-23)
+
+### What's Changed Since Initial Planning
+
+**Infrastructure Complete**:
+- ✅ Modal deployment (Qwen2.5-Coder-32B-Instruct)
+- ✅ Supabase database (9 migrations complete)
+- ✅ **Multi-language code generation** (TypeScript, Rust, Go, Java)
+- ✅ **DSPy meta-framework** (Phase 1, 2, 3, 7 complete)
+- ✅ Fixture-based testing (real LLM validation with caching)
+- ✅ **TokDrift robustness framework** (Phase 1 complete)
+
+**New Instrumentation Requirements**:
+1. **Multi-language code generation** spans (4+ languages, soon 7+)
+2. **DSPy optimization** traces (MIPROv2, COPRO experiments)
+3. **Robustness testing** metrics (TokDrift sensitivity analysis)
+4. **Dual-provider routing** (Best Available vs Modal Inference, per ADR 001)
+5. **ExecutionHistory** integration (H11 provides provenance foundation)
+
+**Current Observability Gaps**:
+- No distributed tracing across Modal → Supabase → LLM
+- No language-specific code generation metrics
+- No robustness/quality tracking (TokDrift integration point)
+- No DSPy optimization experiment tracking
+- No cost attribution per language/provider
+
+---
+
 ## 1. Overview
 
 ### 1.1 Goal
@@ -34,6 +63,8 @@ Implement production-grade observability for lift-sys using **Honeycomb** + **Op
 - **Performance analysis** (identify slow requests, bottlenecks)
 - **Error tracking** (trace failures across service boundaries)
 - **Business metrics** (success rates, user behavior, cost tracking)
+- **Multi-language quality metrics** (per-language success rates, robustness scores)
+- **DSPy optimization tracking** (experiment results, improvements over time)
 - **Production readiness** for beta launch
 
 ### 1.2 Why Honeycomb
@@ -45,31 +76,44 @@ Implement production-grade observability for lift-sys using **Honeycomb** + **Op
 ✅ **SLO tracking**: Built-in Service Level Objectives
 ✅ **Free tier**: 20M events/month (sufficient for beta)
 
-### 1.3 Key Metrics We'll Track
+### 1.3 Key Metrics We'll Track (Updated 2025-10-23)
 
 **Latency**:
 - E2E request latency (p50, p90, p95, p99)
 - IR generation time
-- Code generation time
+- **Multi-language code generation time** (per language: TypeScript, Rust, Go, Java, Python, Zig, C++)
 - Database query time
-- LLM provider latency
+- LLM provider latency (by provider: Best Available vs Modal Inference)
 
 **Success Rates**:
-- Code compilation rate
-- Code execution rate
+- **Per-language compilation rate** (TypeScript 80%, Rust 75%, etc.)
+- **Per-language execution rate** (track separately for each language)
 - Session creation rate
 - Hole resolution rate
+- **DSPy optimization improvement** (before/after MIPRO)
+
+**Quality Metrics** (NEW):
+- **Robustness scores** (TokDrift Phase 2 integration)
+  - IR generation sensitivity (% paraphrase variants → non-equivalent IR)
+  - Code generation sensitivity (% IR variants → non-equivalent code)
+  - Per-language robustness (cross-language consistency)
+- **IR quality scores** (from H10 OptimizationMetrics)
+- **Code quality scores** (from H10 OptimizationMetrics)
+- **Confidence calibration** (from H12 ConfidenceCalibration)
 
 **Errors**:
 - LLM failures (rate limit, timeout, invalid response)
 - Database errors (connection, query)
 - Validation errors (IR, code)
+- **Per-language compilation errors** (categorized by language + error type)
 
 **Business Metrics**:
 - Active users
 - Sessions created/hour
-- Cost per request (LLM tokens, database queries)
+- **Cost per request by language** (TypeScript cheaper than Rust?)
+- **Cost per provider** (Best Available vs Modal Inference)
 - User satisfaction (session completion rate)
+- **Language usage distribution** (which languages are most popular?)
 
 ---
 
@@ -418,7 +462,7 @@ Level 4: Business Events (Analytics)
 - `validation.ir` - Validating IR
 - `validation.code` - Validating generated code
 
-### 5.3 Attribute Conventions
+### 5.3 Attribute Conventions (Updated 2025-10-23)
 
 **Standard Attributes** (add to all spans):
 ```python
@@ -441,36 +485,60 @@ Level 4: Business Events (Analytics)
 
 # IR generation spans
 {
-    "ir.provider": "anthropic|openai|modal",
-    "ir.model": "claude-3-opus",
+    "ir.provider": "anthropic|openai|modal",  # Dual-provider routing (ADR 001)
+    "ir.provider_route": "best_available|modal_inference",  # NEW
+    "ir.model": "claude-3-opus|qwen2.5-coder-32b",
     "ir.completeness": 0.95,
     "ir.constraints_count": 5,
     "ir.validation_status": "valid|incomplete|contradictory",
+    "ir.quality_score": 0.87,  # From H10 OptimizationMetrics
 }
 
-# Code generation spans
+# Code generation spans (UPDATED for multi-language)
 {
+    "code.language": "typescript|rust|go|java|python|zig|cpp",  # NEW - critical for per-language metrics
+    "code.generator": "TypeScriptGenerator|RustGenerator|...",  # NEW
     "code.retries": 2,
     "code.success": True,
     "code.compilation_success": True,
     "code.execution_success": True,
     "code.lines": 45,
+    "code.quality_score": 0.26,  # From H10 OptimizationMetrics
+    "code.robustness_score": 0.93,  # From TokDrift Phase 2 (future)
 }
 
-# LLM spans
+# DSPy optimization spans (NEW)
 {
-    "llm.provider": "anthropic",
-    "llm.model": "claude-3-opus-20240229",
+    "dspy.optimizer": "miprov2|copro",  # From H8 OptimizationAPI
+    "dspy.signature": "IRGenerationSignature",
+    "dspy.metric": "ir_quality|code_quality|end_to_end",
+    "dspy.improvement": 0.15,  # % improvement from baseline
+    "dspy.examples_count": 53,
+}
+
+# LLM spans (UPDATED for routing)
+{
+    "llm.provider": "anthropic|openai|modal",
+    "llm.provider_route": "best_available|modal_inference",  # NEW - ADR 001
+    "llm.model": "claude-3-opus-20240229|qwen2.5-coder-32b",
     "llm.input_tokens": 1200,
     "llm.output_tokens": 450,
     "llm.cost_usd": 0.0234,
     "llm.latency_ms": 3400,
 }
 
+# Robustness testing spans (NEW - TokDrift)
+{
+    "robustness.test_type": "ir_paraphrase|code_variant",
+    "robustness.variant_count": 10,
+    "robustness.sensitivity": 0.08,  # % non-equivalent outputs
+    "robustness.language": "typescript|rust|go|...",  # For code variants
+}
+
 # Database spans
 {
     "db.operation": "insert|select|update|delete",
-    "db.table": "sessions",
+    "db.table": "sessions|holes|func_specs|execution_history",  # Updated tables
     "db.rows_affected": 1,
 }
 ```

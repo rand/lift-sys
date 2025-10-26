@@ -119,11 +119,11 @@ export function IRDiffViewer({
   const [rejectedDiffs, setRejectedDiffs] = useState<Set<string>>(new Set());
 
   const allDiffs: IRDiff[] = [
-    ...comparison.intent_comparison.diffs,
-    ...comparison.signature_comparison.diffs,
-    ...comparison.assertion_comparison.diffs,
-    ...comparison.effect_comparison.diffs,
-    ...comparison.metadata_comparison.diffs,
+    ...(comparison.intent_comparison?.diffs || []),
+    ...(comparison.signature_comparison?.diffs || []),
+    ...(comparison.assertion_comparison?.diffs || []),
+    ...(comparison.effect_comparison?.diffs || []),
+    ...(comparison.metadata_comparison?.diffs || []),
   ];
 
   const getDiffKey = (diff: IRDiff) => `${diff.category}-${diff.path}`;

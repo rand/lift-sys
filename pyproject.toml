@@ -37,6 +37,11 @@ dependencies = [
     "nltk>=3.8.0",
     "networkx>=3.2.0",
     "scipy>=1.11.0",
+    "guidance>=0.3.0",
+    "transformers>=4.57.0",
+    "torch>=2.8.0",
+    "accelerate>=1.11.0",
+    "huggingface-hub>=0.35.3",
 ]
 
 [project.optional-dependencies]
@@ -48,6 +53,15 @@ dev = [
     "pytest-playwright>=0.4.4",
     "anyio>=4.3.0",
     "playwright>=1.41.0"
+]
+causal = [
+    # DoWhy and dependencies for causal inference (H20-H24)
+    # NOTE: DoWhy requires Python 3.11 (cvxpy incompatibility with 3.13)
+    # Installed in separate .venv-dowhy via: uv venv --python 3.11 .venv-dowhy
+    # Communication via subprocess for isolation
+    "dowhy>=0.13",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
 ]
 
 [project.scripts]

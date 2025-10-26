@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "demo_user",
+          "value": "{\"id\":\"demo:google-user\",\"provider\":\"google\",\"email\":\"demo@google.com\",\"name\":\"Demo Google User\",\"avatarUrl\":null}"
+        }
+      ]
+    }
+  ]
+}

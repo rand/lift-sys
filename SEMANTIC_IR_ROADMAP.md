@@ -1,8 +1,10 @@
 # Semantic IR Implementation Roadmap
 
 **Vision**: https://codelift.space - Bidirectional translation system with formal IR
-**Last Updated**: 2025-10-18
-**Status**: Foundation Complete, Moving to Semantic Enhancement
+**Last Updated**: 2025-10-25
+**Status**: **ICS (Primary UI) Active**, Backend Partially Working, Semantic Enhancement Queued
+
+**📌 For up-to-date status, see [CURRENT_STATE.md](CURRENT_STATE.md)**
 
 ---
 
@@ -22,30 +24,40 @@
 
 ---
 
-## Current State Assessment (October 18, 2025)
+## Current State Assessment (October 25, 2025)
 
-### ✅ What's Built: Foundation Layer
+### 🎯 Active Work: ICS (Integrated Context Studio)
 
-**Phase 0: Core IR Generation Pipeline** ✅ COMPLETE
-- IR schema with JSON validation
-- Modal deployment (Qwen2.5-Coder-32B on A100-80GB)
-- XGrammar-constrained generation
-- Provider abstraction (Anthropic, Modal)
-- Performance metrics: 100% success, 38s latency, $0.0065/request
+**PRIMARY FOCUS** - Interactive specification editor with real-time semantic analysis
 
-**Phase 3 (from old numbering): Code Generation Optimization** ✅ COMPLETE
-- Constraint filtering (44% latency reduction)
-- AST repair and validation (83.3% success)
-- ReturnConstraint, LoopBehaviorConstraint, PositionConstraint detection
+**Status**:
+- ✅ Phase 4 complete: 32 Beads issues created (lift-sys-308 to 339)
+- 🔄 Phase 1 implementation starting (STEP-01, STEP-02)
+- 🎯 Timeline: 8-10 days to MVP (22/22 E2E tests passing)
+- 🚧 Blockers: H2 (DecorationApplication), H5 (Autocomplete popup)
 
-**Phase 5 (from old numbering): IR Interpreter** ✅ COMPLETE
-- Semantic validation before code generation
-- 100% detection rate
-- Early error blocking
+**Why ICS First**: Provides the primary user interface AND serves as diagnostic tool to identify backend issues systematically.
 
-**Phase 7 (from old numbering): IR-Level Constraints** ✅ COMPLETE
-- 97.8% test coverage
-- Proactive bug prevention
+---
+
+### ⚠️ What's Built: Foundation Layer (PARTIALLY WORKING)
+
+**Forward Mode Pipeline**: **80% Functional**
+- ✅ **Compilation**: 100% success (IR → syntactically valid Python)
+- ✅ **Execution**: 80% success (8/10 tests pass)
+- ❌ **Known Failures**: 3 persistent (find_index, get_type_name, is_valid_email)
+- ⚠️ **XGrammar**: Status uncertain, llguidance migration in progress
+- ⚠️ **132 Known Gaps**: Backend issues labeled `backend-gap` (incomplete features)
+
+**Working Components**:
+- ✅ **Phase 4**: AST-Level Repair (tests passing)
+- ✅ **Phase 5**: Assertion Checking (tests passing)
+- ✅ **Phase 7**: IR-Level Constraints (97.8% tests passing, 87/89)
+
+**Infrastructure**:
+- ✅ **Modal.com**: Operational (LLM inference, some latency issues)
+- ⏸️ **Supabase**: Schema designed, deployment pending (lift-sys-71)
+- ⏸️ **Honeycomb**: Observability planned, not started
 
 ### ❌ What's Missing: Semantic Enhancement
 
@@ -97,7 +109,43 @@ EnhancedIR {
 
 ---
 
+## Revised Timeline (Updated October 25, 2025)
+
+**Phase 0: ICS (Primary UI) - ACTIVE** (8-10 days)
+- Week 1: ICS Phase 1 implementation (22/22 E2E tests passing)
+- Provides primary user interface for lift-sys
+- Serves as diagnostic tool for backend issues
+- **Status**: Phase 4 complete, Phase 1 starting
+
+**Phase 1: Backend Stabilization - HIGH PRIORITY** (2-3 weeks)
+- Fix 3 persistent test failures (find_index, get_type_name, is_valid_email)
+- Investigate XGrammar status (migrate to llguidance if needed)
+- Systematic review and prioritization of 132 backend-gap issues
+- Deploy Supabase (lift-sys-71)
+
+**Phase 2: Enhancements - QUEUED** (timing TBD)
+- DSPy Architecture (H1-H19): Systematic LLM orchestration
+- ACE Enhancement (3 issues): Advanced code evolution
+- MUSLR Enhancement (4 issues): Multi-stage reasoning
+- Honeycomb observability integration
+
+**Phase 3-8: Semantic Enhancement - QUEUED** (12 months, post-stabilization)
+- See "The 6-Phase Plan" below for detailed breakdown
+- Entity resolution, typed holes, ambiguity detection
+- Interactive refinement UI, visualization, reverse mode
+- **Timing**: Begins after ICS + backend stabilization complete
+
+**Total Revised Timeline**:
+- Near-term (1-2 months): ICS + Backend stabilization
+- Medium-term (3-6 months): Enhancements (DSPy, ACE, MUSLR)
+- Long-term (12 months): Full semantic enhancement (6 phases)
+
+---
+
 ## The 6-Phase Plan (from SEMANTIC_IR_DETAILED_EXECUTION_PLAN.md)
+
+> **⚠️ NOTE**: This plan is QUEUED pending ICS completion and backend stabilization.
+> See "Revised Timeline" above for actual priorities.
 
 ### Phase 1: Foundation (Weeks 1-8) ← **START HERE**
 

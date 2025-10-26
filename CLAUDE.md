@@ -1,6 +1,6 @@
 # lift-sys Development Guidelines
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-10-25
 
 > **Project-Specific Rules**: This file contains development guidelines specific to the lift-sys project. For global Claude development guidelines, see `~/.claude/CLAUDE.md`.
 
@@ -43,21 +43,35 @@ lift_sys/
 
 ### Current Status (October 2025)
 
-- ✅ Forward mode proven end-to-end (NLP → IR → Code)
-- ✅ Modal.com deployment with GPU workers
-- ✅ Supabase database integration complete
-- ✅ Performance: ~16s median latency, 60% real success rate
-- 🔄 **Architecture Redesign: DSPy + Pydantic AI** (Phase 1 - 1/3 complete)
-- 🚧 Reverse mode in planning phase
-- 🚧 Honeycomb observability integration planned
+**For up-to-date status, see [CURRENT_STATE.md](CURRENT_STATE.md) and [docs/issues/BACKEND_STATUS.md](docs/issues/BACKEND_STATUS.md)**
+
+**Active Work:**
+- 🎯 **ICS (Integrated Context Studio)** - PRIMARY UI in development (Phase 4 complete, Phase 1 starting)
+- 🎯 **Backend Pipeline** - Partially working (80% success, 132 known gaps labeled `backend-gap`)
+
+**Working:**
+- ✅ Modal.com deployment operational (LLM inference)
+- ✅ Forward mode partially functional (100% compilation, 80% execution)
+- ✅ AST Repair (Phase 4), Assertion Checking (Phase 5), Constraints (Phase 7)
+
+**Queued:**
+- ⏸️ **DSPy + Pydantic AI Architecture** - Designed, queued for post-ICS implementation (H1-H19)
+- ⏸️ **ACE Enhancement** - Researched, queued (3 issues: lift-sys-167, 168, 169)
+- ⏸️ **MUSLR Enhancement** - Researched, queued (4 issues: lift-sys-163, 164, 165, 166)
+- ⏸️ **Supabase** - Schema designed, deployment pending (lift-sys-71 in progress)
+- ⏸️ **Honeycomb** - Observability planned, not started
+- 🚧 **Reverse mode** - Planning phase
 
 ---
 
 ## 2. Meta-Framework: Hole-Driven Development
 
+> **⚠️ STATUS NOTE**: This section describes the methodology for **future DSPy + Pydantic AI architecture work** (queued, post-ICS).
+> For **current active work** (ICS implementation), see [CURRENT_STATE.md](CURRENT_STATE.md) and [plans/ics-execution-plan.md](plans/ics-execution-plan.md).
+
 ### Overview
 
-**CRITICAL**: This project uses a **typed holes meta-framework** for systematic architecture redesign and implementation. This is NOT optional - it's the mandatory development methodology.
+**WHEN WORKING ON DSPY ARCHITECTURE**: This section describes the **typed holes meta-framework** for systematic DSPy implementation. These guidelines apply when you begin work on H1-H19 holes (currently queued).
 
 **What is it**: We treat the DSPy + Pydantic AI architecture proposal as an "IR with typed holes" that we systematically resolve through constraint propagation.
 

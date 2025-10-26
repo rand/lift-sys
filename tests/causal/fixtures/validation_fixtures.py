@@ -284,7 +284,7 @@ def create_insufficient_data_traces(n_samples: int = 3) -> pd.DataFrame:
 # Known R² values for each fixture
 FIXTURE_R2_RANGES = {
     "perfect_fit": (0.99, 1.0),  # R² ≈ 1.0
-    "good_fit": (0.90, 0.99),  # R² ≈ 0.95
-    "threshold_fit": (0.65, 0.75),  # R² ≈ 0.70
+    "good_fit": (0.95, 1.0),  # R² ≈ 0.95-0.99 (small noise)
+    "threshold_fit": (0.65, 0.80),  # R² ≈ 0.70 (calibrated noise)
     "poor_fit": (0.0, 0.5),  # R² < 0.5
 }

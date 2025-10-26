@@ -202,13 +202,13 @@ class TestTrainTestSplit:
             train_test_split(traces, test_size=0.2)
 
     def test_minimum_viable_split(self):
-        """Test minimum viable split (5 samples → 3 train, 2 test)."""
-        traces = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [2, 4, 6, 8, 10]})
+        """Test minimum viable split (6 samples → 4 train, 2 test)."""
+        traces = pd.DataFrame({"x": [1, 2, 3, 4, 5, 6], "y": [2, 4, 6, 8, 10, 12]})
         train, test = train_test_split(traces, test_size=0.2, random_state=42)
 
         assert len(train) >= 2
         assert len(test) >= 2
-        assert len(train) + len(test) == 5
+        assert len(train) + len(test) == 6
 
     def test_invalid_test_size(self):
         """Test error with invalid test_size."""
@@ -352,8 +352,8 @@ class TestCrossValidateSCM:
 
     def test_root_nodes_skipped(self):
         """Test that root nodes (no parents) are skipped."""
-        # Single root node - no edges to validate
-        traces = pd.DataFrame({"x": [1, 2, 3, 4, 5]})
+        # Single root node - no edges to validate (need more samples for split)
+        traces = pd.DataFrame({"x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})
         graph = nx.DiGraph()
         graph.add_node("x")
 

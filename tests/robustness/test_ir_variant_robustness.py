@@ -65,10 +65,10 @@ class TestIRVariantRobustness:
         def generate_code(ir):
             if ir.effects:
                 # Wrap each effect description as a string literal (docstring-like)
-                effects_str = "\\n    ".join(f'"{e.description}"' for e in ir.effects)
+                effects_str = "\n    ".join(f'"{e.description}"' for e in ir.effects)
             else:
                 effects_str = "pass"
-            return f"def {ir.signature.name}():\\n    {effects_str}"
+            return f"def {ir.signature.name}():\n    {effects_str}"
 
         # Measure sensitivity
         result = sensitivity_analyzer.measure_code_sensitivity(

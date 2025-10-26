@@ -12,6 +12,7 @@ Ground Truth: Manually verified causal graphs for known code patterns.
 
 import ast
 
+import networkx as nx
 import pytest
 
 from lift_sys.causal.graph_builder import CausalGraphBuilder
@@ -235,7 +236,8 @@ def graph_builder():
 def test_validate_linear_chain(graph_builder):
     """Validate graph extraction on linear chain."""
     case = GROUND_TRUTH_CASES[0]  # linear_chain
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()  # Empty call graph for single-function tests
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -255,7 +257,8 @@ def test_validate_linear_chain(graph_builder):
 def test_validate_diamond(graph_builder):
     """Validate graph extraction on diamond structure."""
     case = GROUND_TRUTH_CASES[1]  # diamond
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -270,7 +273,8 @@ def test_validate_diamond(graph_builder):
 def test_validate_conditional(graph_builder):
     """Validate graph extraction on conditional logic."""
     case = GROUND_TRUTH_CASES[2]  # conditional
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -286,7 +290,8 @@ def test_validate_conditional(graph_builder):
 def test_validate_loop(graph_builder):
     """Validate graph extraction on loops."""
     case = GROUND_TRUTH_CASES[3]  # loop
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -301,7 +306,8 @@ def test_validate_loop(graph_builder):
 def test_validate_function_calls(graph_builder):
     """Validate graph extraction with function calls."""
     case = GROUND_TRUTH_CASES[4]  # function_calls
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -316,7 +322,8 @@ def test_validate_function_calls(graph_builder):
 def test_validate_exception_handling(graph_builder):
     """Validate graph extraction with try/except."""
     case = GROUND_TRUTH_CASES[5]  # exception_handling
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -331,7 +338,8 @@ def test_validate_exception_handling(graph_builder):
 def test_validate_list_comprehension(graph_builder):
     """Validate graph extraction with list comprehensions."""
     case = GROUND_TRUTH_CASES[6]  # list_comprehension
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
     metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
@@ -354,8 +362,10 @@ def test_validate_all_cases_aggregate(graph_builder):
     print("CAUSAL GRAPH VALIDATION (STEP-16)")
     print("=" * 80)
 
+    call_graph = nx.DiGraph()  # Empty call graph for single-function tests
+
     for case in GROUND_TRUTH_CASES:
-        graph = graph_builder.build(case.ast)
+        graph = graph_builder.build(case.ast, call_graph)
         extracted_edges = set(graph.edges())
         metrics = calculate_precision_recall(extracted_edges, case.expected_edges)
         metrics["case_name"] = case.name
@@ -425,7 +435,8 @@ def empty():
     pass
 """
     ast_tree = ast.parse(code)
-    graph = graph_builder.build(ast_tree)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(ast_tree, call_graph)
 
     assert graph.number_of_nodes() >= 0  # Should not crash
     assert graph.number_of_edges() >= 0
@@ -438,7 +449,8 @@ def constant():
     return 42
 """
     ast_tree = ast.parse(code)
-    graph = graph_builder.build(ast_tree)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(ast_tree, call_graph)
 
     assert graph.number_of_nodes() >= 0
 
@@ -447,7 +459,8 @@ def test_precision_perfect_when_all_correct(graph_builder):
     """Test precision calculation is perfect when all edges correct."""
     # Simple case where extraction should be perfect
     case = GROUND_TRUTH_CASES[0]  # linear_chain is simplest
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
 
@@ -461,7 +474,8 @@ def test_recall_perfect_when_all_found(graph_builder):
     """Test recall calculation is perfect when all true edges found."""
     # If we find all expected edges, recall should be 1.0
     case = GROUND_TRUTH_CASES[0]
-    graph = graph_builder.build(case.ast)
+    call_graph = nx.DiGraph()
+    graph = graph_builder.build(case.ast, call_graph)
 
     extracted_edges = set(graph.edges())
 

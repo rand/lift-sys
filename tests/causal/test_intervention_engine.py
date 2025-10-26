@@ -438,13 +438,15 @@ def test_validate_error_message_includes_available_nodes():
 # ============================================================================
 
 
-def test_execute_not_yet_implemented():
-    """Test execute method raises NotImplementedError (STEP-11 pending)."""
+def test_execute_requires_traces():
+    """Test execute method requires traces in SCM dict."""
     engine = InterventionEngine()
     graph = nx.DiGraph([("x", "y")])
-    scm = {}  # Fitted SCM (future)
+    scm = {}  # Missing traces
 
-    with pytest.raises(NotImplementedError, match="STEP-11"):
+    from lift_sys.causal.intervention_engine import InterventionError
+
+    with pytest.raises(InterventionError, match="must contain 'traces'"):
         engine.execute(scm, "do(x=5)", graph)
 
 

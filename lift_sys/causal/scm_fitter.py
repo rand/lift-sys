@@ -229,7 +229,7 @@ class SCMFitter:
             raise FittingError(f"DoWhy subprocess error: {error_msg}")
 
         # Store mechanisms for inspection
-        scm_data = result.get("scm", {})
+        scm_data = result.get("scm") or {}
         self.mechanisms = scm_data.get("mechanisms", {})
 
         # Return full result including validation

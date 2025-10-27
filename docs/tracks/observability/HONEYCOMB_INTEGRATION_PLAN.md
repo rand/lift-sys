@@ -1,3 +1,22 @@
+---
+track: observability
+document_type: integration_plan
+status: planning_complete
+priority: P2
+completion: 0%
+last_updated: 2025-10-23
+session_protocol: |
+  For new Claude Code session:
+  1. Honeycomb planning is COMPLETE (awaiting production deployment)
+  2. Use this document as implementation reference
+  3. Timeline: 4 days (10 hours) when ready to implement
+  4. Dependencies: Modal deployment ✅, Supabase ✅, Multi-language generators ✅
+related_docs:
+  - docs/tracks/observability/HONEYCOMB_QUICK_START.md
+  - docs/tracks/observability/OBSERVABILITY_STATUS.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+---
+
 # Honeycomb Observability Integration Plan
 
 **Date**: 2025-10-23 (Updated)

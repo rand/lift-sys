@@ -1,3 +1,23 @@
+---
+track: dspy
+document_type: meta_framework_design
+status: active
+priority: P0
+completion: 100%
+last_updated: 2025-10-20
+session_protocol: |
+  For new Claude Code session:
+  1. Read this document to understand hole-driven development meta-framework
+  2. Use as reference for hole resolution workflow
+  3. Consult constraint propagation rules when resolving holes
+  4. Follow phase structure for systematic implementation
+related_docs:
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/tracks/dspy/PHASE_GATES_VALIDATION.md
+  - docs/tracks/dspy/REIFICATION_SUMMARY.md
+---
+
 # Meta-Framework: Design by Typed Holes
 
 **Date**: 2025-10-20

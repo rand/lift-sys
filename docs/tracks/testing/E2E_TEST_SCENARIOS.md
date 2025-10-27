@@ -1,3 +1,22 @@
+---
+track: testing
+document_type: test_scenarios
+status: complete
+priority: P1
+completion: 100%
+last_updated: 2025-10-26
+session_protocol: |
+  For new Claude Code session:
+  1. Use this document for E2E test design reference (DoWhy integration)
+  2. 10 test repositories defined with comprehensive scenarios
+  3. Scenarios cover static mode, dynamic mode, performance, and edge cases
+  4. Reference for future causal analysis testing
+related_docs:
+  - docs/tracks/testing/E2E_VALIDATION_PLAN.md
+  - docs/tracks/testing/TESTING_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # End-to-End Test Scenarios for DoWhy Integration
 
 **Date**: 2025-10-26

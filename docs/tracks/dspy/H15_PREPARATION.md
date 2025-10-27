@@ -1,7 +1,27 @@
+---
+track: dspy
+document_type: hole_preparation
+status: complete
+priority: P2
+phase: 6
+completion: 100%
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. H15 is RESOLVED (implementation complete)
+  2. Use this document as reference for H15 design decisions
+  3. Implementation: lift_sys/dspy_signatures/migration_constraints.py
+  4. Tests: 33/33 passing
+related_docs:
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/tracks/dspy/SESSION_STATE.md
+---
+
 # H15: MigrationConstraints - Preparation Document
 
 **Date**: 2025-10-21
-**Status**: Planning
+**Status**: Complete (H15 resolved)
 **Phase**: 6 (Week 6)
 
 ---

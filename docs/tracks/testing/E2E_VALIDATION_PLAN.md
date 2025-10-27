@@ -1,3 +1,22 @@
+---
+track: testing
+document_type: validation_plan
+status: planning
+priority: P2
+completion: 20%
+last_updated: 2025-10-22
+session_protocol: |
+  For new Claude Code session:
+  1. Use this document for planning real Modal integration testing
+  2. Mock inventory: 1246 mock occurrences across 50 files
+  3. Current focus: DSPy architecture validation (Phases 1-3 complete)
+  4. Future: Replace critical path mocks with real Modal calls
+related_docs:
+  - docs/tracks/testing/E2E_TEST_SCENARIOS.md
+  - docs/tracks/testing/TESTING_STATUS.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+---
+
 # End-to-End Validation Plan: Replacing Mocks with Real Modal Integration
 
 **Date**: 2025-10-22

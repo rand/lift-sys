@@ -1,3 +1,23 @@
+---
+track: dspy
+document_type: validation_criteria
+status: active
+priority: P0
+completion: 43%
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Check current phase gate status (Gate 1: 8/14 criteria satisfied, 57%)
+  2. Review functional, performance, quality, documentation criteria
+  3. Before completing a phase, validate ALL gate criteria
+  4. Cannot proceed to next phase until current gate passes
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/META_FRAMEWORK_DESIGN_BY_HOLES.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Phase Gates Validation Criteria
 
 **Date**: 2025-10-20

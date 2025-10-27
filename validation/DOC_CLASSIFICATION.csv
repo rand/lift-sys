@@ -1,0 +1,141 @@
+filename,topic,status,date,classification,reason,path
+ACTION_PLAN_3_FAILURES.md,Other,Recent,2025-10-17,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/ACTION_PLAN_3_FAILURES.md
+ADR_001_DUAL_PROVIDER_ROUTING.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/ADR_001_DUAL_PROVIDER_ROUTING.md
+AST_GREP_INTEGRATION_PLAN.md,Integration,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/AST_GREP_INTEGRATION_PLAN.md
+BEADS_OVERVIEW.md,Planning/Roadmap,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/BEADS_OVERVIEW.md
+BEADS_ROADMAP.md,Planning/Roadmap,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/BEADS_ROADMAP.md
+CONSTRAINT_PROPAGATION_IMPLEMENTATION_PLAN.md,Typed Holes,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/CONSTRAINT_PROPAGATION_IMPLEMENTATION_PLAN.md
+CONSTRAINT_PROPAGATION_LOG.md,Other,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/CONSTRAINT_PROPAGATION_LOG.md
+CORE_LOOP_COMPLETION_PLAN.md,Other,Complete,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/CORE_LOOP_COMPLETION_PLAN.md
+COT_BEST_OF_N_HYBRID_PLAN.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/COT_BEST_OF_N_HYBRID_PLAN.md
+CURRENT_STATE_AND_PRIORITIES.md,Other,Recent,2025-10-19,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/CURRENT_STATE_AND_PRIORITIES.md
+DATASTORE_RECOMMENDATION.md,Other,Recent,2025-10-19,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/DATASTORE_RECOMMENDATION.md
+DESIGN_SYSTEM_IMPROVEMENT_PLAN.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/DESIGN_SYSTEM_IMPROVEMENT_PLAN.md
+DOWHY_BEADS_ROADMAP.md,Planning/Roadmap,Active,2025-10-25,CANONICAL,Current authoritative document for topic,docs/planning/DOWHY_BEADS_ROADMAP.md
+DOWHY_INTEGRATION_SPEC.md,Causal Analysis,Active,2025-10-25,CANONICAL,Current authoritative document for topic,docs/planning/DOWHY_INTEGRATION_SPEC.md
+DOWHY_PLANNING_COMPLETE.md,Causal Analysis,Complete,2025-10-25,ARCHIVE,"Marked complete, archive for reference",docs/planning/DOWHY_PLANNING_COMPLETE.md
+DOWHY_WEEK1_COMPLETE.md,Causal Analysis,Complete,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/DOWHY_WEEK1_COMPLETE.md
+DOWHY_WEEK2_COMPLETE.md,Causal Analysis,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/DOWHY_WEEK2_COMPLETE.md
+DSPY_GO_INTEGRATION.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_GO_INTEGRATION.md
+DSPY_INTEGRATION_FINAL_RESULTS.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_INTEGRATION_FINAL_RESULTS.md
+DSPY_INTEGRATION_RESULTS.md,DSPy Architecture,Complete,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_INTEGRATION_RESULTS.md
+DSPY_INTEGRATION_TEST_FAILURES.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_INTEGRATION_TEST_FAILURES.md
+DSPY_JAVA_INTEGRATION.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_JAVA_INTEGRATION.md
+DSPY_MIGRATION_PLAN.md,DSPy Architecture,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_MIGRATION_PLAN.md
+DSPY_PYDANTIC_AI_ARCHITECTURE_PROPOSAL.md,DSPy Architecture,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_PYDANTIC_AI_ARCHITECTURE_PROPOSAL.md
+DSPY_RUST_INTEGRATION.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_RUST_INTEGRATION.md
+DSPY_TYPESCRIPT_INTEGRATION.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/DSPY_TYPESCRIPT_INTEGRATION.md
+E2E_EXPECTED_BEHAVIORS.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/E2E_EXPECTED_BEHAVIORS.md
+E2E_TEST_SCENARIOS.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/E2E_TEST_SCENARIOS.md
+E2E_VALIDATION_PLAN.md,DSPy Architecture,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/E2E_VALIDATION_PLAN.md
+ERROR_HANDLING_STRATEGY.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/ERROR_HANDLING_STRATEGY.md
+EXECUTION_STATUS_20251018.md,Other,Complete,2025-10-18,ARCHIVE,"Marked complete, archive for reference",docs/planning/EXECUTION_STATUS_20251018.md
+EXECUTION_SUMMARY.md,Session Summary,Active,2025-10-20,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/EXECUTION_SUMMARY.md
+FINE_TUNING_SYNTHETIC_DATA_PLAN.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/FINE_TUNING_SYNTHETIC_DATA_PLAN.md
+FORWARD_REVERSE_INTEGRATION_PLAN.md,Integration,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/FORWARD_REVERSE_INTEGRATION_PLAN.md
+FULL_PLAN_OVERVIEW.md,Other,Recent,2025-10-18,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/FULL_PLAN_OVERVIEW.md
+GUIDANCE_BACKEND_COMPARISON.md,Other,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/GUIDANCE_BACKEND_COMPARISON.md
+H10_OPTIMIZATION_METRICS_SPEC.md,ICS Frontend,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H10_OPTIMIZATION_METRICS_SPEC.md
+H12_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H12_COMPLETION_SUMMARY.md
+H12_PREPARATION.md,ICS Frontend,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H12_PREPARATION.md
+H13_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H13_COMPLETION_SUMMARY.md
+H13_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H13_PREPARATION.md
+H15_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H15_PREPARATION.md
+H16_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H16_COMPLETION_SUMMARY.md
+H16_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H16_PREPARATION.md
+H17_PREPARATION.md,DSPy Architecture,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H17_PREPARATION.md
+H3_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H3_COMPLETION_SUMMARY.md
+H3_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H3_PREPARATION.md
+H4_PREPARATION.md,DSPy Architecture,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H4_PREPARATION.md
+H5_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H5_COMPLETION_SUMMARY.md
+H5_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H5_PREPARATION.md
+H7_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/H7_COMPLETION_SUMMARY.md
+H7_PREPARATION.md,Other,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H7_PREPARATION.md
+H8_PREPARATION.md,DSPy Architecture,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/H8_PREPARATION.md
+HOLE_INVENTORY.md,Typed Holes,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/HOLE_INVENTORY.md
+ICS_PHASE1_COMPLETION_20251026.md,ICS Frontend,Complete,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/ICS_PHASE1_COMPLETION_20251026.md
+ICS_RESUME_GUIDE.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/ICS_RESUME_GUIDE.md
+IMPROVEMENT_PLAN_STATE_OF_ART.md,Other,Recent,2025-10-15,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/IMPROVEMENT_PLAN_STATE_OF_ART.md
+INFRASTRUCTURE_RESEARCH_REPORT.md,Infrastructure,Recent,2025-10-19,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/INFRASTRUCTURE_RESEARCH_REPORT.md
+INTEGRATED_STRATEGY.md,DSPy Architecture,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/INTEGRATED_STRATEGY.md
+INTEGRATION_PATTERNS_RESEARCH.md,Integration,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/INTEGRATION_PATTERNS_RESEARCH.md
+INTEGRATION_RECOMMENDATIONS.md,Integration,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/INTEGRATION_RECOMMENDATIONS.md
+INTEGRATION_ROADMAP.md,Planning/Roadmap,Active,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/INTEGRATION_ROADMAP.md
+INTEGRATION_TEST_MIGRATION_PLAN.md,Integration,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/INTEGRATION_TEST_MIGRATION_PLAN.md
+IR_ADOPTION_PLAN.md,DSPy Architecture,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/IR_ADOPTION_PLAN.md
+LIFTER_CAUSAL_INTEGRATION_DESIGN.md,Causal Analysis,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/LIFTER_CAUSAL_INTEGRATION_DESIGN.md
+LLGUIDANCE_MIGRATION_PLAN.md,Other,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/LLGUIDANCE_MIGRATION_PLAN.md
+LSP_INTEGRATION_DESIGN.md,Integration,Complete,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/LSP_INTEGRATION_DESIGN.md
+MASTER_PLAN.md,Other,Complete,Unknown,ARCHIVE,"Marked complete, archive for reference",docs/planning/MASTER_PLAN.md
+META_FRAMEWORK_DESIGN_BY_HOLES.md,Typed Holes,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/META_FRAMEWORK_DESIGN_BY_HOLES.md
+MIGRATION_QUICK_REFERENCE.md,Other,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/MIGRATION_QUICK_REFERENCE.md
+MOCK_INVENTORY.md,Other,Complete,2025-10-22,ARCHIVE,"Marked complete, archive for reference",docs/planning/MOCK_INVENTORY.md
+MODAL_COST_OPTIMIZATION.md,Modal Deployment,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/MODAL_COST_OPTIMIZATION.md
+MODAL_ENDPOINT_ISSUES.md,Modal Deployment,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/MODAL_ENDPOINT_ISSUES.md
+MULTI_LANGUAGE_GENERATOR_EXPANSION.md,ICS Frontend,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/MULTI_LANGUAGE_GENERATOR_EXPANSION.md
+MULTI_LANGUAGE_STRATEGY.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/MULTI_LANGUAGE_STRATEGY.md
+NEXT_STEPS_POST_PHASE_1.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/NEXT_STEPS_POST_PHASE_1.md
+OPTION_C_EXECUTION_PLAN.md,Typed Holes,Active,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/OPTION_C_EXECUTION_PLAN.md
+OPTION_C_TOOLTIP_REFACTOR.md,Other,Active,2025-10-25,CANONICAL,Current authoritative document for topic,docs/planning/OPTION_C_TOOLTIP_REFACTOR.md
+PHASE_1_CLEANUP_TASKS.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_1_CLEANUP_TASKS.md
+PHASE_1_COMPLETION_REPORT.md,ICS Frontend,Complete,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_1_COMPLETION_REPORT.md
+PHASE_1_RETROSPECTIVE.md,ICS Frontend,Complete,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_1_RETROSPECTIVE.md
+PHASE_1_VERIFICATION_ADDENDUM.md,ICS Frontend,Complete,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_1_VERIFICATION_ADDENDUM.md
+PHASE_2_3_ANALYSIS_SUMMARY.md,Session Summary,Active,2025-10-22,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/PHASE_2_3_ANALYSIS_SUMMARY.md
+PHASE_2_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-22,ARCHIVE,"Marked complete, archive for reference",docs/planning/PHASE_2_COMPLETION_SUMMARY.md
+PHASE_2_FRONTEND_API_CLIENT_RESEARCH.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_FRONTEND_API_CLIENT_RESEARCH.md
+PHASE_2_MODAL_DEPLOYMENT_PREP.md,Modal Deployment,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_MODAL_DEPLOYMENT_PREP.md
+PHASE_2_NLP_ENHANCEMENT_RESEARCH.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_NLP_ENHANCEMENT_RESEARCH.md
+PHASE_2_PLANNING.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_PLANNING.md
+PHASE_2_STATUS_20251022.md,Other,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_STATUS_20251022.md
+PHASE_2_UI_PATTERNS_RESEARCH.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_2_UI_PATTERNS_RESEARCH.md
+PHASE_GATES_VALIDATION.md,Other,Active,2025-10-20,CANONICAL,Current authoritative document for topic,docs/planning/PHASE_GATES_VALIDATION.md
+PRINCIPLED_PATH_FORWARD.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/PRINCIPLED_PATH_FORWARD.md
+REIFICATION_SUMMARY.md,Session Summary,Complete,2025-10-20,ARCHIVE,"Marked complete, archive for reference",docs/planning/REIFICATION_SUMMARY.md
+REVERSE_TO_FORWARD_IMPORT_DESIGN.md,Other,Complete,Unknown,ARCHIVE,"Marked complete, archive for reference",docs/planning/REVERSE_TO_FORWARD_IMPORT_DESIGN.md
+SEMANTIC_IR_DETAILED_EXECUTION_PLAN.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/SEMANTIC_IR_DETAILED_EXECUTION_PLAN.md
+SEMANTIC_IR_IMPLEMENTATION_PLAN.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/SEMANTIC_IR_IMPLEMENTATION_PLAN.md
+SEMANTIC_IR_IMPROVEMENT_PLAN.md,Other,Active,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/SEMANTIC_IR_IMPROVEMENT_PLAN.md
+SESSION_BOOTSTRAP.md,Session Summary,Unknown,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/SESSION_BOOTSTRAP.md
+SESSION_COMPLETE_20251018.md,Session Summary,Complete,2025-10-18,ARCHIVE,"Marked complete, archive for reference",docs/planning/SESSION_COMPLETE_20251018.md
+SESSION_STATE.md,Session Summary,Complete,2025-10-21,ARCHIVE,"Marked complete, archive for reference",docs/planning/SESSION_STATE.md
+SESSION_TEMPLATE.md,Session Summary,Unknown,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/SESSION_TEMPLATE.md
+STEP_01_VALIDATION_REPORT.md,ICS Frontend,Active,2025-10-25,CANONICAL,Current authoritative document for topic,docs/planning/STEP_01_VALIDATION_REPORT.md
+STEP_03_H2_FIX_SUMMARY.md,Session Summary,Active,2025-10-25,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/STEP_03_H2_FIX_SUMMARY.md
+STEP_04_07_TESTING_SUMMARY.md,Session Summary,Active,2025-10-25,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/STEP_04_07_TESTING_SUMMARY.md
+STEP_06_COMPLETE.md,Other,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_06_COMPLETE.md
+STEP_07_COMPLETE.md,Other,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_07_COMPLETE.md
+STEP_08_DELIVERABLES_SUMMARY.md,Session Summary,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_08_DELIVERABLES_SUMMARY.md
+STEP_08_RESEARCH.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_08_RESEARCH.md
+STEP_09_11_BUG_FIXES_SUMMARY.md,Session Summary,Active,2025-10-25,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/STEP_09_11_BUG_FIXES_SUMMARY.md
+STEP_09_DELIVERABLES_SUMMARY.md,Session Summary,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_09_DELIVERABLES_SUMMARY.md
+STEP_09_RESEARCH.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_09_RESEARCH.md
+STEP_11_DELIVERABLES_SUMMARY.md,Session Summary,Active,2025-10-26,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/STEP_11_DELIVERABLES_SUMMARY.md
+STEP_11_QUICK_REFERENCE.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_11_QUICK_REFERENCE.md
+STEP_11_RESEARCH.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_11_RESEARCH.md
+STEP_12_UNIT_TEST_RESULTS.md,ICS Frontend,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_12_UNIT_TEST_RESULTS.md
+STEP_13_INTEGRATION_TEST_RESULTS.md,Integration,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_13_INTEGRATION_TEST_RESULTS.md
+STEP_14_15_E2E_RESULTS.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_14_15_E2E_RESULTS.md
+STEP_20_BUILD_VERIFICATION.md,Other,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/STEP_20_BUILD_VERIFICATION.md
+STEP_21_BROWSER_CONSOLE_CHECK.md,ICS Frontend,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_21_BROWSER_CONSOLE_CHECK.md
+STEP_27_STATE_MACHINE_COMPLIANCE.md,ICS Frontend,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_27_STATE_MACHINE_COMPLIANCE.md
+STEP_28_ACCESSIBILITY_CHECK.md,ICS Frontend,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/STEP_28_ACCESSIBILITY_CHECK.md
+STRATEGIC_ASSESSMENT_2025-10-17.md,Other,Recent,2025-10-17,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/STRATEGIC_ASSESSMENT_2025-10-17.md
+STRATEGIC_OVERVIEW.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/STRATEGIC_OVERVIEW.md
+TEST_STRATEGY_IMPROVEMENTS.md,Other,Recent,2025-10-15,REVIEW,"Not canonical but active/recent, needs manual review",docs/planning/TEST_STRATEGY_IMPROVEMENTS.md
+TOKDRIFT_APPLICABILITY_PROPOSAL.md,Robustness Testing,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/TOKDRIFT_APPLICABILITY_PROPOSAL.md
+TOKDRIFT_PHASE1_COMPLETION.md,ICS Frontend,Complete,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/TOKDRIFT_PHASE1_COMPLETION.md
+TOKDRIFT_PHASE1_PLAN.md,ICS Frontend,Active,2025-10-21,CANONICAL,Current authoritative document for topic,docs/planning/TOKDRIFT_PHASE1_PLAN.md
+TOKDRIFT_PHASE3_PLAN.md,Robustness Testing,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/TOKDRIFT_PHASE3_PLAN.md
+TOKDRIFT_SUMMARY.md,Robustness Testing,Active,2025-10-23,CANONICAL,Current authoritative document for topic,docs/planning/TOKDRIFT_SUMMARY.md
+TRIPLE_TRACK_EXECUTION_SUMMARY.md,Session Summary,Unknown,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/TRIPLE_TRACK_EXECUTION_SUMMARY.md
+TYPED_HOLES_SKILL_ASSESSMENT.md,Typed Holes,Active,2025-10-22,CANONICAL,Current authoritative document for topic,docs/planning/TYPED_HOLES_SKILL_ASSESSMENT.md
+TYPESCRIPT_REARCHITECTURE_RESULTS.md,Other,Complete,2025-10-23,ARCHIVE,"Marked complete, archive for reference",docs/planning/TYPESCRIPT_REARCHITECTURE_RESULTS.md
+WEEK4_COMPLETION_SUMMARY.md,Session Summary,Complete,2025-10-26,ARCHIVE,"Marked complete, archive for reference",docs/planning/WEEK4_COMPLETION_SUMMARY.md
+WEEK4_DOWHY_INTEGRATION.md,Causal Analysis,Active,2025-10-26,CANONICAL,Current authoritative document for topic,docs/planning/WEEK4_DOWHY_INTEGRATION.md
+mvp-implementation-plan.md,Typed Holes,Active,Unknown,CANONICAL,Current authoritative document for topic,docs/planning/mvp-implementation-plan.md
+realistic-implementation-plan.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/realistic-implementation-plan.md
+week-9-10-production-deployment-plan.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/week-9-10-production-deployment-plan.md
+week6-optimization-plan.md,Other,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/week6-optimization-plan.md
+week7-8-typescript-plan.md,Other,Complete,Unknown,ARCHIVE,"Marked complete, archive for reference",docs/planning/week7-8-typescript-plan.md
+whole-project-reverse-mode-plan.md,Typed Holes,Unknown,Unknown,REVIEW,"Unknown status, needs manual review",docs/planning/whole-project-reverse-mode-plan.md

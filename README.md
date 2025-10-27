@@ -299,9 +299,3 @@ cat docs/MASTER_ROADMAP.md | head -100  # Orient to project
 ```
 
 All planning documents in `docs/tracks/` include YAML frontmatter with session protocols for instant orientation.
-
----
-
-**License**: Proprietary - All rights reserved (see [`LICENSE.md`](LICENSE.md))
-
-This code is made available for reference and educational purposes only. You may view and study the code, but may not use, copy, modify, or distribute it without explicit written permission.

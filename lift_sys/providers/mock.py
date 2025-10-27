@@ -21,7 +21,7 @@ class MockProvider(BaseProvider):
             name="mock",
             capabilities=ProviderCapabilities(
                 streaming=True,
-                structured_output=False,  # Default to False, can be enabled per-test
+                structured_output=True,  # Mock supports structured output for testing
                 reasoning=True,
             ),
         )

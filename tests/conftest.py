@@ -49,7 +49,9 @@ class _StubGitHubClient:
             private=False,
         )
 
-    async def list_repositories(self, user_id: str) -> list[RepositorySummary]:
+    async def list_repositories(
+        self, user_id: str, page: int = 1, per_page: int = 30
+    ) -> list[RepositorySummary]:
         return [self._summary]
 
     async def ensure_repository(

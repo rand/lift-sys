@@ -1,3 +1,22 @@
+---
+track: infrastructure
+document_type: quick_start_guide
+status: active
+priority: P1
+completion: 100%
+last_updated: 2025-10-27
+session_protocol: |
+  For new Claude Code session:
+  1. Use this guide for Supabase setup (integration complete, reference only)
+  2. Follow step-by-step instructions for new deployments
+  3. Migrations located in migrations/ directory
+  4. Secrets managed via Modal secrets
+related_docs:
+  - docs/tracks/infrastructure/SUPABASE_BEADS_SUMMARY.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Supabase Integration Quick Start Guide
 
 **For**: Developers implementing the Supabase integration

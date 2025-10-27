@@ -1,3 +1,24 @@
+---
+track: observability
+document_type: quick_start_guide
+status: planning
+priority: P1
+completion: 100%
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Honeycomb quick start guide is COMPLETE (planning phase)
+  2. Target: 30-minute setup for production observability
+  3. Stack: OpenTelemetry SDK + Honeycomb API + Modal secrets
+  4. Features: Distributed tracing, performance dashboards, alerting
+  5. Use this for Honeycomb integration when production deployment begins
+related_docs:
+  - docs/tracks/observability/HONEYCOMB_INTEGRATION_PLAN.md
+  - docs/tracks/observability/OBSERVABILITY_STATUS.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Honeycomb Observability - Quick Start Guide
 
 **Target Time**: 30 minutes

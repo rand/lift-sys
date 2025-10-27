@@ -1,3 +1,24 @@
+---
+track: testing
+document_type: strategy_improvements
+status: planning
+priority: P1
+completion: 20%
+last_updated: 2025-10-15
+session_protocol: |
+  For new Claude Code session:
+  1. Test strategy improvements plan addresses long-running tests (5+ minutes)
+  2. Problems: Full suite blocking, Modal latency, no incremental feedback
+  3. Solutions: Response caching, test prioritization, parallel execution, local mocks
+  4. Partially implemented: Response recorder fixtures exist (ir_recorder, modal_recorder)
+  5. Use this for ongoing test optimization decisions
+related_docs:
+  - docs/tracks/testing/E2E_VALIDATION_PLAN.md
+  - docs/tracks/testing/E2E_TEST_SCENARIOS.md
+  - docs/tracks/testing/TESTING_STATUS.md
+  - docs/tracks/infrastructure/INTEGRATION_TEST_MIGRATION_PLAN.md
+---
+
 # Test Strategy Improvements
 
 **Date**: 2025-10-15

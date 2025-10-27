@@ -1,3 +1,23 @@
+---
+track: ics
+document_type: improvement_plan
+status: planning
+priority: P2
+completion: 0%
+last_updated: 2025-10-11
+session_protocol: |
+  For new Claude Code session:
+  1. Design system improvement plan is PLANNED (not started)
+  2. 23 tasks prioritized by impact/effort: 8 high, 10 medium, 5 low priority
+  3. Timeline: 2-4 weeks (3 sprints)
+  4. Based on: Design System Test Report findings
+  5. Use this when beginning design system optimization work
+related_docs:
+  - docs/tracks/ics/ICS_RESUME_GUIDE.md
+  - docs/tracks/ics/ICS_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Design System Improvement Plan
 **Version**: 1.0
 **Date**: October 11, 2025

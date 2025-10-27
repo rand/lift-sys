@@ -1,3 +1,28 @@
+---
+document_type: master_roadmap
+version: "1.0"
+last_updated: 2025-10-27
+purpose: Single source of truth for project status and session continuity
+session_protocol: |
+  Quick Start for New Claude Code Session (< 2 min):
+  1. Read this document (provides full context)
+  2. Check "Current Sprint" section for active work
+  3. Run `bd ready --json --limit 5` to see ready tasks
+  4. Follow work selection decision tree
+  5. Read relevant track STATUS.md for deep dive
+tracks:
+  - dspy: docs/tracks/dspy/DSPY_STATUS.md
+  - ics: docs/tracks/ics/ICS_STATUS.md
+  - testing: docs/tracks/testing/TESTING_STATUS.md
+  - observability: docs/tracks/observability/OBSERVABILITY_STATUS.md
+  - infrastructure: docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+related_docs:
+  - docs/SESSION_SUMMARY_20251027.md
+  - docs/archive/2025_q4_completed/INDEX.md
+  - CLAUDE.md (project guidelines)
+  - .claude/CLAUDE.md (global guidelines)
+---
+
 # lift-sys Master Roadmap
 
 **Last Updated**: 2025-10-27

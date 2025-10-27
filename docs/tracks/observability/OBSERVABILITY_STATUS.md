@@ -1,3 +1,23 @@
+---
+track: observability
+status: planning_complete
+priority: P2
+phase: awaiting_implementation
+completion: 0%
+last_updated: 2025-10-27
+session_protocol: |
+  For new Claude Code session:
+  1. Read this STATUS.md (< 30 seconds context)
+  2. Check archived planning: docs/archive/2025_q4_completed/features/HONEYCOMB_*
+  3. Implementation blocked by: production deployment
+  4. Estimated start: Q1 2026
+  5. No active work currently
+related_docs:
+  - docs/archive/2025_q4_completed/features/HONEYCOMB_PLANNING_COMPLETE.md
+  - docs/archive/2025_q4_completed/features/HONEYCOMB_BEADS_SUMMARY.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Observability Track Status
 
 **Last Updated**: 2025-10-27

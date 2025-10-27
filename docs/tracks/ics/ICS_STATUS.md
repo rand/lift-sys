@@ -1,3 +1,23 @@
+---
+track: ics
+status: active
+priority: P1
+phase: 1_complete_2_planning
+completion: 100%
+last_updated: 2025-10-27
+session_protocol: |
+  For new Claude Code session:
+  1. Read this STATUS.md (< 30 seconds context)
+  2. Check `bd list --label ics --json` for ready tasks
+  3. Run E2E tests: `cd frontend && npm run test:e2e`
+  4. Start dev server: `cd frontend && npm run dev`
+  5. Begin work on Phase 2 features or ready beads
+related_docs:
+  - docs/archive/2025_q4_completed/phases/ICS_PHASE1_COMPLETION_20251026.md
+  - docs/MASTER_ROADMAP.md
+  - frontend/playwright/ics.spec.ts
+---
+
 # ICS (Integrated Context Studio) Track Status
 
 **Last Updated**: 2025-10-27

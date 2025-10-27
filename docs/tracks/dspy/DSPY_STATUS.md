@@ -1,3 +1,24 @@
+---
+track: dspy
+status: active
+priority: P0
+phase: 3
+completion: 53%
+last_updated: 2025-10-27
+session_protocol: |
+  For new Claude Code session:
+  1. Read this STATUS.md (< 2 min context)
+  2. Check `docs/tracks/dspy/SESSION_STATE.md` for current hole
+  3. Run `python3 scripts/planning/track_holes.py ready --phase 3`
+  4. View hole details: `python3 scripts/planning/track_holes.py show H4`
+  5. Begin implementation following hole specification
+related_docs:
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # DSPy Architecture Track Status
 
 **Last Updated**: 2025-10-27

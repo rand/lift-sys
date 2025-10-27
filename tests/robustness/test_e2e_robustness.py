@@ -130,9 +130,10 @@ class TestEndToEndRobustness:
         sensitivity_analyzer,
     ):
         """Test statistical validation of robustness measurements."""
-        # Create sample scores (robust system)
+        # Create sample scores (robust system with random small variations)
+        # Differences should be small and random (not consistently in one direction)
         robust_original = [0.95, 0.96, 0.94, 0.95, 0.96, 0.95, 0.94]
-        robust_variant = [0.94, 0.95, 0.93, 0.94, 0.95, 0.94, 0.93]
+        robust_variant = [0.95, 0.95, 0.94, 0.96, 0.95, 0.95, 0.94]  # More random variation
 
         # Wilcoxon test should show no significant difference (robust)
         result = sensitivity_analyzer.wilcoxon_test(robust_original, robust_variant)

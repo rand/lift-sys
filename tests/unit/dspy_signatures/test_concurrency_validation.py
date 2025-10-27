@@ -20,9 +20,8 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from lift_sys.dspy_signatures.node_interface import BaseNode, End, NextNode, RunContext
+from lift_sys.dspy_signatures.node_interface import BaseNode, End, RunContext
 from lift_sys.dspy_signatures.parallel_executor import (
-    MergeStrategy,
     ParallelExecutor,
 )
 
@@ -53,12 +52,13 @@ class IncrementNode(BaseModel):
         """Update state (not used in test)."""
         pass
 
-    async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
+    async def run(self, ctx: RunContext[TestState]) -> BaseNode[TestState] | End:
         """Increment value and track execution."""
         # Simulate async work
         await asyncio.sleep(0.01)
 
-        new_state = ctx.state.model_copy(
+        # Update context state
+        ctx.state = ctx.state.model_copy(
             update={
                 "value": ctx.state.value + 1,
                 "execution_count": ctx.state.execution_count + 1,
@@ -66,10 +66,7 @@ class IncrementNode(BaseModel):
             }
         )
 
-        return NextNode(
-            state=new_state,
-            next_node=End(),
-        )
+        return End()
 
 
 class MultiplyNode(BaseModel):
@@ -87,11 +84,12 @@ class MultiplyNode(BaseModel):
         """Update state (not used in test)."""
         pass
 
-    async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
+    async def run(self, ctx: RunContext[TestState]) -> BaseNode[TestState] | End:
         """Multiply value and track execution."""
         await asyncio.sleep(0.01)
 
-        new_state = ctx.state.model_copy(
+        # Update context state
+        ctx.state = ctx.state.model_copy(
             update={
                 "value": ctx.state.value * self.multiplier,
                 "execution_count": ctx.state.execution_count + 1,
@@ -99,17 +97,15 @@ class MultiplyNode(BaseModel):
             }
         )
 
-        return NextNode(
-            state=new_state,
-            next_node=End(),
-        )
+        return End()
 
 
-class SharedResourceNode(BaseNode[TestState]):
+class SharedResourceNode(BaseModel):
     """Node that accesses shared resource (for race condition testing)."""
 
     name: str = "SharedResourceNode"
     shared_counter: int = 0  # Class variable (intentionally shared)
+    signature: Any = None
 
     def extract_inputs(self, state: TestState) -> dict:
         """Extract inputs (not used in test)."""
@@ -119,7 +115,7 @@ class SharedResourceNode(BaseNode[TestState]):
         """Update state (not used in test)."""
         pass
 
-    async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
+    async def run(self, ctx: RunContext[TestState]) -> BaseNode[TestState] | End:
         """Access shared resource."""
         # Read-modify-write without lock (potential race)
         await asyncio.sleep(0.001)
@@ -127,17 +123,15 @@ class SharedResourceNode(BaseNode[TestState]):
         await asyncio.sleep(0.001)
         self.shared_counter = temp + 1
 
-        new_state = ctx.state.model_copy(
+        # Update context state
+        ctx.state = ctx.state.model_copy(
             update={
                 "value": self.shared_counter,
                 "execution_count": ctx.state.execution_count + 1,
             }
         )
 
-        return NextNode(
-            state=new_state,
-            next_node=End(),
-        )
+        return End()
 
 
 # =============================================================================
@@ -177,9 +171,7 @@ async def test_ac1_deterministic_parallel_nodes():
     results = []
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        parallel_results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        parallel_results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
         # All nodes increment by 1, so any result should be 11
         results.append(parallel_results[0].context.state.value)
 
@@ -202,9 +194,7 @@ async def test_ac1_deterministic_complex_graph():
     results = []
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        parallel_results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        parallel_results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
         # First successful result should be consistent
         results.append(parallel_results[0].context.state.value)
 
@@ -232,9 +222,7 @@ async def test_ac2_state_isolation_prevents_races():
     # Run 100 iterations with high concurrency
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
         # State isolation ensures each node sees initial state (value=0)
         # All should increment from 0 to 1
@@ -253,9 +241,7 @@ async def test_ac2_no_shared_state_mutation():
     initial_state = TestState(value=100, results=[])
 
     ctx = RunContext(state=initial_state, execution_id="test-exec")
-    results = await executor.execute_parallel(
-        nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-    )
+    results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
     # Verify first result
     first_result = results[0].context.state
@@ -279,9 +265,7 @@ async def test_ac2_concurrent_stress_test():
     # Run multiple iterations
     for iteration in range(10):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
         # First successful result should always be value=1
         assert results[0].context.state.value == 1, f"Iteration {iteration} failed"
@@ -323,9 +307,7 @@ async def test_ac3_parallel_performance_variance():
     execution_times = []
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
         # Measure time of first successful result
         execution_times.append(results[0].execution_time_ms)
 
@@ -348,9 +330,7 @@ async def test_ac3_scaling_performance():
     times_seq = []
     for _ in range(20):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        results = await executor_seq.execute_parallel(
-            nodes=nodes_seq, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor_seq.execute_parallel(nodes=nodes_seq, ctx=ctx)
         times_seq.append(results[0].execution_time_ms)
 
     mean_seq = statistics.mean(times_seq)
@@ -362,9 +342,7 @@ async def test_ac3_scaling_performance():
     times_par = []
     for _ in range(20):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
-        results = await executor_par.execute_parallel(
-            nodes=nodes_par, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor_par.execute_parallel(nodes=nodes_par, ctx=ctx)
         times_par.append(results[0].execution_time_ms)
 
     mean_par = statistics.mean(times_par)
@@ -391,9 +369,7 @@ async def test_ac4_end_to_end_workflow():
     initial_state = TestState(value=10)
     ctx = RunContext(state=initial_state, execution_id="test-exec")
 
-    inc_results = await executor.execute_parallel(
-        nodes=inc_nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-    )
+    inc_results = await executor.execute_parallel(nodes=inc_nodes, ctx=ctx)
 
     # Stage 2: Multiply result
     mult_node = MultiplyNode(multiplier=5)
@@ -419,7 +395,7 @@ async def test_ac4_error_handling_in_parallel():
             """Update state (not used in test)."""
             pass
 
-        async def run(self, ctx: RunContext[TestState]) -> NextNode[TestState]:
+        async def run(self, ctx: RunContext[TestState]) -> BaseNode[TestState] | End:
             await asyncio.sleep(0.01)
             raise ValueError("Intentional failure")
 
@@ -432,9 +408,7 @@ async def test_ac4_error_handling_in_parallel():
     initial_state = TestState(value=0)
     ctx = RunContext(state=initial_state, execution_id="test-exec")
 
-    results = await executor.execute_parallel(
-        nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-    )
+    results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
     # Should get successful result from one of the increment nodes
     successful = [r for r in results if r.is_success]
@@ -454,9 +428,7 @@ async def test_ac4_merge_strategy_all_success():
     initial_state = TestState(value=5)
     ctx = RunContext(state=initial_state, execution_id="test-exec")
 
-    results = await executor.execute_parallel(
-        nodes=nodes, context=ctx, merge_strategy=MergeStrategy.ALL_SUCCESS
-    )
+    results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
     # All should succeed with same result
     assert all(r.is_success for r in results)
@@ -478,9 +450,7 @@ async def test_ac4_determinism_validation_100_iterations():
         initial_state = TestState(value=7)
         ctx = RunContext(state=initial_state, execution_id="test-exec")
 
-        results = await executor.execute_parallel(
-            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-        )
+        results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
         # Record which node succeeded
         first_result = results[0].context.state.value
@@ -516,9 +486,7 @@ async def test_semaphore_limits_concurrency():
     ctx = RunContext(state=initial_state, execution_id="test-exec")
 
     # Execute - should respect max_concurrent=2
-    results = await executor.execute_parallel(
-        nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
-    )
+    results = await executor.execute_parallel(nodes=nodes, ctx=ctx)
 
     # Verify all completed
     assert len(results) == 10

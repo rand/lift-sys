@@ -1,3 +1,24 @@
+---
+track: infrastructure
+document_type: api_documentation
+status: active
+priority: P0
+completion: 90%
+last_updated: 2025-10-19
+session_protocol: |
+  For new Claude Code session:
+  1. This is the API documentation for session management (complete and current)
+  2. Endpoints: Create, List, Get, Resolve Hole, Finalize, Get Assists, Delete
+  3. Uses SupabaseSessionStore for persistence with RLS user isolation
+  4. Authentication via Supabase JWT tokens
+  5. Use this as reference for API integration and frontend development
+related_docs:
+  - docs/tracks/infrastructure/SUPABASE_QUICK_START.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - lift_sys/api/server.py
+  - docs/MASTER_ROADMAP.md
+---
+
 # Session Management API Documentation
 
 This document provides comprehensive documentation for the prompt-to-IR session management API in lift-sys.

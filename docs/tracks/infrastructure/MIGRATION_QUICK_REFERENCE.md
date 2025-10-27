@@ -1,3 +1,24 @@
+---
+track: infrastructure
+document_type: migration_guide
+status: complete
+priority: P1
+completion: 100%
+last_updated: 2025-10-22
+session_protocol: |
+  For new Claude Code session:
+  1. Integration test migration strategy is COMPLETE (planning phase)
+  2. 23 integration tests: 10 need real Modal (43%), 13 stay mocked (57%)
+  3. Migration pattern: @pytest.mark.real_modal + ir_recorder fixtures
+  4. Estimated effort: 3-4 days implementation, 4 weeks part-time
+  5. Use as reference for test migration decisions
+related_docs:
+  - docs/tracks/infrastructure/INTEGRATION_TEST_MIGRATION_PLAN.md
+  - docs/tracks/testing/TESTING_STATUS.md
+  - docs/tracks/testing/E2E_VALIDATION_PLAN.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Integration Test Migration - Quick Reference
 
 **Date**: 2025-10-22

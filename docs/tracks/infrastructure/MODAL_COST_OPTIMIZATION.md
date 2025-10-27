@@ -1,3 +1,23 @@
+---
+track: infrastructure
+document_type: optimization_strategy
+status: complete
+priority: P1
+completion: 100%
+last_updated: 2025-10-26
+session_protocol: |
+  For new Claude Code session:
+  1. Modal cost optimization is COMPLETE (implemented in lift-sys-374)
+  2. Dev mode: 120s scaledown (~$0.13/request), Demo mode: 600s (~$0.67/request)
+  3. A100-80GB GPU: $4.00/hour when active, per-second billing
+  4. Monthly estimate: ~$30-50 for development (20 hours/week)
+  5. Use this as reference for cost management decisions
+related_docs:
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - docs/tracks/dspy/DSPY_INTEGRATION_RESULTS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Modal Cost Optimization Strategy
 
 **Date**: 2025-10-26

@@ -1,3 +1,23 @@
+---
+track: infrastructure
+document_type: beads_summary
+status: complete
+priority: P0
+completion: 100%
+last_updated: 2025-10-19
+session_protocol: |
+  For new Claude Code session:
+  1. Supabase integration is COMPLETE (epic lift-sys-259)
+  2. SupabaseSessionStore replaced InMemorySessionStore
+  3. Features: RLS user isolation, multi-instance sharing, persistent storage
+  4. Deployment: Live on Modal with secrets configured
+  5. Historical record - use for understanding Supabase integration decisions
+related_docs:
+  - docs/tracks/infrastructure/SUPABASE_QUICK_START.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Supabase Integration: Beads Work Items Summary
 
 **Epic**: lift-sys-259

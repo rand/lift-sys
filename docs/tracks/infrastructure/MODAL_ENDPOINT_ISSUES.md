@@ -1,3 +1,24 @@
+---
+track: infrastructure
+document_type: issue_tracking
+status: complete
+priority: P0
+completion: 100%
+last_updated: 2025-10-22
+session_protocol: |
+  For new Claude Code session:
+  1. Modal endpoint issues discovered during E2E validation are FIXED
+  2. Issue 1: Missing request validation (fixed in 5093fcf)
+  3. Issue 2: Schema wrapping (fixed in af59c53)
+  4. CRITICAL: Led to discovery of Modal XGrammar reliability issues
+  5. Historical record - use for understanding Modal API evolution
+related_docs:
+  - docs/tracks/dspy/DSPY_INTEGRATION_FINAL_RESULTS.md
+  - docs/tracks/dspy/DSPY_INTEGRATION_TEST_FAILURES.md
+  - docs/tracks/infrastructure/LLGUIDANCE_MIGRATION_PLAN.md
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+---
+
 # Modal Endpoint Issues - Critical Findings
 
 **Date**: 2025-10-22

@@ -1,3 +1,25 @@
+---
+track: infrastructure
+document_type: migration_plan
+status: complete
+priority: P1
+completion: 100%
+phase: 2.3
+last_updated: 2025-10-22
+session_protocol: |
+  For new Claude Code session:
+  1. Integration test migration plan is COMPLETE (planning phase)
+  2. 23 integration tests analyzed: 5 must use real Modal, 6 stay mocked
+  3. Response recorder infrastructure exists (ir_recorder, modal_recorder fixtures)
+  4. Estimated effort: 3-4 days for Category 1 (critical path tests)
+  5. See MIGRATION_QUICK_REFERENCE.md for implementation checklist
+related_docs:
+  - docs/tracks/infrastructure/MIGRATION_QUICK_REFERENCE.md
+  - docs/tracks/testing/E2E_VALIDATION_PLAN.md
+  - docs/tracks/testing/TESTING_STATUS.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Integration Test Migration Plan - Phase 2.3
 
 **Date**: 2025-10-22

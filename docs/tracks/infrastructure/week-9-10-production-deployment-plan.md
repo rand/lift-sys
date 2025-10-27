@@ -1,3 +1,24 @@
+---
+track: infrastructure
+document_type: weekly_plan
+status: planning
+priority: P0
+completion: 0%
+last_updated: 2025-10-20
+session_protocol: |
+  For new Claude Code session:
+  1. Week 9-10 production deployment plan (FUTURE work)
+  2. Goal: 80%+ E2E success rate with production-ready deployment
+  3. Prerequisites: Weeks 1-8 complete (77 tests passing, xgrammar foundation)
+  4. Focus: E2E testing, performance optimization, Modal deployment, monitoring
+  5. Use as future reference when production deployment phase begins
+related_docs:
+  - docs/tracks/infrastructure/INFRASTRUCTURE_STATUS.md
+  - docs/tracks/infrastructure/MODAL_COST_OPTIMIZATION.md
+  - docs/tracks/testing/E2E_VALIDATION_PLAN.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Week 9-10: Production Deployment and Polish
 
 **Status**: Planning

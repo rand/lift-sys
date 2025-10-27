@@ -178,7 +178,7 @@ async def test_ac1_deterministic_parallel_nodes():
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
         parallel_results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
         # All nodes increment by 1, so any result should be 11
         results.append(parallel_results[0].context.state.value)
@@ -203,7 +203,7 @@ async def test_ac1_deterministic_complex_graph():
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
         parallel_results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
         # First successful result should be consistent
         results.append(parallel_results[0].context.state.value)
@@ -233,7 +233,7 @@ async def test_ac2_state_isolation_prevents_races():
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
         results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
 
         # State isolation ensures each node sees initial state (value=0)
@@ -280,7 +280,7 @@ async def test_ac2_concurrent_stress_test():
     for iteration in range(10):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
         results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
 
         # First successful result should always be value=1
@@ -324,7 +324,7 @@ async def test_ac3_parallel_performance_variance():
     for _ in range(100):
         ctx = RunContext(state=initial_state, execution_id="test-exec")
         results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
         # Measure time of first successful result
         execution_times.append(results[0].execution_time_ms)
@@ -407,8 +407,9 @@ async def test_ac4_end_to_end_workflow():
 async def test_ac4_error_handling_in_parallel():
     """AC4: Error handling doesn't cause race conditions."""
 
-    class FailingNode(BaseNode[TestState]):
+    class FailingNode(BaseModel):
         name: str = "FailingNode"
+        signature: Any = None
 
         def extract_inputs(self, state: TestState) -> dict:
             """Extract inputs (not used in test)."""
@@ -478,7 +479,7 @@ async def test_ac4_determinism_validation_100_iterations():
         ctx = RunContext(state=initial_state, execution_id="test-exec")
 
         results = await executor.execute_parallel(
-            nodes=nodes, context=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
+            nodes=nodes, ctx=ctx, merge_strategy=MergeStrategy.FIRST_SUCCESS
         )
 
         # Record which node succeeded

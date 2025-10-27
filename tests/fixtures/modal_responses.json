@@ -1,1 +1,60 @@
-{}
+{
+  "simple_ir_add_function": {
+    "metadata": {
+      "function": "add",
+      "test": "simple_ir"
+    },
+    "original_key": "simple_ir_add_function",
+    "response": {
+      "constraints": [
+        {
+          "description": "The return value must be non-negative",
+          "type": "return_constraint",
+          "value_name": "result"
+        }
+      ],
+      "intent": {
+        "rationale": "The function needs to ensure both inputs are non-negative before performing addition.",
+        "summary": "Add two non-negative integers"
+      },
+      "signature": {
+        "holes": [],
+        "name": "add",
+        "parameters": [
+          {
+            "description": "First non-negative integer",
+            "name": "a",
+            "type_hint": "int"
+          },
+          {
+            "description": "Second non-negative integer",
+            "name": "b",
+            "type_hint": "int"
+          }
+        ],
+        "returns": "int"
+      }
+    }
+  },
+  "xgrammar_constraint_enforcement": {
+    "metadata": {
+      "test": "xgrammar_constraints"
+    },
+    "original_key": "xgrammar_constraint_enforcement",
+    "response": {
+      "description": "Find the index of an element in a list.",
+      "function_name": "find_index",
+      "parameters": [
+        {
+          "name": "lst",
+          "type": "list"
+        },
+        {
+          "name": "element",
+          "type": "any"
+        }
+      ],
+      "returns": "int or None"
+    }
+  }
+}

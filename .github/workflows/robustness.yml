@@ -97,15 +97,17 @@ jobs:
           fi
 
           TOTAL=$((PASSED + FAILED + SKIPPED))
+          # Calculate pass rate (only count passed and failed, not skipped)
+          TESTED=$((PASSED + FAILED))
 
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
 
-          # Calculate pass rate
-          if [ "$TOTAL" -gt 0 ]; then
-            PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TOTAL) * 100}")
+          # Calculate pass rate (skipped tests don't count)
+          if [ "$TESTED" -gt 0 ]; then
+            PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TESTED) * 100}")
           else
             PASS_RATE="0.0"
           fi

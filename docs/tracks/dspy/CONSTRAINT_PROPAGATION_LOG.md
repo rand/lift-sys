@@ -1,3 +1,23 @@
+---
+track: dspy
+document_type: constraint_log
+status: active
+priority: P1
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Read latest events to understand recent constraint propagation
+  2. After resolving a hole: Create new event entry documenting constraints
+  3. Use Event Template section for consistent formatting
+  4. Calculate solution space reduction for dependent holes
+  5. Update SESSION_STATE.md and HOLE_INVENTORY.md with new constraints
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/REIFICATION_SUMMARY.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Constraint Propagation Log
 
 **Date**: 2025-10-20

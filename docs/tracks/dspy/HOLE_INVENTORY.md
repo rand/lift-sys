@@ -1,7 +1,27 @@
+---
+track: dspy
+document_type: hole_inventory
+status: active
+priority: P0
+completion: 53%
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Use this document as reference for hole specifications
+  2. Check "Hole Status" section for current state (10/19 resolved)
+  3. For active hole: Read full specification, constraints, acceptance criteria
+  4. After resolving hole: Update status, add resolution details
+  5. Document constraint propagation in CONSTRAINT_PROPAGATION_LOG.md
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Hole Inventory - DSPy + Pydantic AI Architecture
 
 **Date**: 2025-10-21
-**Status**: TRACKING (19 holes, 19 resolved, 100%)
+**Status**: TRACKING (19 holes, 10 resolved, 53%)
 **Version**: 1.9
 
 ---

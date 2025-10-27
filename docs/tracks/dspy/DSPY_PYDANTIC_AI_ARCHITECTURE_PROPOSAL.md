@@ -1,3 +1,24 @@
+---
+track: dspy
+document_type: architecture_proposal
+status: active
+priority: P0
+phase: implementation
+completion: 53%
+last_updated: 2025-10-20
+session_protocol: |
+  For new Claude Code session:
+  1. Use this document as architectural reference
+  2. Read relevant sections when implementing holes
+  3. Consult design principles and patterns
+  4. Refer to technical specifications for implementation details
+related_docs:
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/META_FRAMEWORK_DESIGN_BY_HOLES.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # lift-sys DSPy + Pydantic AI Architecture Proposal
 
 **Date**: 2025-10-20

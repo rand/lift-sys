@@ -1,3 +1,25 @@
+---
+track: dspy
+document_type: session_state
+status: active
+priority: P0
+phase: 3
+completion: 53%
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Read this document FIRST (< 2 minutes)
+  2. Check "Current Work Context" section for active hole
+  3. Run `python3 scripts/planning/track_holes.py ready --phase 3`
+  4. Read hole spec from HOLE_INVENTORY.md
+  5. Follow hole resolution workflow (implement → test → document → commit)
+related_docs:
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/tracks/dspy/SESSION_BOOTSTRAP.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Meta-Framework Session State
 
 **Last Updated**: 2025-10-21

@@ -1,3 +1,23 @@
+---
+track: dspy
+document_type: meta_framework_summary
+status: complete
+priority: P1
+completion: 100%
+last_updated: 2025-10-20
+session_protocol: |
+  For new Claude Code session:
+  1. Read this document to understand hole-driven development
+  2. See what documents were created (4 planning docs, 1 script)
+  3. Understand document hierarchy and purpose
+  4. Use as reference for meta-framework concepts
+related_docs:
+  - docs/tracks/dspy/META_FRAMEWORK_DESIGN_BY_HOLES.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/tracks/dspy/SESSION_BOOTSTRAP.md
+---
+
 # Meta-Framework Reification Summary
 
 **Date**: 2025-10-20

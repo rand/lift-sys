@@ -1,3 +1,22 @@
+---
+track: dspy
+document_type: bootstrap_guide
+status: active
+priority: P0
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. Read this document FIRST for 5-minute orientation
+  2. Follow "5-Minute Bootstrap" section step by step
+  3. Use Document Hierarchy to navigate to relevant docs
+  4. Start work on current hole from SESSION_STATE.md
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/REIFICATION_SUMMARY.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Session Bootstrap Guide - Quick Start
 
 **Purpose**: Get oriented and productive in <5 minutes when resuming work on the meta-framework.

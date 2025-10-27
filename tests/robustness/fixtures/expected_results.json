@@ -2,17 +2,17 @@
   "paraphrase_robustness": {
     "simple_functions": {
       "target_robustness": 0.97,
-      "warning_threshold": 0.90,
-      "baseline": null
+      "warning_threshold": 0.9,
+      "baseline": 1.0
     },
     "validation_functions": {
       "target_robustness": 0.97,
-      "warning_threshold": 0.90,
+      "warning_threshold": 0.9,
       "baseline": null
     },
     "transformation_functions": {
       "target_robustness": 0.97,
-      "warning_threshold": 0.90,
+      "warning_threshold": 0.9,
       "baseline": null
     },
     "edge_case_functions": {
@@ -25,16 +25,16 @@
     "naming_variants": {
       "target_robustness": 0.99,
       "warning_threshold": 0.95,
-      "baseline": null
+      "baseline": 1.0
     },
     "effect_ordering": {
       "target_robustness": 0.98,
-      "warning_threshold": 0.90,
+      "warning_threshold": 0.9,
       "baseline": null
     },
     "assertion_rephrasing": {
       "target_robustness": 0.97,
-      "warning_threshold": 0.90,
+      "warning_threshold": 0.9,
       "baseline": null
     }
   },
@@ -49,6 +49,8 @@
     "baseline_null": "Baselines are null until first measurement is taken",
     "how_to_update": "Run test_baseline_robustness.py to populate baseline values",
     "target_explanation": "target_robustness is the ideal goal (<3% sensitivity for most cases)",
-    "warning_explanation": "warning_threshold triggers yellow warnings in CI"
+    "warning_explanation": "warning_threshold triggers yellow warnings in CI",
+    "last_updated": "Phase 4 baseline capture",
+    "measured_at": "2025-10-27"
   }
 }

@@ -329,7 +329,7 @@ def health_80b():
         "status": "healthy",
         "model": QWEN_80B_MODEL,
         "gpu": "H100 x1",
-        "backend": f"vLLM {VLLM_VERSION} with XGrammar",
+        "backend": f"vLLM {VLLM_VERSION} with llguidance",
     }
 
 
@@ -553,7 +553,7 @@ def health_480b():
         "status": "healthy",
         "model": QWEN_480B_MODEL,
         "gpu": "H100 x8 (tensor parallel)",
-        "backend": f"vLLM {VLLM_VERSION} with XGrammar",
+        "backend": f"vLLM {VLLM_VERSION} with llguidance",
     }
 
 

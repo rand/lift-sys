@@ -100,9 +100,9 @@ class ModalProvider(BaseProvider):
                     f"Raw output (first 500 chars): {raw_output[:500]}"
                 )
 
-            # The Modal endpoint returns the generated JSON in the "ir_json" field
-            # (This field name is historical, but works for any schema-constrained generation)
-            return result["ir_json"]
+            # The Modal endpoint returns the generated text/JSON in the "text" field
+            # For schema-constrained generation, this will be a JSON object
+            return result["text"]
 
         except httpx.HTTPStatusError as e:
             # Include response body in error for debugging

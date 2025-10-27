@@ -4,7 +4,7 @@ Real Modal Provider Integration Tests (Phase 2.1).
 Tests REAL Modal endpoint calls (not mocks) with response recording.
 
 This file contains integration tests that:
-1. Call actual Modal endpoint at https://rand--generate.modal.run
+1. Call actual Modal endpoint at https://rand--qwen-80b-generate.modal.run
 2. Validate XGrammar constraint enforcement
 3. Test error handling (missing fields, timeouts, malformed responses)
 4. Use ResponseRecorder for caching (fast subsequent runs)
@@ -13,11 +13,11 @@ This file contains integration tests that:
 **How to run:**
 
     # First run (record responses, slow ~3-6min cold start)
-    RECORD_FIXTURES=true MODAL_ENDPOINT_URL=https://rand--generate.modal.run \
+    RECORD_FIXTURES=true MODAL_ENDPOINT_URL=https://rand--qwen-80b-generate.modal.run \
         uv run pytest tests/integration/test_modal_provider_real.py -v
 
     # Subsequent runs (use cache, fast <1s)
-    MODAL_ENDPOINT_URL=https://rand--generate.modal.run \
+    MODAL_ENDPOINT_URL=https://rand--qwen-80b-generate.modal.run \
         uv run pytest tests/integration/test_modal_provider_real.py -v
 
     # Run specific test
@@ -26,7 +26,7 @@ This file contains integration tests that:
 **Environment variables:**
 
     MODAL_ENDPOINT_URL - Modal endpoint URL (required)
-                         Default: https://rand--generate.modal.run
+                         Default: https://rand--qwen-80b-generate.modal.run
     RECORD_FIXTURES    - Set to "true" to record new responses
                          Default: false (use cached responses)
 
@@ -86,7 +86,7 @@ async def test_real_modal_warmup(modal_recorder):
     from lift_sys.providers.modal_provider import ModalProvider
 
     # Get endpoint from environment
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     # Initialize provider
     provider = ModalProvider(endpoint_url=endpoint_url)
@@ -165,7 +165,7 @@ async def test_real_modal_simple_ir_generation(modal_recorder):
     from lift_sys.ir.schema import IR_JSON_SCHEMA
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -237,7 +237,7 @@ async def test_real_modal_xgrammar_constraint_enforcement(modal_recorder):
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -329,7 +329,7 @@ async def test_real_modal_schema_tolerance_and_validation():
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -385,7 +385,7 @@ async def test_real_modal_error_handling_missing_fields():
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -444,7 +444,7 @@ async def test_real_modal_temperature_parameter(modal_recorder):
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -511,7 +511,7 @@ async def test_real_modal_health_endpoint():
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})
@@ -554,7 +554,7 @@ async def test_real_modal_max_tokens_parameter(modal_recorder):
     """
     from lift_sys.providers.modal_provider import ModalProvider
 
-    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--generate.modal.run")
+    endpoint_url = os.getenv("MODAL_ENDPOINT_URL", "https://rand--qwen-80b-generate.modal.run")
 
     provider = ModalProvider(endpoint_url=endpoint_url)
     await provider.initialize({})

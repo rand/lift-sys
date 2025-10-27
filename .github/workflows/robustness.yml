@@ -137,9 +137,9 @@ jobs:
           echo "  Tests Skipped: ${{ steps.metrics.outputs.skipped }}"
           echo "  Pass Rate: ${PASS_RATE}%"
 
-          # Quality gates
-          WARN_THRESHOLD=90  # Warn if pass rate < 90%
-          FAIL_THRESHOLD=80  # Fail if pass rate < 80%
+          # Quality gates (Phase 5a: Modest tightening)
+          WARN_THRESHOLD=88  # Warn if pass rate < 88% (tightened from 90%)
+          FAIL_THRESHOLD=80  # Fail if pass rate < 80% (unchanged)
 
           if (( $(echo "$PASS_RATE < $FAIL_THRESHOLD" | bc -l) )); then
             echo "status=failed" >> $GITHUB_OUTPUT
@@ -195,9 +195,9 @@ jobs:
             | Avg Robustness | ${avgRobustness}${avgRobustness !== 'N/A' ? '%' : ''} |
 
             ### Quality Gates
-            - ⚠️  Warning: Pass rate < 90%
+            - ⚠️  Warning: Pass rate < 88% (Phase 5a: Modest tightening)
             - ❌ Failure: Pass rate < 80%
-            - ✅ Target: Pass rate ≥ 90%, Robustness ≥ 97%
+            - ✅ Target: Pass rate ≥ 88%, Robustness ≥ 97%
 
             ### What This Means
 

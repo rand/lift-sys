@@ -7,7 +7,7 @@ This module provides GPU-accelerated inference for two large Qwen models:
 
 Both models use:
 - vLLM for efficient inference with PagedAttention
-- XGrammar for JSON schema-constrained generation
+- llguidance for JSON schema-constrained generation
 - FP8 quantization for reduced memory footprint
 - H100 GPUs with tensor parallelism as needed
 
@@ -53,7 +53,7 @@ Performance Notes:
     - MoE architecture: All experts loaded, but only active subset used per token
     - First request triggers model download and compilation (slow)
     - Subsequent requests use cached models (fast)
-    - XGrammar ensures schema-compliant JSON output
+    - llguidance ensures schema-compliant JSON output
 """
 
 import modal
@@ -76,8 +76,8 @@ llm_image = (
         "wget",  # Useful for downloads
     )
     .uv_pip_install(
-        f"vllm=={VLLM_VERSION}",  # vLLM 0.11.0 with improved compatibility
-        "xgrammar",  # XGrammar for constrained generation
+        f"vllm=={VLLM_VERSION}",  # vLLM 0.11.0 with llguidance + xgrammar backends
+        "xgrammar",  # XGrammar backend (for comparison/fallback)
         f"fastapi[standard]=={FASTAPI_VERSION}",  # Web framework
         f"huggingface-hub>={HF_HUB_VERSION}",  # Model downloads
         "hf-transfer",  # Fast downloads from HuggingFace
@@ -172,14 +172,14 @@ class Qwen80BGenerator:
             gpu_memory_utilization=0.85,  # Conservative for stability
             max_model_len=8192,  # Sufficient for most tasks
             tensor_parallel_size=2,  # Split across 2 GPUs
-            guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
+            guided_decoding_backend="guidance",  # llguidance for JSON schema
             enforce_eager=True,  # REQUIRED: Disables CUDA graphs to avoid crash
         )
 
         load_time = time.time() - start
         print(f"✅ Model loaded in {load_time:.2f}s")
         print(f"Model: {QWEN_80B_MODEL}")
-        print("XGrammar backend enabled for structured outputs")
+        print("llguidance backend enabled for structured outputs")
 
         # Commit volume changes
         volume.commit()
@@ -395,7 +395,7 @@ class Qwen480BGenerator:
             gpu_memory_utilization=0.80,  # Conservative for multi-GPU stability
             max_model_len=32768,  # Reduced from 262K to avoid OOM (per docs)
             tensor_parallel_size=8,  # Distribute across 8 H100s
-            guided_decoding_backend="xgrammar",  # XGrammar for JSON schema
+            guided_decoding_backend="guidance",  # llguidance for JSON schema
             enforce_eager=True,  # REQUIRED: Disables CUDA graphs to avoid crash
         )
 
@@ -403,7 +403,7 @@ class Qwen480BGenerator:
         print(f"✅ Model loaded in {load_time:.2f}s")
         print(f"Model: {QWEN_480B_MODEL}")
         print("Tensor parallel: 8 GPUs")
-        print("XGrammar backend enabled for structured outputs")
+        print("llguidance backend enabled for structured outputs")
 
         # Commit volume changes
         volume.commit()

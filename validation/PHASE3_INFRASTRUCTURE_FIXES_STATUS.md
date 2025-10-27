@@ -434,6 +434,80 @@ Remaining work is primarily **validation and documentation**:
 
 ---
 
-**Last Updated**: 2025-10-27 13:30 MDT
-**Next Review**: After test cache re-recording
-**Status**: Short-term tasks 95% complete, Medium-term tasks 20% complete
+## Additional Fixes Discovered (Session 2)
+
+### Issue 4: Health URL Derivation Bug ✅ FIXED
+**Problem**: ModalProvider health URL derivation logic was broken
+
+**Root Cause**:
+- Code checked for `--generate` in URL
+- Actual URL pattern: `https://rand--qwen-80b-generate.modal.run`
+- Contains `-generate` not `--generate` (double vs single dash)
+- Result: Health URL not derived correctly, health checks failed
+
+**Fix**: Updated `lift_sys/providers/modal_provider.py:36-43`
+```python
+# BEFORE:
+if "--generate" in endpoint_url:
+    self.health_url = endpoint_url.replace("--generate", "--health")
+
+# AFTER:
+if "-generate.modal.run" in endpoint_url:
+    self.health_url = endpoint_url.replace("-generate.modal.run", "-health.modal.run")
+```
+
+**Verification**:
+```python
+# Test script confirmed fix works
+endpoint = "https://rand--qwen-80b-generate.modal.run"
+health = endpoint.replace("-generate.modal.run", "-health.modal.run")
+# Result: https://rand--qwen-80b-health.modal.run ✅
+```
+
+**Commit**: 92fff1f - "fix: Correct health URL derivation for Modal endpoints"
+
+### Issue 5: Stale .env Configuration ✅ FIXED
+**Problem**: `.env` and `.env.local` files contained old endpoint URLs
+
+**Root Cause**:
+- Both files had `MODAL_ENDPOINT_URL=https://rand--generate.modal.run`
+- Environment variables override test defaults
+- Tests failed even with correct code because env vars were stale
+
+**Fix**: Updated both `.env` and `.env.local`
+```bash
+# BEFORE:
+MODAL_ENDPOINT_URL=https://rand--generate.modal.run
+MODAL_HEALTH_URL=https://rand--health.modal.run
+
+# AFTER:
+MODAL_ENDPOINT_URL=https://rand--qwen-80b-generate.modal.run
+MODAL_HEALTH_URL=https://rand--qwen-80b-health.modal.run
+```
+
+**Note**: Files are gitignored (contain secrets), changes not committed
+
+**Verification**:
+```bash
+# With explicit env var, health check passes
+MODAL_ENDPOINT_URL="https://rand--qwen-80b-generate.modal.run" \
+  python test_provider_debug.py
+# Result: Health check returned True ✅
+```
+
+### Test Cache Re-recording ✅ COMPLETE
+**Status**: Successfully recorded new cache with llguidance responses
+
+**Results**:
+- **4 tests passed**: simple_ir_generation, xgrammar_constraint_enforcement, schema_tolerance_and_validation, error_handling_missing_fields
+- **2 tests skipped**: Known vLLM bug (temperature and max_tokens tests hang)
+- **2 responses cached**: simple_ir_add_function, xgrammar_constraint_enforcement
+- **Total time**: 5:39 minutes (includes cold start)
+
+**Commit**: d355c19 - "test: Add llguidance response cache"
+
+---
+
+**Last Updated**: 2025-10-27 15:00 MDT
+**Next Review**: Begin medium-term tasks (benchmarking, auto mode testing)
+**Status**: Short-term tasks 100% COMPLETE, Medium-term tasks 0% (ready to start)

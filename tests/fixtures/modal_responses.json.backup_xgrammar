@@ -1,0 +1,114 @@
+{
+  "max_tokens_quicksort_2048": {
+    "metadata": {
+      "test": "max_tokens",
+      "tokens": 2048
+    },
+    "original_key": "max_tokens_quicksort_2048",
+    "response": {
+      "description": "Implements the quicksort algorithm with a pivot selection strategy. The pivot is chosen as the median of the first, middle, and last elements of the array. This function sorts the array in place and returns the sorted array. The function uses Python type hints for clarity and type checking. The implementation is efficient and handles edge cases such as empty arrays and arrays with duplicate elements. The function is designed to be easily readable and maintainable, with clear variable names and a",
+      "name": "quicksort_with_pivot_selection"
+    }
+  },
+  "simple_ir_add_function": {
+    "metadata": {
+      "function": "add",
+      "test": "simple_ir"
+    },
+    "original_key": "simple_ir_add_function",
+    "response": {
+      "constraints": [
+        {
+          "description": "Both input integers must be non-negative",
+          "elements": [
+            "a",
+            "b"
+          ],
+          "severity": "error",
+          "type": "position_constraint"
+        }
+      ],
+      "intent": {
+        "rationale": "The function will take two integers as input, validate that they are non-negative, and return their sum.",
+        "summary": "Create a Python function to add two non-negative integers"
+      },
+      "signature": {
+        "holes": [],
+        "name": "add",
+        "parameters": [
+          {
+            "description": "The first non-negative integer to be added",
+            "name": "a",
+            "type_hint": "int"
+          },
+          {
+            "description": "The second non-negative integer to be added",
+            "name": "b",
+            "type_hint": "int"
+          }
+        ],
+        "returns": "int"
+      }
+    }
+  },
+  "temperature_test_deterministic_run1": {
+    "metadata": {
+      "run": 1,
+      "test": "temperature"
+    },
+    "original_key": "temperature_test_deterministic_run1",
+    "response": {
+      "description": "Function to add two integers and return their sum.",
+      "name": "add_two_numbers"
+    }
+  },
+  "temperature_test_deterministic_run2": {
+    "metadata": {
+      "run": 2,
+      "test": "temperature"
+    },
+    "original_key": "temperature_test_deterministic_run2",
+    "response": {
+      "description": "Function to add two integers and return their sum.",
+      "name": "add_two_numbers"
+    }
+  },
+  "warmup_basic_function": {
+    "metadata": {
+      "model": "Qwen2.5-Coder-32B-Instruct",
+      "test": "warmup"
+    },
+    "original_key": "warmup_basic_function",
+    "response": {
+      "intent": {
+        "summary": "Write a Python function that returns True."
+      },
+      "signature": {
+        "name": "return_true",
+        "parameters": [],
+        "returns": "bool"
+      }
+    }
+  },
+  "xgrammar_constraint_enforcement": {
+    "metadata": {
+      "test": "xgrammar_constraints"
+    },
+    "original_key": "xgrammar_constraint_enforcement",
+    "response": {
+      "description": "Finds the index of an element in a list.",
+      "function_name": "find_element_index",
+      "parameters": [
+        {
+          "name": "lst",
+          "type": "list[int]"
+        },
+        {
+          "name": "element",
+          "type": "int"
+        }
+      ],
+      "returns": "int | NoneType"
+    }
+  }
+}

@@ -12,9 +12,9 @@ from lift_sys.causal.scm_fitter import (
 from lift_sys.causal.trace_collector import collect_traces
 
 # Mark all tests as requiring DoWhy
-pytestmark = pytest.mark.skipif(
-    not pytest.config.getoption("--dowhy", default=False),
-    reason="Requires --dowhy flag and .venv-dowhy setup",
+# TODO: Integrate with dowhy_available fixture or add proper command-line option
+pytestmark = pytest.mark.skip(
+    reason="Requires DoWhy in .venv-dowhy (Python 3.11). Enable when DoWhy setup is complete."
 )
 
 

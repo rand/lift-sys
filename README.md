@@ -164,21 +164,22 @@ lift-sys/
 
 ### Key Development Guidelines
 
-**Critical Rules** (see [`CLAUDE.md`](CLAUDE.md) for complete guidelines):
+**Critical Rules**:
 - ✅ **ALWAYS use `uv`** for Python packages (never pip/poetry)
 - ✅ **Commit BEFORE testing** - Tests must run against committed code
 - ✅ **Use feature branches** - Never commit directly to main
-- ✅ **Organize files** - Follow repository organization rules
+- ✅ **Organize files** - See [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
 - ❌ **NEVER commit secrets** - Use environment variables or Modal secrets
-- 📋 **Track work with Beads** - Use beads framework for task management
 
 ### Contributing
 
-1. Read the guidelines: [`CLAUDE.md`](CLAUDE.md)
-2. Create feature branch: `git checkout -b feature/your-feature`
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Make your changes following the structure in [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
 3. Write tests for new functionality
-4. Follow organization rules (files in correct directories)
+4. Run tests and quality checks (see above)
 5. Create PR: `gh pr create --title "..." --body "..."`
+
+See [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md) for file organization rules.
 
 ---
 
@@ -238,7 +239,7 @@ echo $SUPABASE_ANON_KEY
 
 - **Documentation**: Check [`docs/MASTER_ROADMAP.md`](docs/MASTER_ROADMAP.md) for navigation
 - **Known Issues**: See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)
-- **Development Guide**: See [`CLAUDE.md`](CLAUDE.md)
+- **Project Structure**: See [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md)
 - **Issues**: Report bugs at https://github.com/rand/lift-sys/issues
 
 ---
@@ -274,10 +275,30 @@ echo $SUPABASE_ANON_KEY
 ## Key Resources
 
 - **Master Roadmap**: [`docs/MASTER_ROADMAP.md`](docs/MASTER_ROADMAP.md) - Project navigation and work selection
-- **Development Guide**: [`CLAUDE.md`](CLAUDE.md) - Development practices and protocols
+- **Repository Structure**: [`REPOSITORY_ORGANIZATION.md`](REPOSITORY_ORGANIZATION.md) - File organization rules
 - **IR Specification**: [`docs/IR_SPECIFICATION.md`](docs/IR_SPECIFICATION.md) - Complete IR design (PRD + RFC)
 - **Workflow Guides**: [`docs/WORKFLOW_GUIDES.md`](docs/WORKFLOW_GUIDES.md) - Step-by-step tutorials
 - **API Documentation**: [`docs/tracks/infrastructure/API_SESSION_MANAGEMENT.md`](docs/tracks/infrastructure/API_SESSION_MANAGEMENT.md)
+
+---
+
+## For AI Developers (Claude Code, etc.)
+
+If you're an AI agent working on this project:
+
+1. **Start here**: [`CLAUDE.md`](CLAUDE.md) - Complete development guidelines for AI agents
+2. **Session bootstrap**: [`docs/MASTER_ROADMAP.md`](docs/MASTER_ROADMAP.md) - Quick project navigation (<2 min)
+3. **Track-specific work**: See [`docs/tracks/`](docs/tracks/) - Each track has a STATUS.md with embedded session protocols
+4. **Hole-driven development**: [`docs/tracks/dspy/SESSION_STATE.md`](docs/tracks/dspy/SESSION_STATE.md) - Current DSPy architecture work
+
+**Quick start for AI sessions**:
+```bash
+bd import -i .beads/issues.jsonl  # Import task state
+bd ready --json --limit 5          # Check ready work
+cat docs/MASTER_ROADMAP.md | head -100  # Orient to project
+```
+
+All planning documents in `docs/tracks/` include YAML frontmatter with session protocols for instant orientation.
 
 ---
 

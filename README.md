@@ -302,4 +302,6 @@ All planning documents in `docs/tracks/` include YAML frontmatter with session p
 
 ---
 
-**License**: MIT (see [`LICENSE`](LICENSE))
+**License**: Proprietary - All rights reserved (see [`LICENSE.md`](LICENSE.md))
+
+This code is made available for reference and educational purposes only. You may view and study the code, but may not use, copy, modify, or distribute it without explicit written permission.

@@ -219,12 +219,8 @@ class TypeScriptGenerator:
 
         # Extract implementation dict from dspy.Prediction
         # ProviderAdapter returns prediction with fields: implementation, imports, etc.
-        # Convert back to dict for compatibility with existing code
-        impl_json = {
-            k: v
-            for k, v in prediction.__dict__.items()
-            if not k.startswith("_")  # Filter out internal dspy attributes
-        }
+        # Convert to dict using dict() (Prediction supports dict conversion)
+        impl_json = dict(prediction)
 
         # SCHEMA FIX: Modal XGrammar sometimes returns unwrapped format
         # Expected: {"implementation": {...}}

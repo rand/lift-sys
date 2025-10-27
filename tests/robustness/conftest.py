@@ -23,7 +23,12 @@ from lift_sys.robustness import (
 
 @pytest.fixture
 def paraphrase_generator():
-    """Paraphrase generator for testing."""
+    """Paraphrase generator for testing.
+
+    Uses enhanced configuration:
+    - max_variants=10 (allow up to 10 paraphrases)
+    - min_diversity=0.2 (lowered from 0.3 to allow more variants)
+    """
     return ParaphraseGenerator(max_variants=10, min_diversity=0.2)
 
 

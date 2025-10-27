@@ -37,7 +37,7 @@ class ParaphraseGenerator:
         self,
         max_variants: int = 10,
         preserve_semantics: bool = True,
-        min_diversity: float = 0.3,
+        min_diversity: float = 0.2,  # Lowered from 0.3 to allow more variants
     ):
         """Initialize paraphrase generator.
 
@@ -184,23 +184,29 @@ class ParaphraseGenerator:
 
             synsets = self._wordnet.synsets(token.text.lower(), pos=wordnet_pos)
 
-            # Get synonyms from top 2 synsets for better coverage
+            # Get synonyms from top 3 synsets for better coverage (increased from 2)
             # Semantic similarity filter will reject wrong word senses
             synonyms: set[str] = set()
             if synsets:
-                # Use top 2 synsets to get more synonym candidates
-                for synset in synsets[:2]:
-                    for lemma in synset.lemmas()[:5]:  # Top 5 lemmas per synset
+                # Use top 3 synsets to get more synonym candidates
+                for synset in synsets[:3]:
+                    for lemma in synset.lemmas()[:7]:  # Top 7 lemmas per synset (increased from 5)
                         synonym = lemma.name().replace("_", " ")
                         if synonym.lower() != token.text.lower():
                             # Check if synonym is semantically similar in context
                             if self._is_semantically_similar_synonym(prompt, token.text, synonym):
                                 synonyms.add(synonym)
 
+            # Add custom synonyms for common programming terms
+            custom_synonyms = self._get_custom_synonyms(token.text.lower())
+            for custom_syn in custom_synonyms:
+                if self._is_semantically_similar_synonym(prompt, token.text, custom_syn):
+                    synonyms.add(custom_syn)
+
             if synonyms:
                 replacement_options.append(
-                    (token, list(synonyms)[:2])
-                )  # Keep top 2 synonyms per token
+                    (token, list(synonyms)[:3])
+                )  # Keep top 3 synonyms per token (increased from 2)
 
         # Generate single-replacement variants
         for token, synonyms in replacement_options:
@@ -329,6 +335,10 @@ class ParaphraseGenerator:
         Returns:
             Deduplicated and ranked variants (up to max_variants)
         """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         # Remove duplicates (case-insensitive)
         seen: set[str] = {original.lower()}
         unique_variants: list[str] = []
@@ -339,28 +349,42 @@ class ParaphraseGenerator:
                 seen.add(variant_lower)
                 unique_variants.append(variant)
 
+        logger.debug(
+            f"Generated {len(unique_variants)} unique variants from {len(variants)} candidates"
+        )
+
         # Filter by diversity
-        diverse_variants: list[str] = []
+        diverse_variants: list[tuple[str, float]] = []  # (variant, diversity_score)
         for variant in unique_variants:
             diversity = self._compute_diversity(original, variant)
             if diversity >= self.min_diversity:
-                diverse_variants.append(variant)
+                diverse_variants.append((variant, diversity))
+
+        logger.debug(
+            f"After diversity filter (>={self.min_diversity:.2f}): {len(diverse_variants)} variants"
+        )
 
         # Adaptive diversity threshold: if we don't have enough variants,
         # progressively lower the threshold to get more variants
         if len(diverse_variants) < 2:
             # Try with half the diversity threshold
             relaxed_threshold = self.min_diversity / 2
+            logger.debug(f"Insufficient variants, relaxing threshold to {relaxed_threshold:.2f}")
             diverse_variants = []
             for variant in unique_variants:
                 diversity = self._compute_diversity(original, variant)
                 if diversity >= relaxed_threshold:
-                    diverse_variants.append(variant)
+                    diverse_variants.append((variant, diversity))
+            logger.debug(f"After relaxed filter: {len(diverse_variants)} variants")
 
         # Sort by diversity (higher is better)
-        diverse_variants.sort(key=lambda v: self._compute_diversity(original, v), reverse=True)
+        diverse_variants.sort(key=lambda item: item[1], reverse=True)
 
-        return diverse_variants[: self.max_variants]
+        # Log diversity scores for top variants
+        for i, (variant, div_score) in enumerate(diverse_variants[: self.max_variants]):
+            logger.debug(f"  Variant {i + 1} (diversity={div_score:.3f}): {variant[:50]}...")
+
+        return [variant for variant, _ in diverse_variants[: self.max_variants]]
 
     def _compute_diversity(self, str1: str, str2: str) -> float:
         """Compute normalized edit distance (diversity score).
@@ -421,6 +445,8 @@ class ParaphraseGenerator:
     def _extract_clauses(self, doc: Any) -> list[str]:
         """Extract clauses from spaCy doc.
 
+        Enhanced to split on multiple clause markers for better coverage.
+
         Args:
             doc: spaCy Doc object
 
@@ -430,18 +456,51 @@ class ParaphraseGenerator:
         clauses: list[str] = []
         current_clause: list[str] = []
 
-        for token in doc:
+        for i, token in enumerate(doc):
             # Split on coordinating conjunctions
             if token.pos_ == "CCONJ" and token.text.lower() in ("and", "or"):
                 if current_clause:
                     clauses.append(" ".join(current_clause))
                     current_clause = []
+            # Also split on relative pronouns for subordinate clauses
+            elif (
+                token.text.lower() in ("that", "which", "who")
+                and i > 0
+                and current_clause
+                and len(current_clause) > 2
+            ):  # Minimum clause length
+                clauses.append(" ".join(current_clause))
+                current_clause = [token.text]
             else:
                 current_clause.append(token.text)
 
         # Add final clause
         if current_clause:
             clauses.append(" ".join(current_clause))
+
+        # Also try splitting on "to" for infinitive phrases
+        # Example: "Create a function to sort numbers" → ["Create a function", "to sort numbers"]
+        if len(clauses) < 2:
+            alternate_clauses: list[str] = []
+            current_alt: list[str] = []
+            for i, token in enumerate(doc):
+                if (
+                    token.text.lower() == "to"
+                    and token.pos_ == "PART"  # Infinitive marker
+                    and i > 0
+                    and current_alt
+                    and len(current_alt) >= 3
+                ):
+                    alternate_clauses.append(" ".join(current_alt))
+                    current_alt = [token.text]
+                else:
+                    current_alt.append(token.text)
+            if current_alt:
+                alternate_clauses.append(" ".join(current_alt))
+
+            # Use alternate split if it gives us more clauses
+            if len(alternate_clauses) > len(clauses):
+                clauses = alternate_clauses
 
         return clauses
 
@@ -532,6 +591,37 @@ class ParaphraseGenerator:
                 return f"{object_phrase.capitalize()} should be {passive_verb}"
 
         return None
+
+    def _get_custom_synonyms(self, word: str) -> list[str]:
+        """Get custom synonyms for common programming terms.
+
+        WordNet doesn't have good coverage for programming-specific vocabulary,
+        so we provide manual mappings for common terms.
+
+        Args:
+            word: Lowercase word to find synonyms for
+
+        Returns:
+            List of custom synonyms
+        """
+        custom_mappings = {
+            "create": ["make", "build", "generate", "construct"],
+            "make": ["create", "build", "generate", "construct"],
+            "build": ["create", "make", "generate", "construct"],
+            "write": ["create", "code", "implement", "author"],
+            "implement": ["create", "code", "write", "build"],
+            "generate": ["create", "produce", "build", "make"],
+            "sort": ["order", "arrange", "organize"],
+            "filter": ["select", "screen", "sift"],
+            "validate": ["check", "verify", "confirm"],
+            "calculate": ["compute", "determine", "figure"],
+            "compute": ["calculate", "determine", "figure"],
+            "numbers": ["integers", "values", "digits"],
+            "list": ["array", "sequence", "collection"],
+            "reverse": ["invert", "flip", "turn"],
+            "factorial": ["product"],  # Limited but semantically close
+        }
+        return custom_mappings.get(word, [])
 
     def _get_technical_terms(self) -> set[str]:
         """Get set of technical terms that should not be replaced.

@@ -52,9 +52,12 @@ export function add(a: number, b: number): number {
 }
 """
 
-        # Should return True (or True if tsc not available)
+        # Should return tuple[bool, str]
         result = generator._validate_typescript_syntax(valid_code)
-        assert isinstance(result, bool)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        is_valid, error_output = result
+        assert isinstance(is_valid, bool)
 
     def test_extract_json_from_markdown(self):
         """Test JSON extraction from markdown blocks."""
@@ -356,7 +359,7 @@ class TestTypeScriptGeneration:
     @pytest.mark.asyncio
     async def test_generate_simple_function(self):
         """Test generating a simple TypeScript function."""
-        # Mock provider that returns valid implementation JSON
+        # Mock provider that returns valid implementation JSON matching schema
         provider = MockProvider()
         provider.set_response(
             """
@@ -365,9 +368,11 @@ class TestTypeScriptGeneration:
     "body_statements": [
       {"type": "return", "code": "return a + b;", "rationale": "Add numbers"}
     ],
-    "variables": [],
-    "imports": []
-  }
+    "variables": []
+  },
+  "imports": [],
+  "helper_functions": [],
+  "type_definitions": []
 }
 """
         )
@@ -411,7 +416,10 @@ class TestTypeScriptGeneration:
     "body_statements": [
       {"type": "return", "code": "return x * 2;"}
     ]
-  }
+  },
+  "imports": [],
+  "helper_functions": [],
+  "type_definitions": []
 }
 """,
             ]

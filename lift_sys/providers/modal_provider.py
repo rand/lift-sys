@@ -32,12 +32,15 @@ class ModalProvider(BaseProvider):
         self.endpoint_url = endpoint_url.rstrip("/")
 
         # For label-based URLs, derive health URL from generate URL
-        # https://rand--generate.modal.run -> https://rand--health.modal.run
-        if "--generate" in endpoint_url:
-            self.health_url = endpoint_url.replace("--generate", "--health")
-        else:
+        # https://rand--qwen-80b-generate.modal.run -> https://rand--qwen-80b-health.modal.run
+        if "-generate.modal.run" in endpoint_url:
+            self.health_url = endpoint_url.replace("-generate.modal.run", "-health.modal.run")
+        elif "/generate" in endpoint_url:
             # Fallback for path-based URLs
             self.health_url = endpoint_url.replace("/generate", "/health")
+        else:
+            # If neither pattern matches, use same URL (will fail, but that's expected)
+            self.health_url = endpoint_url
 
         self._client: httpx.AsyncClient | None = None
 

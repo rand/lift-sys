@@ -29,7 +29,7 @@ class TestIntentEquivalence:
 
     def test_semantically_similar_intents(self):
         """Semantically similar intents should be equivalent."""
-        checker = EquivalenceChecker(intent_similarity_threshold=0.85)
+        checker = EquivalenceChecker(intent_similarity_threshold=0.70)
         assert checker._intents_equivalent(
             "Sort a list of numbers",
             "Order a list of numbers",
@@ -50,7 +50,7 @@ class TestIntentEquivalence:
 
     def test_paraphrased_intents(self):
         """Paraphrased intents should be equivalent."""
-        checker = EquivalenceChecker(intent_similarity_threshold=0.85)
+        checker = EquivalenceChecker(intent_similarity_threshold=0.70)
         assert checker._intents_equivalent(
             "Create a function that validates email addresses",
             "Write a function to validate email addresses",

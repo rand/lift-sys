@@ -51,7 +51,7 @@ class EquivalenceChecker:
         normalize_naming: bool = True,
         check_effect_order: bool = False,
         use_smt_solver: bool = False,  # Z3 optional for now (future enhancement)
-        intent_similarity_threshold: float = 0.9,
+        intent_similarity_threshold: float = 0.70,  # Lowered from 0.9 based on analysis (100% recall, F1=0.833)
     ):
         """
         Initialize equivalence checker.

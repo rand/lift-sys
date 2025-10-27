@@ -17,8 +17,8 @@ from typing import Any
 import networkx as nx
 import pytest
 
-# Import all SCM test fixtures to make them available to tests
-pytest_plugins = ["tests.causal.fixtures.scm_test_fixtures"]
+# Note: pytest_plugins declaration moved to root conftest.py
+# to comply with pytest deprecation warning about non-top-level plugin definitions
 
 
 # =============================================================================

@@ -71,14 +71,31 @@ jobs:
         id: metrics
         run: |
           # Extract robustness scores from test output
-          # This is a simple parser - will be enhanced with structured output
+          # Parse the final pytest summary line for accurate counts
 
           echo "Parsing robustness metrics..."
 
-          # Count test results
-          PASSED=$(grep -c "PASSED" robustness-output.txt || echo "0")
-          FAILED=$(grep -c "FAILED" robustness-output.txt || echo "0")
-          SKIPPED=$(grep -c "SKIPPED" robustness-output.txt || echo "0")
+          # Count test results from pytest summary line
+          # Example: "5 failed, 11 passed, 6 skipped, 10 warnings in 35.12s"
+          SUMMARY_LINE=$(grep -E "^={3,} .* in [0-9]+\.[0-9]+s ={3,}$" robustness-output.txt | tail -1 || echo "")
+
+          if [ -n "$SUMMARY_LINE" ]; then
+            echo "Found summary: $SUMMARY_LINE"
+
+            # Extract passed count
+            PASSED=$(echo "$SUMMARY_LINE" | grep -oP '\d+(?= passed)' || echo "0")
+            # Extract failed count
+            FAILED=$(echo "$SUMMARY_LINE" | grep -oP '\d+(?= failed)' || echo "0")
+            # Extract skipped count
+            SKIPPED=$(echo "$SUMMARY_LINE" | grep -oP '\d+(?= skipped)' || echo "0")
+          else
+            echo "Warning: Could not find pytest summary line, falling back to line counting"
+            # Fallback: count unique test result lines (not all occurrences)
+            PASSED=$(grep -E "^tests/.*PASSED" robustness-output.txt | wc -l || echo "0")
+            FAILED=$(grep -E "^tests/.*FAILED" robustness-output.txt | wc -l || echo "0")
+            SKIPPED=$(grep -E "^tests/.*SKIPPED" robustness-output.txt | wc -l || echo "0")
+          fi
+
           TOTAL=$((PASSED + FAILED + SKIPPED))
 
           echo "passed=$PASSED" >> $GITHUB_OUTPUT

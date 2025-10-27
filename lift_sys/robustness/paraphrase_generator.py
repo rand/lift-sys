@@ -605,21 +605,29 @@ class ParaphraseGenerator:
             List of custom synonyms
         """
         custom_mappings = {
-            "create": ["make", "build", "generate", "construct"],
-            "make": ["create", "build", "generate", "construct"],
-            "build": ["create", "make", "generate", "construct"],
-            "write": ["create", "code", "implement", "author"],
-            "implement": ["create", "code", "write", "build"],
-            "generate": ["create", "produce", "build", "make"],
-            "sort": ["order", "arrange", "organize"],
-            "filter": ["select", "screen", "sift"],
-            "validate": ["check", "verify", "confirm"],
-            "calculate": ["compute", "determine", "figure"],
-            "compute": ["calculate", "determine", "figure"],
-            "numbers": ["integers", "values", "digits"],
-            "list": ["array", "sequence", "collection"],
-            "reverse": ["invert", "flip", "turn"],
-            "factorial": ["product"],  # Limited but semantically close
+            "create": ["make", "build", "generate", "construct", "develop"],
+            "make": ["create", "build", "generate", "construct", "develop"],
+            "build": ["create", "make", "generate", "construct", "develop"],
+            "write": ["create", "code", "implement", "author", "compose"],
+            "implement": ["create", "code", "write", "build", "develop"],
+            "generate": ["create", "produce", "build", "make", "construct"],
+            "sort": ["order", "arrange", "organize", "rank"],
+            "filter": ["select", "screen", "sift", "extract"],
+            "validate": ["check", "verify", "confirm", "test"],
+            "calculate": ["compute", "determine", "figure", "evaluate", "derive"],
+            "compute": ["calculate", "determine", "figure", "evaluate", "process"],
+            "calculates": ["computes", "determines", "figures", "evaluates", "derives"],
+            "computes": ["calculates", "determines", "figures", "evaluates", "processes"],
+            "numbers": ["integers", "values", "digits", "figures"],
+            "number": ["integer", "value", "digit", "figure"],
+            "list": ["array", "sequence", "collection", "series"],
+            "reverse": ["invert", "flip", "turn", "backtrack"],
+            "factorial": ["product", "multiplication"],  # Mathematical context
+            "function": ["method", "procedure", "routine"],  # Allow when not in technical_terms
+            "return": ["yield", "produce", "give"],  # Allow when not in technical_terms
+            "email": ["e-mail", "electronic-mail", "mail"],
+            "addresses": ["locations", "destinations"],
+            "string": ["text", "sequence", "characters"],  # Allow when not overly technical
         }
         return custom_mappings.get(word, [])
 

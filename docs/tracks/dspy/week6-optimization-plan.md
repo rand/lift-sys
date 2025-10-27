@@ -1,3 +1,24 @@
+---
+track: dspy
+document_type: weekly_plan
+status: planning
+priority: P2
+completion: 0%
+phase: 6
+last_updated: 2025-10-20
+session_protocol: |
+  For new Claude Code session:
+  1. Week 6 plan for LSP optimization and production polish (FUTURE work)
+  2. Focus: Sub-500ms latency, >70% context relevance via caching
+  3. Prerequisites: Week 5 LSP integration complete
+  4. Current phase: Phase 3 (10/19 holes resolved) - Week 6 not started
+  5. Use as future reference when LSP integration begins
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Week 6: LSP Optimization and Production Polish
 
 ## Overview

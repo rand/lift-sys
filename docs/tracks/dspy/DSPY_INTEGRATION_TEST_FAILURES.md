@@ -1,3 +1,24 @@
+---
+track: dspy
+document_type: failure_analysis
+status: complete
+priority: P0
+completion: 100%
+phase: A
+last_updated: 2025-10-23
+session_protocol: |
+  For new Claude Code session:
+  1. Root cause analysis of 17/21 failed E2E tests (Rust, Go, Java)
+  2. Issue: Modal XGrammar not enforcing schemas (missing required fields)
+  3. TypeScript passed only because it used cached fixtures (not live API)
+  4. Led to schema fix (af59c53) and eventual llguidance migration
+  5. Historical record - use for understanding Modal API issues
+related_docs:
+  - docs/tracks/dspy/DSPY_INTEGRATION_FINAL_RESULTS.md
+  - docs/tracks/infrastructure/MODAL_ENDPOINT_ISSUES.md
+  - docs/tracks/infrastructure/LLGUIDANCE_MIGRATION_PLAN.md
+---
+
 # DSPy Integration Test Failures - Root Cause Analysis
 
 **Date**: 2025-10-23

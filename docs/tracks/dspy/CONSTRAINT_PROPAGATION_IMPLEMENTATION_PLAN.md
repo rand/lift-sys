@@ -1,3 +1,24 @@
+---
+track: dspy
+document_type: implementation_plan
+status: planning
+priority: P2
+completion: 15%
+last_updated: 2025-10-16
+session_protocol: |
+  For new Claude Code session:
+  1. This plan details CSP solver for typed holes (6-8 week implementation)
+  2. Phase 0 (foundation) partially complete - llguidance integration validated
+  3. This is a FUTURE enhancement - not currently blocking
+  4. Current hole-driven approach doesn't require full CSP solver yet
+  5. Use as reference for advanced constraint propagation techniques
+related_docs:
+  - docs/tracks/dspy/META_FRAMEWORK_DESIGN_BY_HOLES.md
+  - docs/tracks/dspy/CONSTRAINT_PROPAGATION_LOG.md
+  - docs/tracks/infrastructure/LLGUIDANCE_MIGRATION_PLAN.md
+  - docs/tracks/dspy/SESSION_STATE.md
+---
+
 # Constraint Propagation for Typed Holes: Implementation Plan
 
 **Created**: October 16, 2025

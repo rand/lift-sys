@@ -1,3 +1,25 @@
+---
+track: dspy
+document_type: migration_plan
+status: active
+priority: P0
+completion: 53%
+phase: 3
+last_updated: 2025-10-21
+session_protocol: |
+  For new Claude Code session:
+  1. This is the historical DSPy migration plan (12-16 month phased approach)
+  2. Current implementation uses hole-driven development (see SESSION_STATE.md)
+  3. 10/19 holes resolved (53% complete), Phase 3 active
+  4. Use this for strategic context, not tactical guidance
+  5. For active work: See SESSION_STATE.md and HOLE_INVENTORY.md
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - docs/tracks/dspy/DSPY_PYDANTIC_AI_ARCHITECTURE_PROPOSAL.md
+  - docs/MASTER_ROADMAP.md
+---
+
 # Lift-Sys DSPy Migration Plan
 
 **Date**: 2025-10-20

@@ -1,3 +1,26 @@
+---
+track: dspy
+document_type: integration_guide
+status: planning
+priority: P1
+completion: 0%
+phase: A
+last_updated: 2025-10-23
+session_protocol: |
+  For new Claude Code session:
+  1. Go generator integration is PLANNED but not started
+  2. Follow proven TypeScript pattern (see DSPY_TYPESCRIPT_INTEGRATION.md)
+  3. Leverage Go-specific schema features (goroutines, channels, defer, error handling)
+  4. Implementation: Replace provider calls with ProviderAdapter
+  5. Test with: uv run pytest tests/unit/test_go_generator.py
+related_docs:
+  - docs/tracks/dspy/DSPY_TYPESCRIPT_INTEGRATION.md
+  - docs/tracks/dspy/SESSION_STATE.md
+  - lift_sys/dspy_signatures/provider_adapter.py
+  - docs/tracks/dspy/DSPY_RUST_INTEGRATION.md
+  - docs/tracks/dspy/DSPY_JAVA_INTEGRATION.md
+---
+
 # DSPy Architecture Integration: Go Generator
 
 **Date**: 2025-10-23

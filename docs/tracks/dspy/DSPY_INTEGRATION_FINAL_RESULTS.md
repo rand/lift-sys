@@ -1,3 +1,25 @@
+---
+track: dspy
+document_type: test_results
+status: complete
+priority: P0
+completion: 100%
+phase: A
+last_updated: 2025-10-23
+session_protocol: |
+  For new Claude Code session:
+  1. This is the FINAL test results after Phase A integration
+  2. CRITICAL: Modal XGrammar API has 43% timeout rate and schema enforcement issues
+  3. 1/21 tests passed (4.8% success rate) - NOT production ready
+  4. Led to llguidance migration decision (see LLGUIDANCE_MIGRATION_PLAN.md)
+  5. Historical record - integration code was solid, Modal API was unreliable
+related_docs:
+  - docs/tracks/dspy/DSPY_INTEGRATION_RESULTS.md
+  - docs/tracks/dspy/DSPY_INTEGRATION_TEST_FAILURES.md
+  - docs/tracks/infrastructure/MODAL_ENDPOINT_ISSUES.md
+  - docs/tracks/infrastructure/LLGUIDANCE_MIGRATION_PLAN.md
+---
+
 # DSPy Integration Final Test Results
 
 **Date**: 2025-10-23

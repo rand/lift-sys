@@ -1,3 +1,27 @@
+---
+track: dspy
+document_type: integration_guide
+status: in_progress
+priority: P1
+completion: 60%
+phase: A
+last_updated: 2025-10-23
+session_protocol: |
+  For new Claude Code session:
+  1. TypeScript generator is partially integrated with DSPy ProviderAdapter
+  2. Phase 1 (minimal integration) complete - commit 1186ca7
+  3. Next: Full DSPy signature migration (Phase 2)
+  4. Use this as reference pattern for other language integrations
+  5. Test changes with: uv run pytest tests/unit/test_typescript_generator.py
+related_docs:
+  - docs/tracks/dspy/SESSION_STATE.md
+  - docs/tracks/dspy/HOLE_INVENTORY.md
+  - lift_sys/dspy_signatures/provider_adapter.py
+  - docs/tracks/dspy/DSPY_RUST_INTEGRATION.md
+  - docs/tracks/dspy/DSPY_GO_INTEGRATION.md
+  - docs/tracks/dspy/DSPY_JAVA_INTEGRATION.md
+---
+
 # DSPy Architecture Integration: TypeScript Generator
 
 **Date**: 2025-10-23

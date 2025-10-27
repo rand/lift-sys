@@ -23,7 +23,8 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from guidance import gen, models
+    from guidance import json as guidance_json
+    from guidance import models
 except ImportError:
     print("❌ ERROR: Guidance library not installed")
     print("Install with: uv add guidance")
@@ -173,7 +174,7 @@ async def test_typescript_poc() -> bool:
 
         # Generate JSON output constrained by schema
         print("\nGenerating TypeScript implementation with schema constraints...")
-        lm += gen(name="output", schema=TYPESCRIPT_GENERATION_SCHEMA)
+        lm += guidance_json(name="output", schema=TYPESCRIPT_GENERATION_SCHEMA)
 
         gen_time = time.time() - start_gen
         print(f"✅ Generation completed in {gen_time:.2f}s")
